@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Amigo — Academic Organizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="amigo">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">A</div>
+        <span class="logo-text">amigo</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <div class="nav-item active" onclick="setNav(this,'home')"><i class="ti ti-home"></i> Home</div>
+        <div class="nav-item" onclick="setNav(this,'assignment')"><i class="ti ti-file-text"></i> Assignments <span class="nav-badge" id="nb-assign">0</span></div>
+        <div class="nav-item" onclick="setNav(this,'quiz')"><i class="ti ti-pencil"></i> Quizzes <span class="nav-badge" id="nb-quiz">0</span></div>
+        <div class="nav-item" onclick="setNav(this,'mids')"><i class="ti ti-writing"></i> Mids <span class="nav-badge" id="nb-mids">0</span></div>
+        <div class="nav-item" onclick="setNav(this,'presentation')"><i class="ti ti-presentation"></i> Presentations</div>
+        <div class="nav-item" onclick="setNav(this,'final')"><i class="ti ti-certificate"></i> Finals</div>
+        <div class="nav-item" onclick="setNav(this,'notice')"><i class="ti ti-speakerphone"></i> Notices</div>
+        <div class="nav-label">Tools</div>
+        <div class="nav-item" onclick="setNav(this,'uploads')"><i class="ti ti-upload"></i> Uploads</div>
+        <div class="nav-item" onclick="setNav(this,'todo')"><i class="ti ti-checkbox"></i> To-Do</div>
+        <div class="nav-item" onclick="setNav(this,'calendar')"><i class="ti ti-calendar"></i> Calendar</div>
+        <div class="nav-item" onclick="setNav(this,'settings')"><i class="ti ti-settings"></i> Settings</div>
+      </div>
+      <div class="sidebar-profile">
+        <div class="avatar">S</div>
+        <div class="profile-info">
+          <p>Student</p>
+          <span>USKT · BSAI</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" style="position:relative;">
+      <div class="topbar">
+        <div class="topbar-date" id="topDate"></div>
+        <div class="topbar-icons">
+          <div class="icon-btn" onclick="toggleSearch()"><i class="ti ti-search"></i></div>
+          <div class="icon-btn" onclick="toggleNotifications()" style="position:relative;">
+            <i class="ti ti-bell"></i>
+            <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:9px;font-weight:600;padding:2px 5px;border-radius:20px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH PANEL -->
+      <div id="searchPanel" style="display:none;padding:0 24px 12px;">
+        <div style="display:flex;gap:8px;align-items:center;background:#fff;border:0.5px solid #b8c9e0;border-radius:10px;padding:8px 14px;">
+          <i class="ti ti-search" style="color:#94A3B8;font-size:16px;"></i>
+          <input id="searchInput" class="ai-input" placeholder="Search assignments, quizzes, subjects..." oninput="doSearch()" />
+          <button class="del-reminder" onclick="toggleSearch()"><i class="ti ti-x"></i></button>
+        </div>
+        <div id="searchResults" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- NOTIFICATION PANEL -->
+      <div id="notifPanel" style="display:none;position:absolute;top:60px;right:24px;width:300px;background:#fff;border:0.5px solid #b8c9e0;border-radius:12px;box-shadow:0 8px 24px rgba(15,34,64,0.1);z-index:100;overflow:hidden;">
+        <div style="padding:12px 16px;border-bottom:0.5px solid #e8eef7;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:500;color:#0F172A;">Upcoming Reminders</span>
+          <button class="del-reminder" onclick="toggleNotifications()"><i class="ti ti-x"></i></button>
+        </div>
+        <div id="notifList" style="max-height:300px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <div class="content">
+
+        <!-- HOME -->
+        <div id="section-home" class="page-section">
+          <div class="greeting">
+            <h2>Hello, Student 👋</h2>
+            <p>Here's what's on your plate today.</p>
+          </div>
+
+          <div class="focus-card">
+            <div class="focus-header">
+              <span class="focus-title">Today's focus</span>
+              <span class="focus-date" id="focusDate"></span>
+            </div>
+            <div class="focus-items" id="focusItems">
+              <div class="focus-empty">No tasks due today — enjoy your day!</div>
+            </div>
+          </div>
+
+          <div class="ai-bar">
+            <div class="ai-input-row">
+              <i class="ti ti-sparkles" style="color:#1a3a6b;font-size:16px;"></i>
+              <input class="ai-input" id="aiInput" placeholder="Tell Amigo something… e.g. Math quiz on Monday" />
+              <button class="ai-send" onclick="organizePrompt()">Add ↗</button>
+            </div>
+            <div class="ai-status" id="aiStatus"></div>
+            <div id="aiFlow" class="ai-flow"></div>
+            <div class="ai-chips">
+              <span class="chip" onclick="setInput('Assignment due today')">Assignment due today</span>
+              <span class="chip" onclick="setInput('Quiz on Monday')">Quiz on Monday</span>
+              <span class="chip" onclick="setInput('Mids next week')">Mids next week</span>
+              <span class="chip" onclick="setInput('Final exam on 10 June')">Final exam</span>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon" style="color:#1a3a6b;"><i class="ti ti-file-text"></i></div><div class="stat-num" id="sc-assign">0</div><div class="stat-label">Assignments</div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#D97706;"><i class="ti ti-pencil"></i></div><div class="stat-num" id="sc-quiz">0</div><div class="stat-label">Quizzes</div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#7C3AED;"><i class="ti ti-presentation"></i></div><div class="stat-num" id="sc-pres">0</div><div class="stat-label">Presentations</div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#DC2626;"><i class="ti ti-certificate"></i></div><div class="stat-num" id="sc-final">0</div><div class="stat-label">Finals</div></div>
+          </div>
+
+          <div class="upcoming-section">
+            <div class="section-header">
+              <span class="section-title">Today</span>
+            </div>
+            <div class="task-list" id="todayList">
+              <div class="focus-empty" style="color:#94A3B8;">Nothing due today.</div>
+            </div>
+          </div>
+
+          <div class="upcoming-section" style="margin-top:12px;">
+            <div class="section-header">
+              <span class="section-title">Upcoming</span>
+            </div>
+            <div class="task-list" id="taskList">
+              <div class="focus-empty" style="color:#94A3B8;">No upcoming tasks yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ASSIGNMENTS -->
+        <div id="section-assignment" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Assignments</h2><p>All your assignments in one place.</p></div>
+          <div class="task-list" id="list-assignment"><div class="focus-empty" style="color:#94A3B8;">No assignments yet.</div></div>
+        </div>
+
+        <!-- QUIZZES -->
+        <div id="section-quiz" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Quizzes</h2><p>Track all your upcoming quizzes.</p></div>
+          <div class="task-list" id="list-quiz"><div class="focus-empty" style="color:#94A3B8;">No quizzes yet.</div></div>
+        </div>
+
+        <!-- MIDS -->
+        <div id="section-mids" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Mids</h2><p>Midterm exams and preparation.</p></div>
+          <div class="task-list" id="list-mids"><div class="focus-empty" style="color:#94A3B8;">No mids added yet.</div></div>
+        </div>
+
+        <!-- PRESENTATIONS -->
+        <div id="section-presentation" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Presentations</h2><p>All your presentations.</p></div>
+          <div class="task-list" id="list-presentation"><div class="focus-empty" style="color:#94A3B8;">No presentations yet.</div></div>
+        </div>
+
+        <!-- FINALS -->
+        <div id="section-final" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Finals</h2><p>Final exams tracker.</p></div>
+          <div class="task-list" id="list-final"><div class="focus-empty" style="color:#94A3B8;">No finals added yet.</div></div>
+        </div>
+
+        <!-- NOTICES -->
+        <div id="section-notice" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Notices</h2><p>Announcements and important updates.</p></div>
+          <div class="task-list" id="list-notice"><div class="focus-empty" style="color:#94A3B8;">No notices yet — add one from home screen.</div></div>
+        </div>
+
+        <!-- UPLOADS -->
+        <div id="section-uploads" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Uploads</h2><p>Organize your files by subject folders.</p></div>
+          <div style="display:flex;gap:8px;margin-bottom:20px;">
+            <input id="folderNameInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 14px;flex:1;" placeholder="Folder name e.g. Physics, OOP..." onkeydown="if(event.key==='Enter') createFolder()" />
+            <button class="ai-send" onclick="createFolder()">Create Folder</button>
+          </div>
+          <div id="folderList" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="focus-empty" style="color:#94A3B8;">No folders yet — create one above!</div>
+          </div>
+        </div>
+
+        <!-- TODO -->
+        <div id="section-todo" class="page-section" style="display:none;">
+          <div class="greeting"><h2>To-Do</h2><p>Your personal task checklist.</p></div>
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <input id="todoInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;flex:1;" placeholder="Add a task and press Enter..." onkeydown="if(event.key==='Enter') addTodo()" />
+            <button class="ai-send" onclick="addTodo()">Add</button>
+          </div>
+          <div id="todoList" class="task-list"><div class="focus-empty" style="color:#94A3B8;">No tasks yet.</div></div>
+        </div>
+
+        <!-- CALENDAR -->
+        <div id="section-calendar" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Calendar</h2><p>Click any date to add a reminder.</p></div>
+
+          <div class="focus-card" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:1;">
+              <button class="icon-btn" onclick="changeMonth(-1)" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;"><i class="ti ti-chevron-left"></i></button>
+              <span style="font-size:14px;font-weight:500;color:#fff;" id="calMonthLabel"></span>
+              <button class="icon-btn" onclick="changeMonth(1)" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;"><i class="ti ti-chevron-right"></i></button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px;position:relative;z-index:1;">
+              <div class="cal-day-label">Sun</div>
+              <div class="cal-day-label">Mon</div>
+              <div class="cal-day-label">Tue</div>
+              <div class="cal-day-label">Wed</div>
+              <div class="cal-day-label">Thu</div>
+              <div class="cal-day-label">Fri</div>
+              <div class="cal-day-label">Sat</div>
+            </div>
+            <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;position:relative;z-index:1;"></div>
+          </div>
+
+          <!-- ADD REMINDER MODAL -->
+          <div id="reminderModal" style="display:none;background:#fff;border:0.5px solid #b8c9e0;border-radius:12px;padding:16px;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:500;color:#0F172A;margin-bottom:12px;">Add reminder for <span id="selectedDateLabel" style="color:#1a3a6b;"></span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <input id="reminderTitle" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;" placeholder="Reminder title e.g. Submit OOP Assignment..." onkeydown="if(event.key==='Enter') saveReminder()" />
+              <div style="display:flex;gap:8px;">
+                <select id="reminderType" style="flex:1;border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#0F172A;font-family:'Inter',sans-serif;background:#fff;">
+                  <option value="assignment">Assignment</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="mids">Mids</option>
+                  <option value="final">Final</option>
+                  <option value="presentation">Presentation</option>
+                  <option value="notice">Notice</option>
+                  <option value="reminder">General Reminder</option>
+                </select>
+                <input id="reminderTime" type="time" style="flex:1;border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#0F172A;font-family:'Inter',sans-serif;" />
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="ai-send" onclick="saveReminder()">Save Reminder ↗</button>
+                <button class="ai-opt" onclick="closeReminderModal()">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REMINDER LIST -->
+          <div class="upcoming-section">
+            <div class="section-header">
+              <span class="section-title">All Reminders</span>
+              <span style="font-size:12px;color:#94A3B8;" id="reminderCount">0 reminders</span>
+            </div>
+            <div class="task-list" id="reminderList">
+              <div class="focus-empty" style="color:#94A3B8;">No reminders yet — click a date to add one!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="section-settings" class="page-section" style="display:none;">
+          <div class="greeting"><h2>Settings</h2><p>Customize your Amigo experience.</p></div>
+
+          <div class="focus-card" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:16px;position:relative;z-index:1;">
+              <div style="position:relative;">
+                <div id="profilePicDisplay" style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#fff;overflow:hidden;">S</div>
+                <label style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                  <i class="ti ti-camera" style="font-size:11px;color:#1a3a6b;"></i>
+                  <input type="file" accept="image/*" style="display:none;" onchange="uploadProfilePic(this)"/>
+                </label>
+              </div>
+              <div>
+                <p style="font-size:15px;font-weight:600;color:#fff;" id="settingsNameDisplay">Student</p>
+                <span style="font-size:12px;color:rgba(255,255,255,0.6);">Tap camera to change photo</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="upcoming-section">
+            <div style="margin-bottom:14px;">
+              <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Your Name</label>
+              <input id="nameInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="Enter your name..." />
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:13px;font-weight:500;color:#1a3a6b;">University</label>
+              <input id="uniInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="e.g. USKT" />
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Program</label>
+              <input id="programInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="e.g. BSAI" />
+            </div>
+            <button class="ai-send" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

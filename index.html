@@ -7,8 +7,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1a3a6b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Amigo" />
   <link rel="stylesheet" href="style.css" />
 </head>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
 <body>
   <div class="amigo">
 
@@ -37,7 +47,7 @@
         <div class="avatar">S</div>
         <div class="profile-info">
           <p>Student</p>
-          <span>USKT · BSAI</span>
+          <span>Academic Organizer</span>
         </div>
       </div>
     </div>
@@ -278,7 +288,7 @@
             </div>
             <div style="margin-bottom:14px;">
               <label style="font-size:13px;font-weight:500;color:#1a3a6b;">University</label>
-              <input id="uniInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="e.g. USKT" />
+              <input id="uniInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="Enter University Name" />
             </div>
             <div style="margin-bottom:16px;">
               <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Program</label>

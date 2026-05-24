@@ -661,7 +661,7 @@ body {
 
   .nav-item i { font-size: 18px; }
   .nav-badge { display: none; }
-  .sidebar-profile { display: none; }
+  .sidebar-profile { display: flex; flex-shrink: 0; padding: 6px 10px; }
 
   .main { flex: 1; overflow-y: auto; min-height: 0; }
 

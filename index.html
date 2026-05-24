@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Amigo — Academic Organizer</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -21,6 +22,94 @@
 </script>
 <body>
   <div class="amigo">
+   <!-- AUTH SCREEN -->
+<div id="authScreen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0f2240 0%,#1a3a6b 60%,#2a4a8a 100%);z-index:1000;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+  
+  <!-- background blobs -->
+  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04);top:-80px;right:-80px;"></div>
+  <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.03);bottom:-60px;left:-60px;"></div>
+  <div style="position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.03);top:40%;left:-40px;"></div>
+
+  <div style="background:#fff;border-radius:24px;padding:36px;width:100%;max-width:400px;margin:20px;box-shadow:0 32px 80px rgba(0,0,0,0.4);position:relative;z-index:1;">
+    
+    <!-- header -->
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="width:72px;height:72px;background:linear-gradient(135deg,#1a3a6b,#0f2240);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;font-weight:700;color:#fff;box-shadow:0 8px 24px rgba(15,34,64,0.3);">A</div>
+      <h2 style="font-size:22px;font-weight:600;color:#0F172A;letter-spacing:-0.5px;margin-bottom:4px;">hey, welcome 👋</h2>
+      <p style="font-size:13px;color:#64748B;">your academic life, finally organized</p>
+    </div>
+
+    <!-- tabs -->
+    <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:24px;">
+      <button onclick="switchTab('login')" id="tab-login" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:#fff;color:#0F172A;box-shadow:0 1px 4px rgba(0,0,0,0.08);font-family:'Inter',sans-serif;transition:all 0.2s;">sign in</button>
+      <button onclick="switchTab('signup')" id="tab-signup" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:#64748B;font-family:'Inter',sans-serif;transition:all 0.2s;">new here?</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="form-login">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="position:relative;">
+          <i class="ti ti-mail" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
+          <input id="loginEmail" type="email" placeholder="your email" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
+        </div>
+        <div style="position:relative;">
+          <i class="ti ti-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
+          <input id="loginPassword" type="password" placeholder="password" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') handleLogin()" />
+        </div>
+        <div id="loginError" style="font-size:12px;color:#EF4444;display:none;padding:8px 12px;background:#FEE2E2;border-radius:8px;"></div>
+        <button onclick="handleLogin()" style="padding:12px;background:linear-gradient(135deg,#1a3a6b,#0f2240);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(15,34,64,0.3);letter-spacing:0.2px;">let me in →</button>
+        <p onclick="handleForgotPassword()" style="text-align:center;font-size:12px;color:#64748B;margin-top:8px;cursor:pointer;">forgot password? <span style="color:#1a3a6b;font-weight:500;">reset it →</span></p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
+        <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
+        <span style="font-size:11px;color:#94A3B8;font-weight:500;">or</span>
+        <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
+      </div>
+
+      <button onclick="signInWithGoogle()" style="width:100%;padding:11px;background:#fff;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <img src="https://www.google.com/favicon.ico" style="width:15px;height:15px;" /> continue with google
+      </button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="form-signup" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="position:relative;">
+          <i class="ti ti-user" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
+          <input id="signupName" type="text" placeholder="what do we call you?" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
+        </div>
+        <div style="position:relative;">
+          <i class="ti ti-mail" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
+          <input id="signupEmail" type="email" placeholder="your email" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
+        </div>
+        <div style="position:relative;">
+          <i class="ti ti-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
+          <input id="signupPassword" type="password" placeholder="create a password" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') handleSignup()" />
+        </div>
+        <div id="signupError" style="font-size:12px;color:#EF4444;display:none;padding:8px 12px;background:#FEE2E2;border-radius:8px;"></div>
+        <div id="signupSuccess" style="font-size:12px;color:#16A34A;display:none;padding:8px 12px;background:#DCFCE7;border-radius:8px;"></div>
+        <button onclick="handleSignup()" style="padding:12px;background:linear-gradient(135deg,#1a3a6b,#0f2240);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(15,34,64,0.3);">create my account ✨</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
+        <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
+        <span style="font-size:11px;color:#94A3B8;font-weight:500;">or</span>
+        <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
+      </div>
+
+      <button onclick="signInWithGoogle()" style="width:100%;padding:11px;background:#fff;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <img src="https://www.google.com/favicon.ico" style="width:15px;height:15px;" /> continue with google
+      </button>
+
+      <p style="text-align:center;font-size:11px;color:#94A3B8;margin-top:14px;">by signing up you agree to use amigo responsibly 🤝</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen" style="display:none;width:100%;height:100%;">
 
     <!-- SIDEBAR -->
     <div class="sidebar">
@@ -44,12 +133,15 @@
         <div class="nav-item" onclick="setNav(this,'settings')"><i class="ti ti-settings"></i> Settings</div>
       </div>
       <div class="sidebar-profile">
-        <div class="avatar">S</div>
-        <div class="profile-info">
-          <p>Student</p>
-          <span>Academic Organizer</span>
-        </div>
-      </div>
+      <div class="avatar">S</div>
+      <div class="profile-info">
+      <p>Student</p>
+      <span>Academic Organizer</span>
+    </div>
+  <button onclick="signOut()" title="Sign out" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);font-size:18px;margin-left:auto;padding:4px;">
+    <i class="ti ti-logout"></i>
+  </button>
+</div>
     </div>
 
     <!-- MAIN -->
@@ -301,7 +393,11 @@
       </div>
     </div>
   </div>
+  </div>
+<!-- END APP SCREEN -->
 
-  <script src="app.js"></script>
+ <script src="auth.js"></script>
+<script src="app.js"></script>
+<script>initAuth();</script>
 </body>
 </html>

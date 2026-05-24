@@ -999,3 +999,102 @@ document.addEventListener('click', e => {
 });
 
 updateNotifBadge();
+
+// ============================================================
+// AUTH HANDLERS
+// ============================================================
+function switchTab(tab) {
+  document.getElementById('form-login').style.display  = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('tab-login').style.background  = tab === 'login'  ? '#fff' : 'transparent';
+  document.getElementById('tab-signup').style.background = tab === 'signup' ? '#fff' : 'transparent';
+  document.getElementById('tab-login').style.color  = tab === 'login'  ? '#0F172A' : '#64748B';
+  document.getElementById('tab-signup').style.color = tab === 'signup' ? '#0F172A' : '#64748B';
+}
+
+async function handleLogin() {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const errEl    = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if (!email || !password) {
+    errEl.textContent = 'fill in everything bestie 🙏';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.textContent = 'signing you in...';
+  errEl.style.color = '#1a3a6b';
+  errEl.style.background = '#e8eef7';
+  errEl.style.display = 'block';
+  const error = await signInWithEmail(email, password);
+  if (error) {
+    errEl.textContent = 'wrong email or password 😬';
+    errEl.style.color = '#EF4444';
+    errEl.style.background = '#FEE2E2';
+    errEl.style.display = 'block';
+    return;
+  }
+  initAuth();
+}
+
+async function handleSignup() {
+  const name     = document.getElementById('signupName').value.trim();
+  const email    = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value.trim();
+  const errEl    = document.getElementById('signupError');
+  const sucEl    = document.getElementById('signupSuccess');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+  if (!name || !email || !password) {
+    errEl.textContent = 'fill in everything bestie 🙏';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = 'password too short — at least 6 chars 🔐';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.textContent = 'creating your account...';
+  errEl.style.color = '#1a3a6b';
+  errEl.style.background = '#e8eef7';
+  errEl.style.display = 'block';
+  const error = await signUpWithEmail(email, password, name);
+  if (error) {
+    errEl.textContent = error;
+    errEl.style.color = '#EF4444';
+    errEl.style.background = '#FEE2E2';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  sucEl.textContent = 'account created! check your email to confirm ✅';
+  sucEl.style.display = 'block';
+}
+
+//forget pass
+async function handleForgotPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const errEl = document.getElementById('loginError');
+  if (!email) {
+    errEl.textContent = 'enter your email first 📧';
+    errEl.style.color = '#EF4444';
+    errEl.style.background = '#FEE2E2';
+    errEl.style.display = 'block';
+    return;
+  }
+  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://amigo-lilac.vercel.app'
+  });
+  if (error) {
+    errEl.textContent = 'something went wrong 😬';
+    errEl.style.color = '#EF4444';
+    errEl.style.background = '#FEE2E2';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.textContent = 'reset link sent! check your email 📩';
+  errEl.style.color = '#16A34A';
+  errEl.style.background = '#DCFCE7';
+  errEl.style.display = 'block';
+}

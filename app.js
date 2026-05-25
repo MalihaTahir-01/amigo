@@ -1098,3 +1098,45 @@ async function handleForgotPassword() {
   errEl.style.background = '#DCFCE7';
   errEl.style.display = 'block';
 }
+// ============================================================
+// FEEDBACK / EMAILJS
+// ============================================================
+emailjs.init('82oFX8G_FfVMfS3Uj');
+
+async function sendFeedback() {
+  const name    = document.getElementById('feedbackName').value.trim();
+  const email   = document.getElementById('feedbackEmail').value.trim();
+  const message = document.getElementById('feedbackMessage').value.trim();
+  const status  = document.getElementById('feedbackStatus');
+
+  if (!name || !email || !message) {
+    status.textContent = 'fill in everything bestie 🙏';
+    status.style.background = '#FEE2E2';
+    status.style.color = '#DC2626';
+    status.style.display = 'block';
+    return;
+  }
+
+  status.textContent = 'sending...';
+  status.style.background = '#e8eef7';
+  status.style.color = '#1a3a6b';
+  status.style.display = 'block';
+
+  try {
+    await emailjs.send('service_64oaeq2', 'template_mf8v8kh', {
+      from_name:  name,
+      from_email: email,
+      message:    message
+    });
+    status.textContent = 'sent! we got it and will get back to you 🙌';
+    status.style.background = '#DCFCE7';
+    status.style.color = '#16A34A';
+    document.getElementById('feedbackName').value    = '';
+    document.getElementById('feedbackEmail').value   = '';
+    document.getElementById('feedbackMessage').value = '';
+  } catch (err) {
+    status.textContent = 'something went wrong 😬 try again';
+    status.style.background = '#FEE2E2';
+    status.style.color = '#DC2626';
+  }
+}

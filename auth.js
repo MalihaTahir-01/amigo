@@ -37,7 +37,10 @@ async function signUpWithEmail(email, password, name) {
   const { error } = await _supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: name } }
+    options: {
+      data: { full_name: name },
+      emailRedirectTo: 'https://amigo-lilac.vercel.app'
+    }
   });
   if (error) return error.message;
   return null;

@@ -1,57 +1,384 @@
 // ============================================================
-// AMIGO — app.js
+// AMIGO — app.js  (with Language Support)
 // ============================================================
 
-// ── ITEMS (tasks) ────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// TRANSLATIONS
+// This object holds all the text for each language.
+// To add a new language, copy one block and translate the values.
+// ────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    dir: 'ltr',
+    greeting: 'Hello',
+    todayFocus: "Today's focus",
+    noTasksToday: 'No tasks due today — enjoy your day!',
+    addPlaceholder: 'Tell Amigo something… e.g. Math quiz on Monday',
+    addBtn: 'Add ↗',
+    chipAssignment: 'Assignment due today',
+    chipQuiz: 'Quiz on Monday',
+    chipMids: 'Mids next week',
+    chipFinal: 'Final exam',
+    today: 'Today',
+    upcoming: 'Upcoming',
+    nothingDueToday: 'Nothing due today.',
+    noUpcoming: 'No upcoming tasks yet.',
+    settingsSaved: 'Settings saved!',
+    saved: 'Saved! Amigo has it organized.',
+    whatType: 'what type is this?',
+    whichSubject: 'Which subject?',
+    subjectPlaceholder: 'e.g. Physics, OOP, Calculus...',
+    priority: 'Priority?',
+    dueDate: 'Due date?',
+    duePlaceholder: 'e.g. Today, 24/05/2026, 24may2026...',
+    addNote: 'Add a note? (optional)',
+    notePlaceholder: 'e.g. Chapter 3, pages 10-20...',
+    next: 'Next',
+    saveBtn: 'Save ↗',
+    skip: 'Skip',
+    cancel: 'Cancel',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+    assignment: 'Assignment',
+    quiz: 'Quiz',
+    mids: 'Mids',
+    final: 'Final',
+    presentation: 'Presentation',
+    notice: 'Notice',
+  },
+  ur: {
+    dir: 'rtl',
+    greeting: 'ہیلو',
+    todayFocus: 'آج کا فوکس',
+    noTasksToday: 'آج کوئی کام نہیں — دن اچھا گزارو!',
+    addPlaceholder: 'امیگو کو بتاؤ… مثلاً پیر کو ریاضی کا کوئز',
+    addBtn: 'شامل کریں ↗',
+    chipAssignment: 'آج اسائنمنٹ جمع',
+    chipQuiz: 'پیر کو کوئز',
+    chipMids: 'اگلے ہفتے مڈز',
+    chipFinal: 'فائنل امتحان',
+    today: 'آج',
+    upcoming: 'آنے والا',
+    nothingDueToday: 'آج کچھ نہیں۔',
+    noUpcoming: 'ابھی کوئی کام نہیں۔',
+    settingsSaved: 'سیٹنگز محفوظ ہو گئیں!',
+    saved: 'محفوظ! امیگو نے ترتیب دے دی۔',
+    whatType: 'یہ کیا ہے؟',
+    whichSubject: 'کون سا مضمون؟',
+    subjectPlaceholder: 'مثلاً فزکس، OOP، حساب...',
+    priority: 'ترجیح؟',
+    dueDate: 'آخری تاریخ؟',
+    duePlaceholder: 'مثلاً آج، 24/05/2026...',
+    addNote: 'نوٹ شامل کریں؟ (اختیاری)',
+    notePlaceholder: 'مثلاً باب 3، صفحات 10-20...',
+    next: 'اگلا',
+    saveBtn: 'محفوظ کریں ↗',
+    skip: 'چھوڑیں',
+    cancel: 'منسوخ',
+    high: 'زیادہ',
+    medium: 'درمیانہ',
+    low: 'کم',
+    assignment: 'اسائنمنٹ',
+    quiz: 'کوئز',
+    mids: 'مڈ ٹرم',
+    final: 'فائنل',
+    presentation: 'پریزنٹیشن',
+    notice: 'نوٹس',
+  },
+  ar: {
+    dir: 'rtl',
+    greeting: 'مرحباً',
+    todayFocus: 'تركيز اليوم',
+    noTasksToday: 'لا مهام اليوم — استمتع بيومك!',
+    addPlaceholder: 'أخبر أميغو… مثلاً اختبار رياضيات يوم الاثنين',
+    addBtn: 'أضف ↗',
+    chipAssignment: 'واجب اليوم',
+    chipQuiz: 'اختبار الاثنين',
+    chipMids: 'منتصف الفصل الأسبوع القادم',
+    chipFinal: 'الامتحان النهائي',
+    today: 'اليوم',
+    upcoming: 'القادم',
+    nothingDueToday: 'لا شيء اليوم.',
+    noUpcoming: 'لا مهام قادمة بعد.',
+    settingsSaved: 'تم حفظ الإعدادات!',
+    saved: 'تم الحفظ! رتّب أميغو كل شيء.',
+    whatType: 'ما نوع هذا؟',
+    whichSubject: 'أي مادة؟',
+    subjectPlaceholder: 'مثلاً فيزياء، برمجة، رياضيات...',
+    priority: 'الأولوية؟',
+    dueDate: 'تاريخ الاستحقاق؟',
+    duePlaceholder: 'مثلاً اليوم، 24/05/2026...',
+    addNote: 'إضافة ملاحظة؟ (اختياري)',
+    notePlaceholder: 'مثلاً الفصل 3، الصفحات 10-20...',
+    next: 'التالي',
+    saveBtn: 'حفظ ↗',
+    skip: 'تخطي',
+    cancel: 'إلغاء',
+    high: 'عالية',
+    medium: 'متوسطة',
+    low: 'منخفضة',
+    assignment: 'واجب',
+    quiz: 'اختبار',
+    mids: 'منتصف الفصل',
+    final: 'نهائي',
+    presentation: 'عرض',
+    notice: 'إشعار',
+  },
+  fr: {
+    dir: 'ltr',
+    greeting: 'Bonjour',
+    todayFocus: "Focus d'aujourd'hui",
+    noTasksToday: "Aucune tâche aujourd'hui — profitez de votre journée!",
+    addPlaceholder: 'Dites à Amigo… ex: Quiz de maths lundi',
+    addBtn: 'Ajouter ↗',
+    chipAssignment: "Devoir aujourd'hui",
+    chipQuiz: 'Quiz lundi',
+    chipMids: 'Partiels la semaine prochaine',
+    chipFinal: 'Examen final',
+    today: "Aujourd'hui",
+    upcoming: 'À venir',
+    nothingDueToday: "Rien à faire aujourd'hui.",
+    noUpcoming: 'Aucune tâche à venir.',
+    settingsSaved: 'Paramètres sauvegardés!',
+    saved: 'Sauvegardé! Amigo a tout organisé.',
+    whatType: 'quel type est-ce?',
+    whichSubject: 'Quelle matière?',
+    subjectPlaceholder: 'ex: Physique, Programmation, Maths...',
+    priority: 'Priorité?',
+    dueDate: 'Date limite?',
+    duePlaceholder: "ex: Aujourd'hui, 24/05/2026...",
+    addNote: 'Ajouter une note? (optionnel)',
+    notePlaceholder: 'ex: Chapitre 3, pages 10-20...',
+    next: 'Suivant',
+    saveBtn: 'Sauvegarder ↗',
+    skip: 'Passer',
+    cancel: 'Annuler',
+    high: 'Haute',
+    medium: 'Moyenne',
+    low: 'Basse',
+    assignment: 'Devoir',
+    quiz: 'Quiz',
+    mids: 'Partiel',
+    final: 'Final',
+    presentation: 'Présentation',
+    notice: 'Avis',
+  },
+  zh: {
+    dir: 'ltr',
+    greeting: '你好',
+    todayFocus: '今日重点',
+    noTasksToday: '今天没有任务 — 好好享受吧！',
+    addPlaceholder: '告诉Amigo… 例如：周一数学测验',
+    addBtn: '添加 ↗',
+    chipAssignment: '今天作业到期',
+    chipQuiz: '周一测验',
+    chipMids: '下周期中考试',
+    chipFinal: '期末考试',
+    today: '今天',
+    upcoming: '即将到来',
+    nothingDueToday: '今天没有到期任务。',
+    noUpcoming: '暂无即将到来的任务。',
+    settingsSaved: '设置已保存！',
+    saved: '已保存！Amigo已整理好。',
+    whatType: '这是什么类型？',
+    whichSubject: '哪个科目？',
+    subjectPlaceholder: '例如：物理、编程、数学...',
+    priority: '优先级？',
+    dueDate: '截止日期？',
+    duePlaceholder: '例如：今天、24/05/2026...',
+    addNote: '添加备注？（可选）',
+    notePlaceholder: '例如：第3章，第10-20页...',
+    next: '下一步',
+    saveBtn: '保存 ↗',
+    skip: '跳过',
+    cancel: '取消',
+    high: '高',
+    medium: '中',
+    low: '低',
+    assignment: '作业',
+    quiz: '测验',
+    mids: '期中',
+    final: '期末',
+    presentation: '演示',
+    notice: '通知',
+  },
+  es: {
+    dir: 'ltr',
+    greeting: 'Hola',
+    todayFocus: 'Enfoque de hoy',
+    noTasksToday: 'No hay tareas hoy — ¡disfruta el día!',
+    addPlaceholder: 'Dile a Amigo… ej: Quiz de Matemáticas el lunes',
+    addBtn: 'Agregar ↗',
+    chipAssignment: 'Tarea para hoy',
+    chipQuiz: 'Quiz el lunes',
+    chipMids: 'Parciales la próxima semana',
+    chipFinal: 'Examen final',
+    today: 'Hoy',
+    upcoming: 'Próximo',
+    nothingDueToday: 'Nada para hoy.',
+    noUpcoming: 'No hay tareas próximas.',
+    settingsSaved: '¡Configuración guardada!',
+    saved: '¡Guardado! Amigo lo organizó todo.',
+    whatType: '¿qué tipo es esto?',
+    whichSubject: '¿Qué materia?',
+    subjectPlaceholder: 'ej: Física, Programación, Matemáticas...',
+    priority: '¿Prioridad?',
+    dueDate: '¿Fecha límite?',
+    duePlaceholder: 'ej: Hoy, 24/05/2026...',
+    addNote: '¿Agregar nota? (opcional)',
+    notePlaceholder: 'ej: Capítulo 3, páginas 10-20...',
+    next: 'Siguiente',
+    saveBtn: 'Guardar ↗',
+    skip: 'Omitir',
+    cancel: 'Cancelar',
+    high: 'Alta',
+    medium: 'Media',
+    low: 'Baja',
+    assignment: 'Tarea',
+    quiz: 'Quiz',
+    mids: 'Parcial',
+    final: 'Final',
+    presentation: 'Presentación',
+    notice: 'Aviso',
+  },
+};
+
+// ────────────────────────────────────────────────────────────
+// LANGUAGE HELPER
+// Call t('key') anywhere to get the translated text
+// ────────────────────────────────────────────────────────────
+function getLang() {
+  return localStorage.getItem('amigo_lang') || 'en';
+}
+
+function t(key) {
+  const lang = getLang();
+  return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS['en'][key] || key;
+}
+
+// Apply language direction and update visible UI text
+function applyLanguage(lang) {
+  const langData = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+
+  // Set text direction (RTL for Urdu/Arabic)
+  document.documentElement.dir = langData.dir;
+
+  // Update greeting
+  const name = localStorage.getItem('amigo_name') || 'Student';
+  const greetingEl = document.querySelector('.greeting h2');
+  if (greetingEl) greetingEl.textContent = `${langData.greeting}, ${name} 👋`;
+
+  // Update AI bar placeholder and button
+  const aiInput = document.getElementById('aiInput');
+  if (aiInput) aiInput.placeholder = langData.addPlaceholder;
+
+  // Update chips
+  const chips = document.querySelectorAll('.chip');
+  const chipKeys = ['chipAssignment', 'chipQuiz', 'chipMids', 'chipFinal'];
+  const chipActions = ['Assignment due today', 'Quiz on Monday', 'Mids next week', 'Final exam on 10 June'];
+  chips.forEach((chip, i) => {
+    if (chipKeys[i]) chip.textContent = langData[chipKeys[i]];
+  });
+
+  // Update section titles
+  const todayTitle = document.querySelector('#section-home .upcoming-section:first-of-type .section-title');
+  if (todayTitle) todayTitle.textContent = langData.today;
+
+  const upcomingTitle = document.querySelector('#section-home .upcoming-section:last-of-type .section-title');
+  if (upcomingTitle) upcomingTitle.textContent = langData.upcoming;
+
+  // Update focus card title
+  const focusTitle = document.querySelector('.focus-title');
+  if (focusTitle) focusTitle.textContent = langData.todayFocus;
+
+  // Update empty states
+  const focusEmpty = document.querySelector('#focusItems .focus-empty');
+  if (focusEmpty) focusEmpty.textContent = langData.noTasksToday;
+}
+
+
+// ────────────────────────────────────────────────────────────
+// ITEMS (tasks) — stored in localStorage
+// ────────────────────────────────────────────────────────────
 let items = JSON.parse(localStorage.getItem('amigo_items') || '[]');
 let flowData = {};
 let flowStep = 0;
 
+// Show today's date in the topbar and focus card
 const now = new Date();
-document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-document.getElementById('focusDate').textContent = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', {
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
+document.getElementById('focusDate').textContent = now.toLocaleDateString('en-US', {
+  day: 'numeric', month: 'short', year: 'numeric'
+});
 
+// Render all saved items on page load
 items.forEach(item => renderItem(item));
 sortList('taskList');
-['assignment','quiz','mids','presentation','final','notice'].forEach(t => sortList('list-' + t));
+['assignment','quiz','mids','presentation','final','notice'].forEach(type => sortList('list-' + type));
 updateCounts();
 
-// ── SETTINGS (load on boot) ──────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// SETTINGS — load saved values on page load
+// ────────────────────────────────────────────────────────────
 const savedName    = localStorage.getItem('amigo_name');
 const savedPic     = localStorage.getItem('amigo_pic');
 const savedUni     = localStorage.getItem('amigo_uni');
 const savedProgram = localStorage.getItem('amigo_program');
+const savedLang    = localStorage.getItem('amigo_lang') || 'en';
 
 if (savedName) {
-  document.querySelector('.greeting h2').textContent   = `Hello, ${savedName} 👋`;
+  document.querySelector('.greeting h2').textContent    = `Hello, ${savedName} 👋`;
   document.querySelector('.profile-info p').textContent = savedName;
   document.querySelector('.avatar').textContent         = savedName.charAt(0).toUpperCase();
   const el = document.getElementById('nameInput');
   if (el) el.value = savedName;
 }
+
 if (savedPic) applyProfilePic(savedPic);
+
 if (savedUni) {
   const el = document.getElementById('uniInput');
   if (el) el.value = savedUni;
 }
+
 if (savedProgram) {
   const el = document.getElementById('programInput');
   if (el) el.value = savedProgram;
 }
+
 if (savedUni && savedProgram) {
   document.querySelector('.profile-info span').textContent = savedUni + ' · ' + savedProgram;
 }
 
-// ── NAV ──────────────────────────────────────────────────────
+// Load saved language into the dropdown and apply it
+const langDropdown = document.getElementById('languageInput');
+if (langDropdown) langDropdown.value = savedLang;
+applyLanguage(savedLang);
+
+
+// ────────────────────────────────────────────────────────────
+// NAVIGATION
+// ────────────────────────────────────────────────────────────
 function setNav(el, section) {
+  // Remove active class from all nav items
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
+
+  // Hide all sections, then show the selected one
   document.querySelectorAll('.page-section').forEach(s => s.style.display = 'none');
   const target = document.getElementById('section-' + section);
   if (target) target.style.display = 'block';
 }
 
-// ── AI FLOW ──────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// AI FLOW — the step-by-step task adding process
+// ────────────────────────────────────────────────────────────
 function setInput(val) {
   document.getElementById('aiInput').value = val;
   document.getElementById('aiInput').focus();
@@ -64,75 +391,89 @@ document.getElementById('aiInput').addEventListener('keydown', e => {
 function organizePrompt() {
   const text = document.getElementById('aiInput').value.trim();
   if (!text) return;
+
   flowData = { raw: text };
+
   const flow = document.getElementById('aiFlow');
   flow.innerHTML = `
-    <div class="ai-question">"${text}" — what type is this?</div>
+    <div class="ai-question">"${text}" — ${t('whatType')}</div>
     <div class="ai-options">
-      <button class="ai-opt" onclick="pickType('assignment')">Assignment</button>
-      <button class="ai-opt" onclick="pickType('quiz')">Quiz</button>
-      <button class="ai-opt" onclick="pickType('mids')">Mids</button>
-      <button class="ai-opt" onclick="pickType('final')">Final</button>
-      <button class="ai-opt" onclick="pickType('presentation')">Presentation</button>
-      <button class="ai-opt" onclick="pickType('notice')">Notice</button>
-      <button class="ai-opt" onclick="cancelFlow()">Cancel</button>
+      <button class="ai-opt" onclick="pickType('assignment')">${t('assignment')}</button>
+      <button class="ai-opt" onclick="pickType('quiz')">${t('quiz')}</button>
+      <button class="ai-opt" onclick="pickType('mids')">${t('mids')}</button>
+      <button class="ai-opt" onclick="pickType('final')">${t('final')}</button>
+      <button class="ai-opt" onclick="pickType('presentation')">${t('presentation')}</button>
+      <button class="ai-opt" onclick="pickType('notice')">${t('notice')}</button>
+      <button class="ai-opt" onclick="cancelFlow()">${t('cancel')}</button>
     </div>`;
 }
 
 function cancelFlow() {
   document.getElementById('aiFlow').innerHTML = '';
-  document.getElementById('aiInput').value = '';
+  document.getElementById('aiInput').value   = '';
 }
 
-function pickType(t) {
-  flowData.type = t;
+function pickType(type) {
+  flowData.type = type;
   flowStep = 2;
   showFlowStep();
 }
 
+// Shows the correct step in the task-adding flow
 function showFlowStep() {
   const flow = document.getElementById('aiFlow');
+
   if (flowStep === 2) {
+    // Step 2: Ask for subject
     flow.innerHTML = `
-      <div class="ai-question">Which subject?</div>
+      <div class="ai-question">${t('whichSubject')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
-        <input id="subjectInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="e.g. Physics, OOP, Calculus..." />
-        <button class="ai-send" onclick="pickSubject()">Next</button>
+        <input id="subjectInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('subjectPlaceholder')}" />
+        <button class="ai-send" onclick="pickSubject()">${t('next')}</button>
       </div>`;
     setTimeout(() => document.getElementById('subjectInput').focus(), 100);
-    document.getElementById('subjectInput').addEventListener('keydown', e => { if (e.key === 'Enter') pickSubject(); });
+    document.getElementById('subjectInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') pickSubject();
+    });
 
   } else if (flowStep === 3) {
+    // Step 3: Ask for priority
     flow.innerHTML = `
-      <div class="ai-question">Priority?</div>
+      <div class="ai-question">${t('priority')}</div>
       <div class="ai-options">
-        <button class="ai-opt" onclick="pickPriority('High')">High</button>
-        <button class="ai-opt" onclick="pickPriority('Medium')">Medium</button>
-        <button class="ai-opt" onclick="pickPriority('Low')">Low</button>
+        <button class="ai-opt" onclick="pickPriority('High')">${t('high')}</button>
+        <button class="ai-opt" onclick="pickPriority('Medium')">${t('medium')}</button>
+        <button class="ai-opt" onclick="pickPriority('Low')">${t('low')}</button>
       </div>`;
 
   } else if (flowStep === 4) {
+    // Step 4: Ask for due date
     flow.innerHTML = `
-      <div class="ai-question">Due date?</div>
+      <div class="ai-question">${t('dueDate')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
-        <input id="dateInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="e.g. Today, 24/05/2026, 24may2026..." />
-        <button class="ai-send" onclick="pickDue()">Next</button>
+        <input id="dateInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('duePlaceholder')}" />
+        <button class="ai-send" onclick="pickDue()">${t('next')}</button>
       </div>`;
     setTimeout(() => document.getElementById('dateInput').focus(), 100);
-    document.getElementById('dateInput').addEventListener('keydown', e => { if (e.key === 'Enter') pickDue(); });
+    document.getElementById('dateInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') pickDue();
+    });
 
   } else if (flowStep === 5) {
+    // Step 5: Optional note
     flow.innerHTML = `
-      <div class="ai-question">Add a note? (optional)</div>
+      <div class="ai-question">${t('addNote')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
-        <input id="noteInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="e.g. Chapter 3, pages 10-20..." />
-        <button class="ai-send" onclick="pickNote()">Save ↗</button>
+        <input id="noteInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('notePlaceholder')}" />
+        <button class="ai-send" onclick="pickNote()">${t('saveBtn')}</button>
       </div>
       <div style="margin-top:6px;">
-        <button class="ai-opt" onclick="pickNote()">Skip</button>
+        <button class="ai-opt" onclick="pickNote()">${t('skip')}</button>
       </div>`;
     setTimeout(() => document.getElementById('noteInput').focus(), 100);
-    document.getElementById('noteInput').addEventListener('keydown', e => { if (e.key === 'Enter') pickNote(); });
+    document.getElementById('noteInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') pickNote();
+    });
   }
 }
 
@@ -164,7 +505,12 @@ function pickNote() {
   saveItem();
 }
 
-// ── DATE HELPERS ─────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// DATE HELPERS
+// ────────────────────────────────────────────────────────────
+
+// Converts text like "24may2026" into a proper Date object
 function normalizeDate(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   const months = {
@@ -172,6 +518,7 @@ function normalizeDate(due) {
     january:0, february:1, march:2, april:3, june:5, july:6, august:7,
     september:8, october:9, november:10, december:11
   };
+
   for (const [name, idx] of Object.entries(months)) {
     if (d.includes(name)) {
       const withoutMonth = d.replace(name, '');
@@ -190,9 +537,11 @@ function normalizeDate(due) {
   return null;
 }
 
+// Checks if a due date string means today
 function isToday(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return true;
+
   const today     = new Date();
   const dd        = String(today.getDate()).padStart(2, '0');
   const d2        = String(today.getDate());
@@ -204,7 +553,9 @@ function isToday(due) {
     dd+'/'+mm+'/'+yyyy, mm+'/'+dd+'/'+yyyy, yyyy+'-'+mm+'-'+dd,
     d2+monthName+yyyy,  dd+monthName+yyyy,  monthName+d2+yyyy, monthName+dd+yyyy,
   ];
+
   if (formats.some(f => d.includes(f))) return true;
+
   const normalized = normalizeDate(due);
   if (normalized) {
     return normalized.getDate()     === today.getDate() &&
@@ -214,20 +565,29 @@ function isToday(due) {
   return false;
 }
 
+// Converts a due date string to a Date object for sorting
 function parseDate(due) {
   const d = due.toLowerCase().trim();
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return new Date();
-  if (d.includes('tomorrow')) { const t = new Date(); t.setDate(t.getDate() + 1); return t; }
+  if (d.includes('tomorrow')) {
+    const t = new Date();
+    t.setDate(t.getDate() + 1);
+    return t;
+  }
   const normalized = normalizeDate(due);
   if (normalized && !isNaN(normalized)) return normalized;
   const parsed = new Date(due);
   if (!isNaN(parsed)) return parsed;
   const parts = due.split('/');
   if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
-  return new Date(9999, 0, 1);
+  return new Date(9999, 0, 1); // Unknown dates go to the end
 }
 
-// ── SAVE / RENDER ITEMS ──────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// SAVE & RENDER ITEMS
+// ────────────────────────────────────────────────────────────
+
 function saveItem() {
   const item = {
     id:       Date.now(),
@@ -238,12 +598,19 @@ function saveItem() {
     due:      flowData.due,
     note:     flowData.note || ''
   };
+
   items.push(item);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+
+  // Clear the input flow
   document.getElementById('aiFlow').innerHTML = '';
   document.getElementById('aiInput').value   = '';
-  document.getElementById('aiStatus').textContent = 'Saved! Amigo has it organized.';
+
+  // Show success message
+  document.getElementById('aiStatus').textContent = t('saved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2500);
+
+  // Add to the correct lists and refresh
   renderItem(item);
   sortList('taskList');
   sortList('list-' + item.type);
@@ -260,6 +627,7 @@ function renderItem(item) {
   addToList('list-' + item.type, item);
 }
 
+// Sort a task list by due date (earliest first)
 function sortList(listId) {
   const list = document.getElementById(listId);
   if (!list) return;
@@ -272,9 +640,11 @@ function sortList(listId) {
   cards.forEach(c => list.appendChild(c));
 }
 
+// Update the count badges in the sidebar and stat cards
 function updateCounts() {
   const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0 };
   items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
+
   document.getElementById('sc-assign').textContent = c.assignment;
   document.getElementById('sc-quiz').textContent   = c.quiz;
   document.getElementById('sc-pres').textContent   = c.presentation;
@@ -284,7 +654,10 @@ function updateCounts() {
   document.getElementById('nb-mids').textContent   = c.mids;
 }
 
-// ── ICON HELPERS ─────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// ICON HELPERS
+// ────────────────────────────────────────────────────────────
 function iconClass(type) {
   const map = { quiz:'ti-quiz', presentation:'ti-pres', final:'ti-final', notice:'ti-notice', mids:'ti-final' };
   return map[type] || 'ti-assign';
@@ -313,12 +686,18 @@ function tagClass(p) {
   return 'tag-low';
 }
 
-// ── LIST / FOCUS RENDERING ───────────────────────────────────
+
+// ────────────────────────────────────────────────────────────
+// LIST & FOCUS CARD RENDERING
+// ────────────────────────────────────────────────────────────
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
+
+  // Remove the "empty" placeholder if it exists
   const empty = list.querySelector('.focus-empty');
   if (empty) empty.remove();
+
   const div = document.createElement('div');
   div.className = 'task-item';
   div.setAttribute('data-id', item.id);
@@ -330,25 +709,33 @@ function addToList(listId, item) {
     </div>
     <span class="task-due">${item.due}</span>
     <span class="urgency ${urgencyClass(item.priority)}">${item.priority}</span>
-    <button class="del-reminder" onclick="deleteItem(${item.id})" title="Delete"><i class="ti ti-trash"></i></button>`;
+    <button class="del-reminder" onclick="deleteItem(${item.id})" title="Delete">
+      <i class="ti ti-trash"></i>
+    </button>`;
   list.appendChild(div);
 }
 
 function deleteItem(id) {
   items = items.filter(i => i.id !== id);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+
+  // Remove all cards with this id from the DOM
   document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
   updateCounts();
-  ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'].forEach(listId => {
+
+  // Add "empty" message back to any list that is now empty
+  const allLists = ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'];
+  allLists.forEach(listId => {
     const list = document.getElementById(listId);
     if (list && list.querySelectorAll('.task-item').length === 0) {
       list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">Nothing here yet.</div>';
     }
   });
-  // also clean focus items
+
+  // Also check the focus card
   const focus = document.getElementById('focusItems');
   if (focus && focus.querySelectorAll('.focus-item').length === 0) {
-    focus.innerHTML = '<div class="focus-empty">No tasks due today — enjoy your day!</div>';
+    focus.innerHTML = `<div class="focus-empty">${t('noTasksToday')}</div>`;
   }
 }
 
@@ -356,6 +743,7 @@ function addToFocus(item) {
   const focus = document.getElementById('focusItems');
   const empty = focus.querySelector('.focus-empty');
   if (empty) empty.remove();
+
   const div = document.createElement('div');
   div.className = 'focus-item';
   div.setAttribute('data-id', item.id);
@@ -366,15 +754,19 @@ function addToFocus(item) {
   focus.appendChild(div);
 }
 
+
 // ============================================================
-// FOLDERS & UPLOADS  (IndexedDB for files, localStorage for metadata)
+// FOLDERS & UPLOADS
+// Files are stored in IndexedDB (supports large files).
+// Folder names/metadata are stored in localStorage.
 // ============================================================
 let folders = JSON.parse(localStorage.getItem('amigo_folders') || '[]');
 
 function saveFolders() {
+  // Only save metadata (not file contents) to localStorage
   const meta = folders.map(f => ({
-    id:   f.id,
-    name: f.name,
+    id:    f.id,
+    name:  f.name,
     files: f.files.map(({ name, key, size, uploadedAt }) => ({ name, key, size, uploadedAt }))
   }));
   localStorage.setItem('amigo_folders', JSON.stringify(meta));
@@ -425,19 +817,23 @@ function createFolder() {
   const input = document.getElementById('folderNameInput');
   const name  = input.value.trim();
   if (!name) return;
+
   const folder = { id: Date.now(), name, files: [] };
   folders.push(folder);
   saveFolders();
   input.value = '';
+
   const container = document.getElementById('folderList');
-  const empty = container.querySelector('.focus-empty');
+  const empty     = container.querySelector('.focus-empty');
   if (empty) empty.remove();
+
   renderFolder(folder);
 }
 
 function renderFolder(folder) {
   const container = document.getElementById('folderList');
   if (!container) return;
+
   const div = document.createElement('div');
   div.className = 'folder-card';
   div.setAttribute('data-folder-id', folder.id);
@@ -461,6 +857,8 @@ function renderFolder(folder) {
     </div>
     <div class="folder-files" id="files-${folder.id}" style="display:none;"></div>`;
   container.appendChild(div);
+
+  // Render any files that were previously saved in this folder
   folder.files.forEach(f => renderFile(folder.id, f));
 }
 
@@ -490,11 +888,13 @@ function formatBytes(bytes) {
 function renderFile(folderId, fileData) {
   const list = document.getElementById('files-' + folderId);
   if (!list) return;
+
   const icon     = getFileIcon(fileData.name);
   const size     = formatBytes(fileData.size);
   const safeName = fileData.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const div      = document.createElement('div');
-  div.className  = 'file-item';
+
+  const div     = document.createElement('div');
+  div.className = 'file-item';
   div.setAttribute('data-file-name', fileData.name);
   div.innerHTML = `
     <i class="ti ${icon}" style="font-size:16px;color:#1a3a6b;flex-shrink:0;"></i>
@@ -513,7 +913,7 @@ function renderFile(folderId, fileData) {
 
 // ── Upload ───────────────────────────────────────────────────
 function handleUpload(input, folderId) {
-  const folder = folders.find(f => f.id === folderId);
+  const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
 
   const MAX_MB    = 200;
@@ -525,20 +925,25 @@ function handleUpload(input, folderId) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
       return;
     }
+
     if (status) status.textContent = `Uploading "${file.name}"...`;
+
     const reader = new FileReader();
     reader.onload = async function(e) {
       const key      = `file_${folderId}_${Date.now()}_${file.name}`;
       await saveFileToDB(key, e.target.result);
+
       const fileData = { name: file.name, key, size: file.size, uploadedAt: Date.now() };
       folder.files.push(fileData);
       saveFolders();
       renderFile(folderId, fileData);
       updateFolderCount(folderId);
-      // show files panel
+
+      // Auto-open the folder after upload
       document.getElementById('files-' + folderId).style.display = 'block';
       const chev = document.getElementById('fchev-' + folderId);
       if (chev) chev.style.transform = 'rotate(180deg)';
+
       if (status) {
         status.textContent = `"${file.name}" uploaded!`;
         setTimeout(() => status.textContent = '', 2500);
@@ -593,7 +998,8 @@ async function openFile(fileName, folderId) {
     return;
   }
 
-  const a = document.createElement('a');
+  // For other file types, trigger a download
+  const a  = document.createElement('a');
   a.href     = blobUrl;
   a.download = fileName;
   a.click();
@@ -603,12 +1009,15 @@ async function openFile(fileName, folderId) {
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
   if (!confirm(`Delete "${fileName}"?`)) return;
-  const folder = folders.find(f => f.id === folderId);
+
+  const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
   if (fileData && fileData.key) await deleteFileFromDB(fileData.key);
+
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
+
   const list = document.getElementById('files-' + folderId);
   if (list) {
     const item = list.querySelector(`[data-file-name="${fileName}"]`);
@@ -622,13 +1031,16 @@ async function deleteFolder(folderId) {
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
   if (!confirm(`Delete folder "${folder.name}" and all its files?`)) return;
+
   for (const f of folder.files) {
     if (f.key) await deleteFileFromDB(f.key);
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();
+
   const card = document.querySelector(`[data-folder-id="${folderId}"]`);
   if (card) card.remove();
+
   const container = document.getElementById('folderList');
   if (container && container.querySelectorAll('.folder-card').length === 0) {
     container.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No folders yet — create one above!</div>';
@@ -646,13 +1058,15 @@ function toggleFolder(folderId) {
   const chev   = document.getElementById('fchev-' + folderId);
   const icon   = document.getElementById('ficon-' + folderId);
   const isOpen = files.style.display === 'block';
+
   files.style.display = isOpen ? 'none' : 'block';
   if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   if (icon) icon.className = `ti ${isOpen ? 'ti-folder' : 'ti-folder-open'} ` + icon.className.split(' ').slice(2).join(' ');
 }
 
-// Load saved folders on boot
+// Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
+
 
 // ============================================================
 // TO-DO
@@ -664,6 +1078,7 @@ function addTodo() {
   const text  = input.value.trim();
   if (!text) return;
   input.value = '';
+
   const todo = { id: Date.now(), text, done: false };
   todos.push(todo);
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
@@ -674,6 +1089,7 @@ function renderTodoItem(todo) {
   const list  = document.getElementById('todoList');
   const empty = list.querySelector('.focus-empty');
   if (empty) empty.remove();
+
   const div   = document.createElement('div');
   div.className = 'todo-item';
   div.id        = 'todo-item-' + todo.id;
@@ -686,28 +1102,30 @@ function renderTodoItem(todo) {
 
 function toggleTodo(checkbox, id) {
   document.getElementById('todo-' + id).classList.toggle('done', checkbox.checked);
-  const todo = todos.find(t => t.id === id);
+  const todo = todos.find(td => td.id === id);
   if (todo) todo.done = checkbox.checked;
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
 }
 
 function deleteTodo(id) {
-  todos = todos.filter(t => t.id !== id);
+  todos = todos.filter(td => td.id !== id);
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
   const item = document.getElementById('todo-item-' + id);
   if (item) item.remove();
+
   const list = document.getElementById('todoList');
   if (list && list.querySelectorAll('.todo-item').length === 0) {
     list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No tasks yet.</div>';
   }
 }
 
-todos.forEach(t => renderTodoItem(t));
+todos.forEach(td => renderTodoItem(td));
 const todoListEl = document.getElementById('todoList');
 if (todoListEl && todos.length > 0) {
   const empty = todoListEl.querySelector('.focus-empty');
   if (empty) empty.remove();
 }
+
 
 // ============================================================
 // SETTINGS
@@ -716,6 +1134,9 @@ function saveSettings() {
   const name    = document.getElementById('nameInput').value.trim();
   const uni     = document.getElementById('uniInput')     ? document.getElementById('uniInput').value.trim()     : '';
   const program = document.getElementById('programInput') ? document.getElementById('programInput').value.trim() : '';
+  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value : 'en';
+
+  // Save name
   if (name) {
     document.querySelector('.greeting h2').textContent    = `Hello, ${name} 👋`;
     document.querySelector('.profile-info p').textContent = name;
@@ -724,10 +1145,20 @@ function saveSettings() {
     if (sd) sd.textContent = name;
     localStorage.setItem('amigo_name', name);
   }
+
+  // Save university and program
   if (uni)     localStorage.setItem('amigo_uni', uni);
   if (program) localStorage.setItem('amigo_program', program);
-  if (uni && program) document.querySelector('.profile-info span').textContent = uni + ' · ' + program;
-  document.getElementById('aiStatus').textContent = 'Settings saved!';
+  if (uni && program) {
+    document.querySelector('.profile-info span').textContent = uni + ' · ' + program;
+  }
+
+  // Save and apply language
+  localStorage.setItem('amigo_lang', lang);
+  applyLanguage(lang);
+
+  // Show success message then go home
+  document.getElementById('aiStatus').textContent = t('settingsSaved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2000);
   setNav(document.querySelector('.nav-item'), 'home');
 }
@@ -756,6 +1187,7 @@ function applyProfilePic(src) {
   if (avatar)  avatar.innerHTML  = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
 }
 
+
 // ============================================================
 // CALENDAR
 // ============================================================
@@ -767,14 +1199,17 @@ function renderCalendar() {
   const year        = calDate.getFullYear();
   const month       = calDate.getMonth();
   document.getElementById('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+
   const grid        = document.getElementById('calGrid');
   grid.innerHTML    = '';
+
   const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev  = new Date(year, month, 0).getDate();
   const today       = new Date();
   const eventDates  = new Set();
 
+  // Collect dates that have tasks or reminders
   items.forEach(item => {
     const d = parseDate(item.due);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
@@ -784,22 +1219,29 @@ function renderCalendar() {
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
   });
 
+  // Fill in previous month's trailing days
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell other-month';
     cell.textContent = daysInPrev - i;
     grid.appendChild(cell);
   }
+
+  // Fill in this month's days
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell';
     cell.textContent = d;
-    if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) cell.classList.add('today');
+    if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+      cell.classList.add('today');
+    }
     if (eventDates.has(d)) cell.classList.add('has-event');
     const dateStr = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
     cell.onclick = () => openReminderModal(dateStr);
     grid.appendChild(cell);
   }
+
+  // Fill in next month's leading days to complete the last row
   const remaining = (grid.children.length % 7 === 0) ? 0 : 7 - (grid.children.length % 7);
   for (let d = 1; d <= remaining; d++) {
     const cell = document.createElement('div');
@@ -818,7 +1260,7 @@ function openReminderModal(dateStr) {
   selectedDate = dateStr;
   const label  = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   document.getElementById('selectedDateLabel').textContent = label;
-  document.getElementById('reminderModal').style.display   = 'block';
+  document.getElementById('reminderModal').style.display  = 'block';
   document.getElementById('reminderTitle').focus();
 }
 
@@ -832,6 +1274,7 @@ function saveReminder() {
   const type  = document.getElementById('reminderType').value;
   const time  = document.getElementById('reminderTime').value;
   if (!title) return;
+
   const reminder = { id: Date.now(), title, type, date: selectedDate, time: time || '08:00' };
   reminders.push(reminder);
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
@@ -845,13 +1288,16 @@ function saveReminder() {
 function renderReminderList() {
   const list = document.getElementById('reminderList');
   list.innerHTML = '';
+
   if (reminders.length === 0) {
     list.innerHTML = '<div class="focus-empty">No reminders yet — click a date to add one!</div>';
     document.getElementById('reminderCount').textContent = '0 reminders';
     return;
   }
+
   const sorted = [...reminders].sort((a, b) => new Date(a.date) - new Date(b.date));
   document.getElementById('reminderCount').textContent = sorted.length + ' reminder' + (sorted.length > 1 ? 's' : '');
+
   sorted.forEach(r => {
     const div       = document.createElement('div');
     div.className   = 'task-item';
@@ -896,6 +1342,7 @@ if ('Notification' in window && Notification.permission === 'default') {
 renderCalendar();
 renderReminderList();
 
+
 // ============================================================
 // SEARCH
 // ============================================================
@@ -912,21 +1359,24 @@ function doSearch() {
   const results = document.getElementById('searchResults');
   results.innerHTML = '';
   if (!query) return;
+
   const matches = items.filter(i =>
     i.title.toLowerCase().includes(query)   ||
     i.subject.toLowerCase().includes(query) ||
     i.type.toLowerCase().includes(query)    ||
     (i.note && i.note.toLowerCase().includes(query))
   );
+
   if (matches.length === 0) {
     results.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No results found.</div>';
     return;
   }
+
   matches.forEach(item => {
-    const div       = document.createElement('div');
-    div.className   = 'task-item';
+    const div     = document.createElement('div');
+    div.className = 'task-item';
     div.style.background = '#fff';
-    div.innerHTML   = `
+    div.innerHTML = `
       <div class="task-icon ${iconClass(item.type)}"><i class="ti ${iconName(item.type)}"></i></div>
       <div class="task-info">
         <div class="task-title">${item.title}</div>
@@ -937,6 +1387,7 @@ function doSearch() {
     results.appendChild(div);
   });
 }
+
 
 // ============================================================
 // NOTIFICATIONS
@@ -962,10 +1413,12 @@ function renderNotifPanel() {
   const list     = document.getElementById('notifList');
   const upcoming = getUpcomingReminders();
   list.innerHTML  = '';
+
   if (upcoming.length === 0) {
     list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;">No upcoming reminders this month.</div>';
     return;
   }
+
   upcoming.forEach(r => {
     const div       = document.createElement('div');
     div.className   = 'task-item';
@@ -991,6 +1444,7 @@ function updateNotifBadge() {
   }
 }
 
+// Close panels when clicking anywhere outside them
 document.addEventListener('click', e => {
   const notifPanel  = document.getElementById('notifPanel');
   const searchPanel = document.getElementById('searchPanel');
@@ -999,6 +1453,7 @@ document.addEventListener('click', e => {
 });
 
 updateNotifBadge();
+
 
 // ============================================================
 // AUTH HANDLERS
@@ -1017,15 +1472,18 @@ async function handleLogin() {
   const password = document.getElementById('loginPassword').value.trim();
   const errEl    = document.getElementById('loginError');
   errEl.style.display = 'none';
+
   if (!email || !password) {
     errEl.textContent = 'fill in everything bestie 🙏';
     errEl.style.display = 'block';
     return;
   }
+
   errEl.textContent = 'signing you in...';
   errEl.style.color = '#1a3a6b';
   errEl.style.background = '#e8eef7';
   errEl.style.display = 'block';
+
   const error = await signInWithEmail(email, password);
   if (error) {
     errEl.textContent = 'wrong email or password 😬';
@@ -1045,20 +1503,24 @@ async function handleSignup() {
   const sucEl    = document.getElementById('signupSuccess');
   errEl.style.display = 'none';
   sucEl.style.display = 'none';
+
   if (!name || !email || !password) {
     errEl.textContent = 'fill in everything bestie 🙏';
     errEl.style.display = 'block';
     return;
   }
+
   if (password.length < 6) {
     errEl.textContent = 'password too short — at least 6 chars 🔐';
     errEl.style.display = 'block';
     return;
   }
+
   errEl.textContent = 'creating your account...';
   errEl.style.color = '#1a3a6b';
   errEl.style.background = '#e8eef7';
   errEl.style.display = 'block';
+
   const error = await signUpWithEmail(email, password, name);
   if (error) {
     errEl.textContent = error;
@@ -1072,10 +1534,10 @@ async function handleSignup() {
   sucEl.style.display = 'block';
 }
 
-//forget pass
 async function handleForgotPassword() {
   const email = document.getElementById('loginEmail').value.trim();
   const errEl = document.getElementById('loginError');
+
   if (!email) {
     errEl.textContent = 'enter your email first 📧';
     errEl.style.color = '#EF4444';
@@ -1083,9 +1545,11 @@ async function handleForgotPassword() {
     errEl.style.display = 'block';
     return;
   }
+
   const { error } = await _supabase.auth.resetPasswordForEmail(email, {
     redirectTo: 'https://amigo-lilac.vercel.app'
   });
+
   if (error) {
     errEl.textContent = 'something went wrong 😬';
     errEl.style.color = '#EF4444';
@@ -1093,11 +1557,14 @@ async function handleForgotPassword() {
     errEl.style.display = 'block';
     return;
   }
+
   errEl.textContent = 'reset link sent! check your email 📩';
   errEl.style.color = '#16A34A';
   errEl.style.background = '#DCFCE7';
   errEl.style.display = 'block';
 }
+
+
 // ============================================================
 // FEEDBACK / EMAILJS
 // ============================================================

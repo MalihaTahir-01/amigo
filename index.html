@@ -37,13 +37,13 @@
       <div style="background:#fff;border-radius:24px;padding:36px;width:100%;max-width:400px;margin:20px;box-shadow:0 32px 80px rgba(0,0,0,0.4);position:relative;z-index:1;">
         <div style="text-align:center;margin-bottom:28px;">
           <div style="width:72px;height:72px;background:linear-gradient(135deg,#1a3a6b,#0f2240);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;font-weight:700;color:#fff;box-shadow:0 8px 24px rgba(15,34,64,0.3);">A</div>
-          <h2 style="font-size:22px;font-weight:600;color:#0F172A;letter-spacing:-0.5px;margin-bottom:4px;">Hey, welcome 👋</h2>
-          <p style="font-size:13px;color:#64748B;">Your academic life, finally organized</p>
+          <h2 style="font-size:22px;font-weight:600;color:#0F172A;letter-spacing:-0.5px;margin-bottom:4px;">hey, welcome 👋</h2>
+          <p style="font-size:13px;color:#64748B;">your academic life, finally organized</p>
         </div>
 
         <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:24px;">
-          <button onclick="switchTab('login')" id="tab-login" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:#fff;color:#0F172A;box-shadow:0 1px 4px rgba(0,0,0,0.08);font-family:'Inter',sans-serif;transition:all 0.2s;">Sign in</button>
-          <button onclick="switchTab('signup')" id="tab-signup" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:#64748B;font-family:'Inter',sans-serif;transition:all 0.2s;">New here?</button>
+          <button onclick="switchTab('login')" id="tab-login" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:#fff;color:#0F172A;box-shadow:0 1px 4px rgba(0,0,0,0.08);font-family:'Inter',sans-serif;transition:all 0.2s;">sign in</button>
+          <button onclick="switchTab('signup')" id="tab-signup" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:#64748B;font-family:'Inter',sans-serif;transition:all 0.2s;">new here?</button>
         </div>
 
         <!-- LOGIN FORM -->
@@ -51,15 +51,15 @@
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="position:relative;">
               <i class="ti ti-mail" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
-              <input id="loginEmail" type="email" placeholder="Your email" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
+              <input id="loginEmail" type="email" placeholder="your email" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
             </div>
             <div style="position:relative;">
               <i class="ti ti-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
-              <input id="loginPassword" type="Password" placeholder="Password" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') handleLogin()" />
+              <input id="loginPassword" type="password" placeholder="password" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') handleLogin()" />
             </div>
             <div id="loginError" style="font-size:12px;color:#EF4444;display:none;padding:8px 12px;background:#FEE2E2;border-radius:8px;"></div>
-            <button onclick="handleLogin()" style="padding:12px;background:linear-gradient(135deg,#1a3a6b,#0f2240);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(15,34,64,0.3);letter-spacing:0.2px;">Let me in →</button>
-            <p onclick="handleForgotPassword()" style="text-align:center;font-size:12px;color:#64748B;margin-top:8px;cursor:pointer;">Forgot password? <span style="color:#1a3a6b;font-weight:500;">Reset it →</span></p>
+            <button onclick="handleLogin()" style="padding:12px;background:linear-gradient(135deg,#1a3a6b,#0f2240);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(15,34,64,0.3);letter-spacing:0.2px;">let me in →</button>
+            <p onclick="handleForgotPassword()" style="text-align:center;font-size:12px;color:#64748B;margin-top:8px;cursor:pointer;">forgot password? <span style="color:#1a3a6b;font-weight:500;">reset it →</span></p>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
             <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
@@ -67,7 +67,7 @@
             <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
           </div>
           <button onclick="signInWithGoogle()" style="width:100%;padding:11px;background:#fff;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-            <img src="https://www.google.com/favicon.ico" style="width:15px;height:15px;" /> Continue with Google
+            <img src="https://www.google.com/favicon.ico" style="width:15px;height:15px;" /> continue with google
           </button>
         </div>
 
@@ -76,19 +76,19 @@
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="position:relative;">
               <i class="ti ti-user" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
-              <input id="signupName" type="text" placeholder="What do we call you?" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
+              <input id="signupName" type="text" placeholder="what do we call you?" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
             </div>
             <div style="position:relative;">
               <i class="ti ti-mail" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
-              <input id="signupEmail" type="email" placeholder="Your email" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
+              <input id="signupEmail" type="email" placeholder="your email" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
             </div>
             <div style="position:relative;">
               <i class="ti ti-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:16px;"></i>
-              <input id="signupPassword" type="Password" placeholder="Create a password" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') handleSignup()" />
+              <input id="signupPassword" type="password" placeholder="create a password" style="width:100%;padding:11px 14px 11px 38px;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') handleSignup()" />
             </div>
             <div id="signupError" style="font-size:12px;color:#EF4444;display:none;padding:8px 12px;background:#FEE2E2;border-radius:8px;"></div>
             <div id="signupSuccess" style="font-size:12px;color:#16A34A;display:none;padding:8px 12px;background:#DCFCE7;border-radius:8px;"></div>
-            <button onclick="handleSignup()" style="padding:12px;background:linear-gradient(135deg,#1a3a6b,#0f2240);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(15,34,64,0.3);">Create my account ✨</button>
+            <button onclick="handleSignup()" style="padding:12px;background:linear-gradient(135deg,#1a3a6b,#0f2240);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(15,34,64,0.3);">create my account ✨</button>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
             <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
@@ -96,9 +96,9 @@
             <div style="flex:1;height:0.5px;background:#e2e8f0;"></div>
           </div>
           <button onclick="signInWithGoogle()" style="width:100%;padding:11px;background:#fff;border:0.5px solid #b8c9e0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-            <img src="https://www.google.com/favicon.ico" style="width:15px;height:15px;" /> Continue with Google
+            <img src="https://www.google.com/favicon.ico" style="width:15px;height:15px;" /> continue with google
           </button>
-          <p style="text-align:center;font-size:11px;color:#94A3B8;margin-top:14px;">By signing up you agree to use Amigo responsibly 🤝</p>
+          <p style="text-align:center;font-size:11px;color:#94A3B8;margin-top:14px;">by signing up you agree to use amigo responsibly 🤝</p>
         </div>
       </div>
     </div>
@@ -337,15 +337,15 @@
             <div style="background:linear-gradient(135deg,#1a3a6b,#0f2240);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
               <div style="font-size:28px;">👀</div>
               <div>
-                <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px;">Got something to say?</p>
-                <p style="font-size:12px;color:rgba(255,255,255,0.6);">We read every single message. No cap.</p>
+                <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px;">got something to say?</p>
+                <p style="font-size:12px;color:rgba(255,255,255,0.6);">we read every single message. no cap.</p>
               </div>
             </div>
             <div class="upcoming-section">
               <div style="display:flex;flex-direction:column;gap:12px;">
                 <div>
                   <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Your Name</label>
-                  <input id="feedbackName" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="What do we call you?" />
+                  <input id="feedbackName" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="what do we call you?" />
                 </div>
                 <div>
                   <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Your Email</label>
@@ -353,7 +353,7 @@
                 </div>
                 <div>
                   <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Message</label>
-                  <textarea id="feedbackMessage" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;font-size:13px;font-family:'Inter',sans-serif;resize:none;height:120px;outline:none;color:#0F172A;" placeholder="Tell us what you think, what's missing, what broke, or just say hi 👋"></textarea>
+                  <textarea id="feedbackMessage" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;font-size:13px;font-family:'Inter',sans-serif;resize:none;height:120px;outline:none;color:#0F172A;" placeholder="tell us what you think, what's missing, what broke, or just say hi 👋"></textarea>
                 </div>
                 <div id="feedbackStatus" style="font-size:13px;display:none;padding:10px 14px;border-radius:8px;"></div>
                 <button onclick="sendFeedback()" class="ai-send" style="width:100%;padding:12px;font-size:13px;">send feedback ↗</button>

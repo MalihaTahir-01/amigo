@@ -1018,17 +1018,17 @@ async function handleLogin() {
   const errEl    = document.getElementById('loginError');
   errEl.style.display = 'none';
   if (!email || !password) {
-    errEl.textContent = 'fill in everything bestie 🙏';
+    errEl.textContent = 'Fill in everything bestie 🙏';
     errEl.style.display = 'block';
     return;
   }
-  errEl.textContent = 'signing you in...';
+  errEl.textContent = 'Signing you in...';
   errEl.style.color = '#1a3a6b';
   errEl.style.background = '#e8eef7';
   errEl.style.display = 'block';
   const error = await signInWithEmail(email, password);
   if (error) {
-    errEl.textContent = 'wrong email or password 😬';
+    errEl.textContent = 'Wrong email or password 😬';
     errEl.style.color = '#EF4444';
     errEl.style.background = '#FEE2E2';
     errEl.style.display = 'block';
@@ -1046,12 +1046,12 @@ async function handleSignup() {
   errEl.style.display = 'none';
   sucEl.style.display = 'none';
   if (!name || !email || !password) {
-    errEl.textContent = 'fill in everything bestie 🙏';
+    errEl.textContent = 'Fill in everything bestie 🙏';
     errEl.style.display = 'block';
     return;
   }
   if (password.length < 6) {
-    errEl.textContent = 'password too short — at least 6 chars 🔐';
+    errEl.textContent = 'password too short — At least 6 chars 🔐';
     errEl.style.display = 'block';
     return;
   }
@@ -1068,7 +1068,7 @@ async function handleSignup() {
     return;
   }
   errEl.style.display = 'none';
-  sucEl.textContent = 'account created! check your email to confirm ✅';
+  sucEl.textContent = 'Account created! Check your email to confirm ✅';
   sucEl.style.display = 'block';
 }
 
@@ -1103,14 +1103,14 @@ async function handleForgotPassword() {
 // ============================================================
 emailjs.init('82oFX8G_FfVMfS3Uj');
 
-async function sendFeedback() {
+async function Send Feedback() {
   const name    = document.getElementById('feedbackName').value.trim();
   const email   = document.getElementById('feedbackEmail').value.trim();
   const message = document.getElementById('feedbackMessage').value.trim();
   const status  = document.getElementById('feedbackStatus');
 
   if (!name || !email || !message) {
-    status.textContent = 'fill in everything bestie 🙏';
+    status.textContent = 'Fill in everything bestie 🙏';
     status.style.background = '#FEE2E2';
     status.style.color = '#DC2626';
     status.style.display = 'block';

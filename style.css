@@ -106,6 +106,7 @@ body {
   font-size: 13px;
   margin-bottom: 1px;
   transition: all 0.15s;
+  text-transform: capitalize; /* FIX: ensures all nav items show in proper case */
 }
 
 .nav-item:hover {
@@ -544,11 +545,10 @@ body {
 .todo-text.done { text-decoration: line-through; color: #94A3B8; }
 
 /* CALENDAR */
-/* CALENDAR */
 .cal-day-label {
-  font-size: 15px;          /* bigger day names */
+  font-size: 15px;
   font-weight: 600;
-  color: #E5E7EB;           /* light grey */
+  color: #E5E7EB;
   text-align: center;
   padding: 6px 0;
 }
@@ -561,12 +561,9 @@ body {
   justify-content: center;
   border-radius: 8px;
   cursor: pointer;
-
-  font-size: 17px;          /* bigger numbers */
+  font-size: 17px;
   font-weight: 500;
-
-  color: #FFFFFF;           /* white numbers */
-
+  color: #FFFFFF;
   position: relative;
   transition: all 0.15s;
 }
@@ -582,13 +579,9 @@ body {
   font-weight: 700;
 }
 
-.cal-cell.today:hover {
-  opacity: 0.9;
-}
+.cal-cell.today:hover { opacity: 0.9; }
 
-.cal-cell.other-month {
-  color: #9CA3AF;           /* faded grey */
-}
+.cal-cell.other-month { color: #9CA3AF; }
 
 .cal-cell.has-event::after {
   content: '';
@@ -600,9 +593,7 @@ body {
   bottom: 3px;
 }
 
-.cal-cell.today.has-event::after {
-  background: #fff;
-}
+.cal-cell.today.has-event::after { background: #fff; }
 
 .del-reminder {
   background: none;
@@ -616,8 +607,7 @@ body {
 
 .del-reminder:hover { color: #EF4444; background: #FEE2E2; }
 
-/* mobile style */
-
+/* MOBILE */
 @media (max-width: 768px) {
   .amigo { flex-direction: column; height: 100vh; overflow: hidden; }
 
@@ -670,6 +660,7 @@ body {
     margin-bottom: 0;
     flex-shrink: 0;
     min-width: fit-content;
+    text-transform: capitalize; /* also explicitly set in mobile override */
   }
 
   .nav-item i { font-size: 16px; }

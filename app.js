@@ -1,9 +1,11 @@
-// ============================================================
-// AMIGO — app.js  (with Full Language Support)
-// ============================================================
 
+// ============================================================
+// AMIGO — app.js  (with Language Support)
+// ============================================================
 // ────────────────────────────────────────────────────────────
 // TRANSLATIONS
+// This object holds all the text for each language.
+// To add a new language, copy one block and translate the values.
 // ────────────────────────────────────────────────────────────
 const TRANSLATIONS = {
   en: {
@@ -44,23 +46,6 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Presentation',
     notice: 'Notice',
-    // Sidebar
-    navHome: 'Home', navAssignments: 'Assignments', navQuizzes: 'Quizzes',
-    navMids: 'Mids', navPresentations: 'Presentations', navFinals: 'Finals',
-    navNotices: 'Notices', navUploads: 'Uploads', navTodo: 'To-Do',
-    navCalendar: 'Calendar', navFeedback: 'Feedback', navSettings: 'Settings',
-    // Section headings
-    secAssignments: 'Assignments', secAssignmentsSub: 'All your assignments in one place.',
-    secQuizzes: 'Quizzes', secQuizzesSub: 'Track all your upcoming quizzes.',
-    secMids: 'Mids', secMidsSub: 'Midterm exams and preparation.',
-    secPresentations: 'Presentations', secPresentationsSub: 'All your presentations.',
-    secFinals: 'Finals', secFinalsSub: 'Final exams tracker.',
-    secNotices: 'Notices', secNoticesSub: 'Announcements and important updates.',
-    secUploads: 'Uploads', secUploadsSub: 'Organize your files by subject folders.',
-    secTodo: 'To-Do', secTodoSub: 'Your personal task checklist.',
-    secCalendar: 'Calendar', secCalendarSub: 'Click any date to add a reminder.',
-    secFeedback: 'Feedback', secFeedbackSub: 'Help us make Amigo better for you 🙏',
-    secSettings: 'Settings', secSettingsSub: 'Customize your Amigo experience.',
   },
   ur: {
     dir: 'rtl',
@@ -100,23 +85,6 @@ const TRANSLATIONS = {
     final: 'فائنل',
     presentation: 'پریزنٹیشن',
     notice: 'نوٹس',
-    // Sidebar
-    navHome: 'ہوم', navAssignments: 'اسائنمنٹس', navQuizzes: 'کوئزز',
-    navMids: 'مڈز', navPresentations: 'پریزنٹیشنز', navFinals: 'فائنلز',
-    navNotices: 'نوٹسز', navUploads: 'اپلوڈز', navTodo: 'ٹو-ڈو',
-    navCalendar: 'کیلنڈر', navFeedback: 'فیڈبیک', navSettings: 'سیٹنگز',
-    // Section headings
-    secAssignments: 'اسائنمنٹس', secAssignmentsSub: 'تمام اسائنمنٹس ایک جگہ۔',
-    secQuizzes: 'کوئزز', secQuizzesSub: 'تمام آنے والے کوئزز ٹریک کریں۔',
-    secMids: 'مڈز', secMidsSub: 'مڈ ٹرم امتحانات اور تیاری۔',
-    secPresentations: 'پریزنٹیشنز', secPresentationsSub: 'تمام پریزنٹیشنز۔',
-    secFinals: 'فائنلز', secFinalsSub: 'فائنل امتحانات ٹریکر۔',
-    secNotices: 'نوٹسز', secNoticesSub: 'اعلانات اور اہم اپڈیٹس۔',
-    secUploads: 'اپلوڈز', secUploadsSub: 'فائلیں فولڈرز میں ترتیب دیں۔',
-    secTodo: 'ٹو-ڈو', secTodoSub: 'ذاتی ٹاسک چیک لسٹ۔',
-    secCalendar: 'کیلنڈر', secCalendarSub: 'یاددہانی شامل کرنے کے لیے تاریخ پر کلک کریں۔',
-    secFeedback: 'فیڈبیک', secFeedbackSub: 'امیگو کو بہتر بنانے میں مدد کریں 🙏',
-    secSettings: 'سیٹنگز', secSettingsSub: 'اپنا امیگو تجربہ اپنی مرضی کے مطابق بنائیں۔',
   },
   ar: {
     dir: 'rtl',
@@ -156,23 +124,6 @@ const TRANSLATIONS = {
     final: 'نهائي',
     presentation: 'عرض',
     notice: 'إشعار',
-    // Sidebar
-    navHome: 'الرئيسية', navAssignments: 'الواجبات', navQuizzes: 'الاختبارات',
-    navMids: 'منتصف الفصل', navPresentations: 'العروض', navFinals: 'النهائيات',
-    navNotices: 'الإشعارات', navUploads: 'الرفع', navTodo: 'المهام',
-    navCalendar: 'التقويم', navFeedback: 'التغذية الراجعة', navSettings: 'الإعدادات',
-    // Section headings
-    secAssignments: 'الواجبات', secAssignmentsSub: 'جميع واجباتك في مكان واحد.',
-    secQuizzes: 'الاختبارات', secQuizzesSub: 'تتبع جميع اختباراتك القادمة.',
-    secMids: 'منتصف الفصل', secMidsSub: 'امتحانات منتصف الفصل والتحضير.',
-    secPresentations: 'العروض', secPresentationsSub: 'جميع عروضك التقديمية.',
-    secFinals: 'النهائيات', secFinalsSub: 'متتبع الامتحانات النهائية.',
-    secNotices: 'الإشعارات', secNoticesSub: 'الإعلانات والتحديثات المهمة.',
-    secUploads: 'الرفع', secUploadsSub: 'نظّم ملفاتك في مجلدات.',
-    secTodo: 'المهام', secTodoSub: 'قائمة مهامك الشخصية.',
-    secCalendar: 'التقويم', secCalendarSub: 'انقر على أي تاريخ لإضافة تذكير.',
-    secFeedback: 'التغذية الراجعة', secFeedbackSub: 'ساعدنا في تحسين أميغو 🙏',
-    secSettings: 'الإعدادات', secSettingsSub: 'خصّص تجربة أميغو الخاصة بك.',
   },
   fr: {
     dir: 'ltr',
@@ -212,23 +163,6 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Présentation',
     notice: 'Avis',
-    // Sidebar
-    navHome: 'Accueil', navAssignments: 'Devoirs', navQuizzes: 'Quiz',
-    navMids: 'Partiels', navPresentations: 'Présentations', navFinals: 'Finaux',
-    navNotices: 'Avis', navUploads: 'Fichiers', navTodo: 'À faire',
-    navCalendar: 'Calendrier', navFeedback: 'Retours', navSettings: 'Paramètres',
-    // Section headings
-    secAssignments: 'Devoirs', secAssignmentsSub: 'Tous vos devoirs en un seul endroit.',
-    secQuizzes: 'Quiz', secQuizzesSub: 'Suivez tous vos quiz à venir.',
-    secMids: 'Partiels', secMidsSub: 'Examens partiels et préparation.',
-    secPresentations: 'Présentations', secPresentationsSub: 'Toutes vos présentations.',
-    secFinals: 'Finaux', secFinalsSub: 'Suivi des examens finaux.',
-    secNotices: 'Avis', secNoticesSub: 'Annonces et mises à jour importantes.',
-    secUploads: 'Fichiers', secUploadsSub: 'Organisez vos fichiers par dossiers.',
-    secTodo: 'À faire', secTodoSub: 'Votre liste de tâches personnelle.',
-    secCalendar: 'Calendrier', secCalendarSub: 'Cliquez sur une date pour ajouter un rappel.',
-    secFeedback: 'Retours', secFeedbackSub: 'Aidez-nous à améliorer Amigo 🙏',
-    secSettings: 'Paramètres', secSettingsSub: 'Personnalisez votre expérience Amigo.',
   },
   zh: {
     dir: 'ltr',
@@ -268,23 +202,6 @@ const TRANSLATIONS = {
     final: '期末',
     presentation: '演示',
     notice: '通知',
-    // Sidebar
-    navHome: '首页', navAssignments: '作业', navQuizzes: '测验',
-    navMids: '期中', navPresentations: '演示', navFinals: '期末',
-    navNotices: '通知', navUploads: '上传', navTodo: '待办',
-    navCalendar: '日历', navFeedback: '反馈', navSettings: '设置',
-    // Section headings
-    secAssignments: '作业', secAssignmentsSub: '所有作业一目了然。',
-    secQuizzes: '测验', secQuizzesSub: '追踪所有即将到来的测验。',
-    secMids: '期中', secMidsSub: '期中考试和备考。',
-    secPresentations: '演示', secPresentationsSub: '所有演示文稿。',
-    secFinals: '期末', secFinalsSub: '期末考试追踪器。',
-    secNotices: '通知', secNoticesSub: '公告和重要更新。',
-    secUploads: '上传', secUploadsSub: '按科目文件夹整理文件。',
-    secTodo: '待办', secTodoSub: '个人任务清单。',
-    secCalendar: '日历', secCalendarSub: '点击任意日期添加提醒。',
-    secFeedback: '反馈', secFeedbackSub: '帮助我们改进Amigo 🙏',
-    secSettings: '设置', secSettingsSub: '自定义您的Amigo体验。',
   },
   es: {
     dir: 'ltr',
@@ -324,28 +241,11 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Presentación',
     notice: 'Aviso',
-    // Sidebar
-    navHome: 'Inicio', navAssignments: 'Tareas', navQuizzes: 'Quizzes',
-    navMids: 'Parciales', navPresentations: 'Presentaciones', navFinals: 'Finales',
-    navNotices: 'Avisos', navUploads: 'Archivos', navTodo: 'Por hacer',
-    navCalendar: 'Calendario', navFeedback: 'Comentarios', navSettings: 'Configuración',
-    // Section headings
-    secAssignments: 'Tareas', secAssignmentsSub: 'Todas tus tareas en un solo lugar.',
-    secQuizzes: 'Quizzes', secQuizzesSub: 'Rastrea todos tus quizzes próximos.',
-    secMids: 'Parciales', secMidsSub: 'Exámenes parciales y preparación.',
-    secPresentations: 'Presentaciones', secPresentationsSub: 'Todas tus presentaciones.',
-    secFinals: 'Finales', secFinalsSub: 'Rastreador de exámenes finales.',
-    secNotices: 'Avisos', secNoticesSub: 'Anuncios y actualizaciones importantes.',
-    secUploads: 'Archivos', secUploadsSub: 'Organiza tus archivos por carpetas.',
-    secTodo: 'Por hacer', secTodoSub: 'Tu lista de tareas personal.',
-    secCalendar: 'Calendario', secCalendarSub: 'Haz clic en una fecha para agregar un recordatorio.',
-    secFeedback: 'Comentarios', secFeedbackSub: 'Ayúdanos a mejorar Amigo 🙏',
-    secSettings: 'Configuración', secSettingsSub: 'Personaliza tu experiencia en Amigo.',
   },
 };
-
 // ────────────────────────────────────────────────────────────
-// LANGUAGE HELPERS
+// LANGUAGE HELPER
+// Call t('key') anywhere to get the translated text
 // ────────────────────────────────────────────────────────────
 function getLang() {
   return localStorage.getItem('amigo_lang') || 'en';
@@ -354,159 +254,44 @@ function t(key) {
   const lang = getLang();
   return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS['en'][key] || key;
 }
-
-// ────────────────────────────────────────────────────────────
-// APPLY LANGUAGE — updates every visible text element safely
-// Nothing structural is touched — only textContent of known elements
-// ────────────────────────────────────────────────────────────
+// Apply language direction and update visible UI text
 function applyLanguage(lang) {
-  const L = TRANSLATIONS[lang] || TRANSLATIONS['en'];
-
-  // Direction (RTL for Urdu/Arabic)
-  document.documentElement.dir = L.dir;
-
+  const langData = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+  // Set text direction (RTL for Urdu/Arabic)
+  document.documentElement.dir = langData.dir;
+  // Update greeting
   const name = localStorage.getItem('amigo_name') || 'Student';
-
-  // Greeting — home section only
-  const greetingEl = document.querySelector('#section-home .greeting h2');
-  if (greetingEl) greetingEl.textContent = `${L.greeting}, ${name} 👋`;
-
-  // AI bar placeholder
+  const greetingEl = document.querySelector('.greeting h2');
+  if (greetingEl) greetingEl.textContent = `${langData.greeting}, ${name} 👋`;
+  // Update AI bar placeholder and button
   const aiInput = document.getElementById('aiInput');
-  if (aiInput) aiInput.placeholder = L.addPlaceholder;
-
-  // AI bar send button
-  const aiSendBtn = document.querySelector('.ai-bar .ai-send');
-  if (aiSendBtn) aiSendBtn.textContent = L.addBtn;
-
-  // Chips
-  const chips = document.querySelectorAll('.ai-chips .chip');
+  if (aiInput) aiInput.placeholder = langData.addPlaceholder;
+  // Update chips
+  const chips = document.querySelectorAll('.chip');
   const chipKeys = ['chipAssignment', 'chipQuiz', 'chipMids', 'chipFinal'];
+  const chipActions = ['Assignment due today', 'Quiz on Monday', 'Mids next week', 'Final exam on 10 June'];
   chips.forEach((chip, i) => {
-    if (chipKeys[i] && L[chipKeys[i]]) chip.textContent = L[chipKeys[i]];
+    if (chipKeys[i]) chip.textContent = langData[chipKeys[i]];
   });
-
-  // Focus card title
-  const focusTitle = document.querySelector('.focus-title');
-  if (focusTitle) focusTitle.textContent = L.todayFocus;
-
-  // Focus card empty state
-  const focusEmpty = document.querySelector('#focusItems .focus-empty');
-  if (focusEmpty) focusEmpty.textContent = L.noTasksToday;
-
-  // Home section "Today" / "Upcoming" titles
+  // Update section titles
   const todayTitle = document.querySelector('#section-home .upcoming-section:first-of-type .section-title');
-  if (todayTitle) todayTitle.textContent = L.today;
+  if (todayTitle) todayTitle.textContent = langData.today;
   const upcomingTitle = document.querySelector('#section-home .upcoming-section:last-of-type .section-title');
-  if (upcomingTitle) upcomingTitle.textContent = L.upcoming;
-
-  // ── Sidebar nav items ──────────────────────────────────────
-  // We update only the text node inside each nav item,
-  // leaving icons and badge <span> elements completely untouched
-  const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-  const navKeys = [
-    'navHome', 'navAssignments', 'navQuizzes', 'navMids',
-    'navPresentations', 'navFinals', 'navNotices',
-    'navUploads', 'navTodo', 'navCalendar', 'navFeedback', 'navSettings',
-  ];
-  navItems.forEach((item, i) => {
-    if (!navKeys[i]) return;
-    const label = L[navKeys[i]];
-    if (!label) return;
-    // Walk child nodes and update only plain text nodes
-    Array.from(item.childNodes).forEach(node => {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0) {
-        node.textContent = ' ' + label + ' ';
-      }
-    });
-  });
-
-  // ── Section headings (h2 + subtitle p) ────────────────────
-  const sections = [
-    { id: 'section-assignment',  h2: 'secAssignments',  p: 'secAssignmentsSub' },
-    { id: 'section-quiz',        h2: 'secQuizzes',      p: 'secQuizzesSub' },
-    { id: 'section-mids',        h2: 'secMids',         p: 'secMidsSub' },
-    { id: 'section-presentation',h2: 'secPresentations',p: 'secPresentationsSub' },
-    { id: 'section-final',       h2: 'secFinals',       p: 'secFinalsSub' },
-    { id: 'section-notice',      h2: 'secNotices',      p: 'secNoticesSub' },
-    { id: 'section-uploads',     h2: 'secUploads',      p: 'secUploadsSub' },
-    { id: 'section-todo',        h2: 'secTodo',         p: 'secTodoSub' },
-    { id: 'section-calendar',    h2: 'secCalendar',     p: 'secCalendarSub' },
-    { id: 'section-feedback',    h2: 'secFeedback',     p: 'secFeedbackSub' },
-    { id: 'section-settings',    h2: 'secSettings',     p: 'secSettingsSub' },
-  ];
-  sections.forEach(({ id, h2, p }) => {
-    const sec = document.getElementById(id);
-    if (!sec) return;
-    const h2El = sec.querySelector('.greeting h2');
-    const pEl  = sec.querySelector('.greeting p');
-    if (h2El && L[h2]) h2El.textContent = L[h2];
-    if (pEl  && L[p])  pEl.textContent  = L[p];
-  });
-
-  // ── Reminder type dropdown options ────────────────────────
-// ── Reminder type dropdown options ────────────────────────
-  const typeSelect = document.getElementById('reminderType');
-  if (typeSelect) {
-    const typeKeys = ['assignment', 'quiz', 'mids', 'final', 'presentation', 'notice'];
-    Array.from(typeSelect.options).forEach(opt => {
-      if (typeKeys.includes(opt.value) && L[opt.value]) {
-        opt.text = L[opt.value];
-      }
-    });
-  }
-
-  // ── Calendar day labels ───────────────────────────────────
-  const calDays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dayTranslations = {
-    ur: ['اتوار','پیر','منگل','بدھ','جمعرات','جمعہ','ہفتہ'],
-    ar: ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
-    fr: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
-    zh: ['周日','周一','周二','周三','周四','周五','周六'],
-    es: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
-  };
-  const days = dayTranslations[lang] || calDays;
-  for (let i = 0; i < 7; i++) {
-    const el = document.getElementById('calDay' + i);
-    if (el) el.textContent = days[i];
-  }
-
-  // ── Feedback labels ───────────────────────────────────────
-  const fbLabels = {
-    ur: { name:'آپ کا نام', email:'آپ کی ای میل', msg:'پیغام', btn:'فیڈبیک بھیجیں ↗', namePh:'آپ کو کیا کہیں؟', emailPh:'آپ کی ای میل', msgPh:'بتائیں کیا سوچتے ہیں...' },
-    ar: { name:'اسمك', email:'بريدك الإلكتروني', msg:'الرسالة', btn:'إرسال التغذية الراجعة ↗', namePh:'ماذا نناديك؟', emailPh:'بريدك الإلكتروني', msgPh:'أخبرنا برأيك...' },
-    fr: { name:'Votre nom', email:'Votre email', msg:'Message', btn:'Envoyer le retour ↗', namePh:'Comment vous appelle-t-on?', emailPh:'Votre email', msgPh:'Dites-nous ce que vous pensez...' },
-    zh: { name:'您的姓名', email:'您的邮箱', msg:'消息', btn:'发送反馈 ↗', namePh:'我们怎么称呼您？', emailPh:'您的邮箱', msgPh:'告诉我们您的想法...' },
-    es: { name:'Tu nombre', email:'Tu email', msg:'Mensaje', btn:'Enviar comentarios ↗', namePh:'¿Cómo te llamamos?', emailPh:'Tu correo', msgPh:'Cuéntanos qué piensas...' },
-  };
-  const fb = fbLabels[lang];
-  if (fb) {
-    const n = document.getElementById('fbNameLabel');   if (n) n.textContent = fb.name;
-    const e = document.getElementById('fbEmailLabel');  if (e) e.textContent = fb.email;
-    const m = document.getElementById('fbMsgLabel');    if (m) m.textContent = fb.msg;
-    const b = document.getElementById('fbBtn');         if (b) b.textContent = fb.btn;
-    const ni = document.getElementById('feedbackName');    if (ni) ni.placeholder = fb.namePh;
-    const ei = document.getElementById('feedbackEmail');   if (ei) ei.placeholder = fb.emailPh;
-    const mi = document.getElementById('feedbackMessage'); if (mi) mi.placeholder = fb.msgPh;
-  } else {
-    const n = document.getElementById('fbNameLabel');   if (n) n.textContent = 'Your Name';
-    const e = document.getElementById('fbEmailLabel');  if (e) e.textContent = 'Your Email';
-    const m = document.getElementById('fbMsgLabel');    if (m) m.textContent = 'Message';
-    const b = document.getElementById('fbBtn');         if (b) b.textContent = 'Send feedback ↗';
-  }
-
-  // ── Re-render calendar with translated month name ─────────
-  renderCalendar();
+  if (upcomingTitle) upcomingTitle.textContent = langData.upcoming;
+  // Update focus card title
+  const focusTitle = document.querySelector('.focus-title');
+  if (focusTitle) focusTitle.textContent = langData.todayFocus;
+  // Update empty states
+  const focusEmpty = document.querySelector('#focusItems .focus-empty');
+  if (focusEmpty) focusEmpty.textContent = langData.noTasksToday;
 }
-
 // ────────────────────────────────────────────────────────────
-// ITEMS — stored in localStorage
+// ITEMS (tasks) — stored in localStorage
 // ────────────────────────────────────────────────────────────
 let items = JSON.parse(localStorage.getItem('amigo_items') || '[]');
 let flowData = {};
 let flowStep = 0;
-
-// Show today's date in topbar and focus card
+// Show today's date in the topbar and focus card
 const now = new Date();
 document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', {
   weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -514,13 +299,11 @@ document.getElementById('topDate').textContent = now.toLocaleDateString('en-US',
 document.getElementById('focusDate').textContent = now.toLocaleDateString('en-US', {
   day: 'numeric', month: 'short', year: 'numeric'
 });
-
 // Render all saved items on page load
 items.forEach(item => renderItem(item));
 sortList('taskList');
 ['assignment','quiz','mids','presentation','final','notice'].forEach(type => sortList('list-' + type));
 updateCounts();
-
 // ────────────────────────────────────────────────────────────
 // SETTINGS — load saved values on page load
 // ────────────────────────────────────────────────────────────
@@ -529,7 +312,6 @@ const savedPic     = localStorage.getItem('amigo_pic');
 const savedUni     = localStorage.getItem('amigo_uni');
 const savedProgram = localStorage.getItem('amigo_program');
 const savedLang    = localStorage.getItem('amigo_lang') || 'en';
-
 if (savedName) {
   document.querySelector('.greeting h2').textContent    = `Hello, ${savedName} 👋`;
   document.querySelector('.profile-info p').textContent = savedName;
@@ -549,25 +331,24 @@ if (savedProgram) {
 if (savedUni && savedProgram) {
   document.querySelector('.profile-info span').textContent = savedUni + ' · ' + savedProgram;
 }
-
-// Load saved language into dropdown and apply it
+// Load saved language into the dropdown and apply it
 const langDropdown = document.getElementById('languageInput');
 if (langDropdown) langDropdown.value = savedLang;
 applyLanguage(savedLang);
-
 // ────────────────────────────────────────────────────────────
 // NAVIGATION
 // ────────────────────────────────────────────────────────────
 function setNav(el, section) {
+  // Remove active class from all nav items
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
+  // Hide all sections, then show the selected one
   document.querySelectorAll('.page-section').forEach(s => s.style.display = 'none');
   const target = document.getElementById('section-' + section);
   if (target) target.style.display = 'block';
 }
-
 // ────────────────────────────────────────────────────────────
-// AI FLOW
+// AI FLOW — the step-by-step task adding process
 // ────────────────────────────────────────────────────────────
 function setInput(val) {
   document.getElementById('aiInput').value = val;
@@ -602,23 +383,23 @@ function pickType(type) {
   flowStep = 2;
   showFlowStep();
 }
+// Shows the correct step in the task-adding flow
 function showFlowStep() {
   const flow = document.getElementById('aiFlow');
   if (flowStep === 2) {
+    // Step 2: Ask for subject
     flow.innerHTML = `
       <div class="ai-question">${t('whichSubject')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
         <input id="subjectInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('subjectPlaceholder')}" />
         <button class="ai-send" onclick="pickSubject()">${t('next')}</button>
       </div>`;
-    setTimeout(() => {
-      const el = document.getElementById('subjectInput');
-      if (el) {
-        el.focus();
-        el.addEventListener('keydown', e => { if (e.key === 'Enter') pickSubject(); });
-      }
-    }, 100);
+    setTimeout(() => document.getElementById('subjectInput').focus(), 100);
+    document.getElementById('subjectInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') pickSubject();
+    });
   } else if (flowStep === 3) {
+    // Step 3: Ask for priority
     flow.innerHTML = `
       <div class="ai-question">${t('priority')}</div>
       <div class="ai-options">
@@ -627,20 +408,19 @@ function showFlowStep() {
         <button class="ai-opt" onclick="pickPriority('Low')">${t('low')}</button>
       </div>`;
   } else if (flowStep === 4) {
+    // Step 4: Ask for due date
     flow.innerHTML = `
       <div class="ai-question">${t('dueDate')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
         <input id="dateInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('duePlaceholder')}" />
         <button class="ai-send" onclick="pickDue()">${t('next')}</button>
       </div>`;
-    setTimeout(() => {
-      const el = document.getElementById('dateInput');
-      if (el) {
-        el.focus();
-        el.addEventListener('keydown', e => { if (e.key === 'Enter') pickDue(); });
-      }
-    }, 100);
+    setTimeout(() => document.getElementById('dateInput').focus(), 100);
+    document.getElementById('dateInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') pickDue();
+    });
   } else if (flowStep === 5) {
+    // Step 5: Optional note
     flow.innerHTML = `
       <div class="ai-question">${t('addNote')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -650,13 +430,10 @@ function showFlowStep() {
       <div style="margin-top:6px;">
         <button class="ai-opt" onclick="pickNote()">${t('skip')}</button>
       </div>`;
-    setTimeout(() => {
-      const el = document.getElementById('noteInput');
-      if (el) {
-        el.focus();
-        el.addEventListener('keydown', e => { if (e.key === 'Enter') pickNote(); });
-      }
-    }, 100);
+    setTimeout(() => document.getElementById('noteInput').focus(), 100);
+    document.getElementById('noteInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') pickNote();
+    });
   }
 }
 function pickSubject() {
@@ -683,10 +460,10 @@ function pickNote() {
   flowData.note = input ? input.value.trim() : '';
   saveItem();
 }
-
 // ────────────────────────────────────────────────────────────
 // DATE HELPERS
 // ────────────────────────────────────────────────────────────
+// Converts text like "24may2026" into a proper Date object
 function normalizeDate(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   const months = {
@@ -711,6 +488,7 @@ function normalizeDate(due) {
   }
   return null;
 }
+// Checks if a due date string means today
 function isToday(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return true;
@@ -734,6 +512,7 @@ function isToday(due) {
   }
   return false;
 }
+// Converts a due date string to a Date object for sorting
 function parseDate(due) {
   const d = due.toLowerCase().trim();
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return new Date();
@@ -748,9 +527,8 @@ function parseDate(due) {
   if (!isNaN(parsed)) return parsed;
   const parts = due.split('/');
   if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
-  return new Date(9999, 0, 1);
+  return new Date(9999, 0, 1); // Unknown dates go to the end
 }
-
 // ────────────────────────────────────────────────────────────
 // SAVE & RENDER ITEMS
 // ────────────────────────────────────────────────────────────
@@ -766,10 +544,13 @@ function saveItem() {
   };
   items.push(item);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+  // Clear the input flow
   document.getElementById('aiFlow').innerHTML = '';
   document.getElementById('aiInput').value   = '';
+  // Show success message
   document.getElementById('aiStatus').textContent = t('saved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2500);
+  // Add to the correct lists and refresh
   renderItem(item);
   sortList('taskList');
   sortList('list-' + item.type);
@@ -784,6 +565,7 @@ function renderItem(item) {
   }
   addToList('list-' + item.type, item);
 }
+// Sort a task list by due date (earliest first)
 function sortList(listId) {
   const list = document.getElementById(listId);
   if (!list) return;
@@ -795,6 +577,7 @@ function sortList(listId) {
   });
   cards.forEach(c => list.appendChild(c));
 }
+// Update the count badges in the sidebar and stat cards
 function updateCounts() {
   const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0 };
   items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
@@ -806,7 +589,6 @@ function updateCounts() {
   document.getElementById('nb-quiz').textContent   = c.quiz;
   document.getElementById('nb-mids').textContent   = c.mids;
 }
-
 // ────────────────────────────────────────────────────────────
 // ICON HELPERS
 // ────────────────────────────────────────────────────────────
@@ -833,13 +615,13 @@ function tagClass(p) {
   if (p === 'Medium') return 'tag-med';
   return 'tag-low';
 }
-
 // ────────────────────────────────────────────────────────────
 // LIST & FOCUS CARD RENDERING
 // ────────────────────────────────────────────────────────────
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
+  // Remove the "empty" placeholder if it exists
   const empty = list.querySelector('.focus-empty');
   if (empty) empty.remove();
   const div = document.createElement('div');
@@ -861,8 +643,10 @@ function addToList(listId, item) {
 function deleteItem(id) {
   items = items.filter(i => i.id !== id);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+  // Remove all cards with this id from the DOM
   document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
   updateCounts();
+  // Add "empty" message back to any list that is now empty
   const allLists = ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'];
   allLists.forEach(listId => {
     const list = document.getElementById(listId);
@@ -870,6 +654,7 @@ function deleteItem(id) {
       list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">Nothing here yet.</div>';
     }
   });
+  // Also check the focus card
   const focus = document.getElementById('focusItems');
   if (focus && focus.querySelectorAll('.focus-item').length === 0) {
     focus.innerHTML = `<div class="focus-empty">${t('noTasksToday')}</div>`;
@@ -888,12 +673,14 @@ function addToFocus(item) {
     <span class="focus-item-tag ${tagClass(item.priority)}">${item.priority}</span>`;
   focus.appendChild(div);
 }
-
 // ============================================================
 // FOLDERS & UPLOADS
+// Files are stored in IndexedDB (supports large files).
+// Folder names/metadata are stored in localStorage.
 // ============================================================
 let folders = JSON.parse(localStorage.getItem('amigo_folders') || '[]');
 function saveFolders() {
+  // Only save metadata (not file contents) to localStorage
   const meta = folders.map(f => ({
     id:    f.id,
     name:  f.name,
@@ -901,7 +688,6 @@ function saveFolders() {
   }));
   localStorage.setItem('amigo_folders', JSON.stringify(meta));
 }
-
 // ── IndexedDB helpers ────────────────────────────────────────
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -938,7 +724,6 @@ async function deleteFileFromDB(key) {
     tx.onerror    = () => reject(tx.error);
   });
 }
-
 // ── Folder CRUD ──────────────────────────────────────────────
 function createFolder() {
   const input = document.getElementById('folderNameInput');
@@ -979,9 +764,9 @@ function renderFolder(folder) {
     </div>
     <div class="folder-files" id="files-${folder.id}" style="display:none;"></div>`;
   container.appendChild(div);
+  // Render any files that were previously saved in this folder
   folder.files.forEach(f => renderFile(folder.id, f));
 }
-
 // ── File helpers ─────────────────────────────────────────────
 function getFileIcon(filename) {
   const ext = filename.split('.').pop().toLowerCase();
@@ -1026,7 +811,6 @@ function renderFile(folderId, fileData) {
     </button>`;
   list.appendChild(div);
 }
-
 // ── Upload ───────────────────────────────────────────────────
 function handleUpload(input, folderId) {
   const folder   = folders.find(f => f.id === folderId);
@@ -1049,6 +833,7 @@ function handleUpload(input, folderId) {
       saveFolders();
       renderFile(folderId, fileData);
       updateFolderCount(folderId);
+      // Auto-open the folder after upload
       document.getElementById('files-' + folderId).style.display = 'block';
       const chev = document.getElementById('fchev-' + folderId);
       if (chev) chev.style.transform = 'rotate(180deg)';
@@ -1061,7 +846,6 @@ function handleUpload(input, folderId) {
   });
   input.value = '';
 }
-
 // ── Open file ────────────────────────────────────────────────
 async function openFile(fileName, folderId) {
   const folder = folders.find(f => f.id === folderId);
@@ -1100,13 +884,13 @@ async function openFile(fileName, folderId) {
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     return;
   }
+  // For other file types, trigger a download
   const a  = document.createElement('a');
   a.href     = blobUrl;
   a.download = fileName;
   a.click();
   setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 }
-
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
   if (!confirm(`Delete "${fileName}"?`)) return;
@@ -1123,7 +907,6 @@ async function deleteFile(fileName, folderId) {
   }
   updateFolderCount(folderId);
 }
-
 // ── Delete folder ────────────────────────────────────────────
 async function deleteFolder(folderId) {
   const folder = folders.find(f => f.id === folderId);
@@ -1155,10 +938,8 @@ function toggleFolder(folderId) {
   if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   if (icon) icon.className = `ti ${isOpen ? 'ti-folder' : 'ti-folder-open'} ` + icon.className.split(' ').slice(2).join(' ');
 }
-
 // Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
-
 // ============================================================
 // TO-DO
 // ============================================================
@@ -1208,15 +989,15 @@ if (todoListEl && todos.length > 0) {
   const empty = todoListEl.querySelector('.focus-empty');
   if (empty) empty.remove();
 }
-
 // ============================================================
 // SETTINGS
 // ============================================================
 function saveSettings() {
   const name    = document.getElementById('nameInput').value.trim();
-  const uni     = document.getElementById('uniInput')      ? document.getElementById('uniInput').value.trim()      : '';
-  const program = document.getElementById('programInput')  ? document.getElementById('programInput').value.trim()  : '';
-  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value        : 'en';
+  const uni     = document.getElementById('uniInput')     ? document.getElementById('uniInput').value.trim()     : '';
+  const program = document.getElementById('programInput') ? document.getElementById('programInput').value.trim() : '';
+  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value : 'en';
+  // Save name
   if (name) {
     document.querySelector('.greeting h2').textContent    = `Hello, ${name} 👋`;
     document.querySelector('.profile-info p').textContent = name;
@@ -1225,13 +1006,16 @@ function saveSettings() {
     if (sd) sd.textContent = name;
     localStorage.setItem('amigo_name', name);
   }
+  // Save university and program
   if (uni)     localStorage.setItem('amigo_uni', uni);
   if (program) localStorage.setItem('amigo_program', program);
   if (uni && program) {
     document.querySelector('.profile-info span').textContent = uni + ' · ' + program;
   }
+  // Save and apply language
   localStorage.setItem('amigo_lang', lang);
   applyLanguage(lang);
+  // Show success message then go home
   document.getElementById('aiStatus').textContent = t('settingsSaved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2000);
   setNav(document.querySelector('.nav-item'), 'home');
@@ -1258,27 +1042,16 @@ function applyProfilePic(src) {
   if (display) display.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
   if (avatar)  avatar.innerHTML  = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
 }
-
 // ============================================================
 // CALENDAR
 // ============================================================
 let calDate      = new Date();
 let selectedDate = null;
 let reminders    = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
-
 function renderCalendar() {
   const year        = calDate.getFullYear();
   const month       = calDate.getMonth();
-  const _calLang = getLang();
-  const _months = {
-    ur: ['جنوری','فروری','مارچ','اپریل','مئی','جون','جولائی','اگست','ستمبر','اکتوبر','نومبر','دسمبر'],
-    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-    fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
-    zh: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
-    es: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
-  };
-  const _monthName = (_months[_calLang] || [])[month] || calDate.toLocaleDateString('en-US', { month:'long' });
-  document.getElementById('calMonthLabel').textContent = _monthName + ' ' + year;
+  document.getElementById('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
   const grid        = document.getElementById('calGrid');
   grid.innerHTML    = '';
   const firstDay    = new Date(year, month, 1).getDay();
@@ -1286,6 +1059,7 @@ function renderCalendar() {
   const daysInPrev  = new Date(year, month, 0).getDate();
   const today       = new Date();
   const eventDates  = new Set();
+  // Collect dates that have tasks or reminders
   items.forEach(item => {
     const d = parseDate(item.due);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
@@ -1294,12 +1068,14 @@ function renderCalendar() {
     const d = new Date(r.date);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
   });
+  // Fill in previous month's trailing days
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell other-month';
     cell.textContent = daysInPrev - i;
     grid.appendChild(cell);
   }
+  // Fill in this month's days
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell';
@@ -1312,6 +1088,7 @@ function renderCalendar() {
     cell.onclick = () => openReminderModal(dateStr);
     grid.appendChild(cell);
   }
+  // Fill in next month's leading days to complete the last row
   const remaining = (grid.children.length % 7 === 0) ? 0 : 7 - (grid.children.length % 7);
   for (let d = 1; d <= remaining; d++) {
     const cell = document.createElement('div');
@@ -1398,7 +1175,6 @@ if ('Notification' in window && Notification.permission === 'default') {
 }
 renderCalendar();
 renderReminderList();
-
 // ============================================================
 // SEARCH
 // ============================================================
@@ -1439,7 +1215,6 @@ function doSearch() {
     results.appendChild(div);
   });
 }
-
 // ============================================================
 // NOTIFICATIONS
 // ============================================================
@@ -1489,6 +1264,7 @@ function updateNotifBadge() {
     badge.style.display = 'none';
   }
 }
+// Close panels when clicking anywhere outside them
 document.addEventListener('click', e => {
   const notifPanel  = document.getElementById('notifPanel');
   const searchPanel = document.getElementById('searchPanel');
@@ -1496,7 +1272,6 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#searchPanel') && !e.target.closest('.icon-btn')) searchPanel.style.display = 'none';
 });
 updateNotifBadge();
-
 // ============================================================
 // AUTH HANDLERS
 // ============================================================
@@ -1591,7 +1366,6 @@ async function handleForgotPassword() {
   errEl.style.background = '#DCFCE7';
   errEl.style.display = 'block';
 }
-
 // ============================================================
 // FEEDBACK / EMAILJS
 // ============================================================

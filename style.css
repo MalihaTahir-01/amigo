@@ -702,5 +702,5 @@ body {
   .upcoming-section { padding: 12px; }
 
   .greeting h2 { font-size: 18px; }
-  .task-due { display: none; }
+  .task-due { display: inline; font-size: 10px; }
 }

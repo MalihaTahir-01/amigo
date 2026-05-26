@@ -702,7 +702,14 @@ body {
   .upcoming-section { padding: 12px; }
 
   .greeting h2 { font-size: 18px; }
-.task-due { display: inline !important; font-size: 10px; }
-.task-item { flex-wrap: wrap; gap: 6px; }
-.urgency { font-size: 9px; }
+.task-item {
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px;
+}
+.task-info { flex: 1; min-width: 0; }
+.task-title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-sub { font-size: 10px; }
+.task-due { display: inline !important; font-size: 10px; color: #64748B; background: #e8eef7; padding: 2px 6px; border-radius: 20px; white-space: nowrap; }
+.urgency { font-size: 9px; padding: 2px 6px; }
 }

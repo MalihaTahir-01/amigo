@@ -618,6 +618,50 @@ function tagClass(p) {
 // ────────────────────────────────────────────────────────────
 // LIST & FOCUS CARD RENDERING
 // ────────────────────────────────────────────────────────────
+function showTaskDetail(item) {
+  const existing = document.getElementById('taskDetailModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'taskDetailModal';
+  modal.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,34,64,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center;`;
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;box-shadow:0 -8px 32px rgba(0,0,0,0.15);">
+      <div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div class="task-icon ${iconClass(item.type)}" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+          <i class="ti ${iconName(item.type)}"></i>
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:600;color:#0F172A;">${item.title}</div>
+          <div style="font-size:12px;color:#94A3B8;margin-top:2px;">${item.subject}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;background:#f4f7fb;border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#64748B;">Type</span>
+          <span style="font-size:12px;font-weight:500;color:#0F172A;text-transform:capitalize;">${item.type}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#64748B;">Due</span>
+          <span style="font-size:12px;font-weight:500;color:#0F172A;">${item.due}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#64748B;">Priority</span>
+          <span class="urgency ${urgencyClass(item.priority)}" style="font-size:11px;">${item.priority}</span>
+        </div>
+        ${item.note ? `<div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#64748B;">Note</span>
+          <span style="font-size:12px;font-weight:500;color:#0F172A;">${item.note}</span>
+        </div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('taskDetailModal').remove()" style="flex:1;padding:12px;border:0.5px solid #b8c9e0;border-radius:10px;background:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#64748B;">Close</button>
+        <button onclick="deleteItem(${item.id});document.getElementById('taskDetailModal').remove();" style="flex:1;padding:12px;border:none;border-radius:10px;background:#FEE2E2;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#DC2626;">Delete</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
@@ -627,6 +671,11 @@ function addToList(listId, item) {
   const div = document.createElement('div');
   div.className = 'task-item';
   div.setAttribute('data-id', item.id);
+  div.style.cursor = 'pointer';
+  div.addEventListener('click', e => {
+    if (e.target.closest('.del-reminder')) return;
+    showTaskDetail(item);
+  });
   div.innerHTML = `
     <div class="task-icon ${iconClass(item.type)}"><i class="ti ${iconName(item.type)}"></i></div>
     <div class="task-info">

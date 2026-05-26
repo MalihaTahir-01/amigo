@@ -288,13 +288,13 @@
                 <button class="icon-btn" onclick="changeMonth(1)" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;"><i class="ti ti-chevron-right"></i></button>
               </div>
               <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px;position:relative;z-index:1;">
-                <div class="cal-day-label">Sun</div>
-                <div class="cal-day-label">Mon</div>
-                <div class="cal-day-label">Tue</div>
-                <div class="cal-day-label">Wed</div>
-                <div class="cal-day-label">Thu</div>
-                <div class="cal-day-label">Fri</div>
-                <div class="cal-day-label">Sat</div>
+                <div class="cal-day-label" id="calDay0">Sun</div>
+                <div class="cal-day-label" id="calDay1">Mon</div>
+                <div class="cal-day-label" id="calDay2">Tue</div>
+                <div class="cal-day-label" id="calDay3">Wed</div>
+                <div class="cal-day-label" id="calDay4">Thu</div>
+                <div class="cal-day-label" id="calDay5">Fri</div>
+                <div class="cal-day-label" id="calDay6">Sat</div>
               </div>
               <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;position:relative;z-index:1;"></div>
             </div>
@@ -344,19 +344,19 @@
             <div class="upcoming-section">
               <div style="display:flex;flex-direction:column;gap:12px;">
                 <div>
-                  <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Your Name</label>
+                  <label style="font-size:13px;font-weight:500;color:#1a3a6b;">id="fbNameLabel</label>
                   <input id="feedbackName" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="What do we call you?" />
                 </div>
                 <div>
-                  <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Your Email</label>
+                  <label style="font-size:13px;font-weight:500;color:#1a3a6b;">id="fbEmailLabel"</label>
                   <input id="feedbackEmail" type="email" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;" placeholder="Your email" />
                 </div>
                 <div>
-                  <label style="font-size:13px;font-weight:500;color:#1a3a6b;">Message</label>
+                  <label style="font-size:13px;font-weight:500;color:#1a3a6b;">id="fbMsgLabel"</label>
                   <textarea id="feedbackMessage" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:8px 12px;width:100%;margin-top:6px;font-size:13px;font-family:'Inter',sans-serif;resize:none;height:120px;outline:none;color:#0F172A;" placeholder="Tell us what you think, what's missing, what broke, or just say hi 👋"></textarea>
                 </div>
                 <div id="feedbackStatus" style="font-size:13px;display:none;padding:10px 14px;border-radius:8px;"></div>
-                <button onclick="sendFeedback()" class="ai-send" style="width:100%;padding:12px;font-size:13px;">Send feedback ↗</button>
+                <button onclick="sendFeedback()" class="ai-send" style="width:100%;padding:12px;font-size:13px;">id="fbBtn" ↗</button>
               </div>
             </div>
           </div>

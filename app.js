@@ -445,6 +445,7 @@ function applyLanguage(lang) {
   });
 
   // ── Reminder type dropdown options ────────────────────────
+// ── Reminder type dropdown options ────────────────────────
   const typeSelect = document.getElementById('reminderType');
   if (typeSelect) {
     const typeKeys = ['assignment', 'quiz', 'mids', 'final', 'presentation', 'notice'];
@@ -454,6 +455,48 @@ function applyLanguage(lang) {
       }
     });
   }
+
+  // ── Calendar day labels ───────────────────────────────────
+  const calDays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayTranslations = {
+    ur: ['اتوار','پیر','منگل','بدھ','جمعرات','جمعہ','ہفتہ'],
+    ar: ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+    fr: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
+    zh: ['周日','周一','周二','周三','周四','周五','周六'],
+    es: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
+  };
+  const days = dayTranslations[lang] || calDays;
+  for (let i = 0; i < 7; i++) {
+    const el = document.getElementById('calDay' + i);
+    if (el) el.textContent = days[i];
+  }
+
+  // ── Feedback labels ───────────────────────────────────────
+  const fbLabels = {
+    ur: { name:'آپ کا نام', email:'آپ کی ای میل', msg:'پیغام', btn:'فیڈبیک بھیجیں ↗', namePh:'آپ کو کیا کہیں؟', emailPh:'آپ کی ای میل', msgPh:'بتائیں کیا سوچتے ہیں...' },
+    ar: { name:'اسمك', email:'بريدك الإلكتروني', msg:'الرسالة', btn:'إرسال التغذية الراجعة ↗', namePh:'ماذا نناديك؟', emailPh:'بريدك الإلكتروني', msgPh:'أخبرنا برأيك...' },
+    fr: { name:'Votre nom', email:'Votre email', msg:'Message', btn:'Envoyer le retour ↗', namePh:'Comment vous appelle-t-on?', emailPh:'Votre email', msgPh:'Dites-nous ce que vous pensez...' },
+    zh: { name:'您的姓名', email:'您的邮箱', msg:'消息', btn:'发送反馈 ↗', namePh:'我们怎么称呼您？', emailPh:'您的邮箱', msgPh:'告诉我们您的想法...' },
+    es: { name:'Tu nombre', email:'Tu email', msg:'Mensaje', btn:'Enviar comentarios ↗', namePh:'¿Cómo te llamamos?', emailPh:'Tu correo', msgPh:'Cuéntanos qué piensas...' },
+  };
+  const fb = fbLabels[lang];
+  if (fb) {
+    const n = document.getElementById('fbNameLabel');   if (n) n.textContent = fb.name;
+    const e = document.getElementById('fbEmailLabel');  if (e) e.textContent = fb.email;
+    const m = document.getElementById('fbMsgLabel');    if (m) m.textContent = fb.msg;
+    const b = document.getElementById('fbBtn');         if (b) b.textContent = fb.btn;
+    const ni = document.getElementById('feedbackName');    if (ni) ni.placeholder = fb.namePh;
+    const ei = document.getElementById('feedbackEmail');   if (ei) ei.placeholder = fb.emailPh;
+    const mi = document.getElementById('feedbackMessage'); if (mi) mi.placeholder = fb.msgPh;
+  } else {
+    const n = document.getElementById('fbNameLabel');   if (n) n.textContent = 'Your Name';
+    const e = document.getElementById('fbEmailLabel');  if (e) e.textContent = 'Your Email';
+    const m = document.getElementById('fbMsgLabel');    if (m) m.textContent = 'Message';
+    const b = document.getElementById('fbBtn');         if (b) b.textContent = 'Send feedback ↗';
+  }
+
+  // ── Re-render calendar with translated month name ─────────
+  renderCalendar();
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1226,7 +1269,16 @@ let reminders    = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
 function renderCalendar() {
   const year        = calDate.getFullYear();
   const month       = calDate.getMonth();
-  document.getElementById('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+  const _calLang = getLang();
+  const _months = {
+    ur: ['جنوری','فروری','مارچ','اپریل','مئی','جون','جولائی','اگست','ستمبر','اکتوبر','نومبر','دسمبر'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+    zh: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+    es: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+  };
+  const _monthName = (_months[_calLang] || [])[month] || calDate.toLocaleDateString('en-US', { month:'long' });
+  document.getElementById('calMonthLabel').textContent = _monthName + ' ' + year;
   const grid        = document.getElementById('calGrid');
   grid.innerHTML    = '';
   const firstDay    = new Date(year, month, 1).getDay();

@@ -2,7 +2,6 @@
 // AMIGO — app.js  (with Language Support)
 // ============================================================
 
-
 // ────────────────────────────────────────────────────────────
 // TRANSLATIONS
 // This object holds all the text for each language.
@@ -47,6 +46,12 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Presentation',
     notice: 'Notice',
+    nothingHereYet: 'Nothing here yet.',
+    noTasksYet: 'No tasks yet.',
+    noFoldersYet: 'No folders yet — create one above!',
+    noResultsFound: 'No results found.',
+    noRemindersYet: 'No reminders yet — click a date to add one!',
+    noUpcomingReminders: 'No upcoming reminders this month.',
   },
   ur: {
     dir: 'rtl',
@@ -86,6 +91,12 @@ const TRANSLATIONS = {
     final: 'فائنل',
     presentation: 'پریزنٹیشن',
     notice: 'نوٹس',
+    nothingHereYet: 'ابھی کچھ نہیں۔',
+    noTasksYet: 'ابھی کوئی کام نہیں۔',
+    noFoldersYet: 'کوئی فولڈر نہیں — اوپر سے بنائیں!',
+    noResultsFound: 'کوئی نتیجہ نہیں ملا۔',
+    noRemindersYet: 'کوئی یاددہانی نہیں — تاریخ پر کلک کریں!',
+    noUpcomingReminders: 'اس مہینے کوئی آنے والی یاددہانی نہیں۔',
   },
   ar: {
     dir: 'rtl',
@@ -125,6 +136,12 @@ const TRANSLATIONS = {
     final: 'نهائي',
     presentation: 'عرض',
     notice: 'إشعار',
+    nothingHereYet: 'لا شيء هنا بعد.',
+    noTasksYet: 'لا مهام بعد.',
+    noFoldersYet: 'لا مجلدات بعد — أنشئ واحداً أعلاه!',
+    noResultsFound: 'لا نتائج.',
+    noRemindersYet: 'لا تذكيرات — انقر على تاريخ لإضافة واحد!',
+    noUpcomingReminders: 'لا تذكيرات قادمة هذا الشهر.',
   },
   fr: {
     dir: 'ltr',
@@ -164,6 +181,12 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Présentation',
     notice: 'Avis',
+    nothingHereYet: 'Rien ici pour l\'instant.',
+    noTasksYet: 'Pas encore de tâches.',
+    noFoldersYet: 'Aucun dossier — créez-en un ci-dessus!',
+    noResultsFound: 'Aucun résultat.',
+    noRemindersYet: 'Aucun rappel — cliquez sur une date!',
+    noUpcomingReminders: 'Aucun rappel ce mois-ci.',
   },
   zh: {
     dir: 'ltr',
@@ -203,6 +226,12 @@ const TRANSLATIONS = {
     final: '期末',
     presentation: '演示',
     notice: '通知',
+    nothingHereYet: '暂无内容。',
+    noTasksYet: '暂无任务。',
+    noFoldersYet: '暂无文件夹 — 在上方创建一个！',
+    noResultsFound: '未找到结果。',
+    noRemindersYet: '暂无提醒 — 点击日期添加！',
+    noUpcomingReminders: '本月暂无即将到来的提醒。',
   },
   es: {
     dir: 'ltr',
@@ -242,6 +271,12 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Presentación',
     notice: 'Aviso',
+    nothingHereYet: 'Nada aquí todavía.',
+    noTasksYet: 'Sin tareas aún.',
+    noFoldersYet: 'Sin carpetas — ¡crea una arriba!',
+    noResultsFound: 'Sin resultados.',
+    noRemindersYet: 'Sin recordatorios — ¡haz clic en una fecha!',
+    noUpcomingReminders: 'Sin recordatorios este mes.',
   },
 };
 
@@ -252,7 +287,6 @@ const TRANSLATIONS = {
 function getLang() {
   return localStorage.getItem('amigo_lang') || 'en';
 }
-
 function t(key) {
   const lang = getLang();
   return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS['en'][key] || key;
@@ -270,14 +304,17 @@ function applyLanguage(lang) {
   const greetingEl = document.querySelector('.greeting h2');
   if (greetingEl) greetingEl.textContent = `${langData.greeting}, ${name} 👋`;
 
-  // Update AI bar placeholder and button
+  // Update AI bar placeholder
   const aiInput = document.getElementById('aiInput');
   if (aiInput) aiInput.placeholder = langData.addPlaceholder;
+
+  // Update Add button
+  const addBtn = document.getElementById('addBtn');
+  if (addBtn) addBtn.textContent = langData.addBtn;
 
   // Update chips
   const chips = document.querySelectorAll('.chip');
   const chipKeys = ['chipAssignment', 'chipQuiz', 'chipMids', 'chipFinal'];
-  const chipActions = ['Assignment due today', 'Quiz on Monday', 'Mids next week', 'Final exam on 10 June'];
   chips.forEach((chip, i) => {
     if (chipKeys[i]) chip.textContent = langData[chipKeys[i]];
   });
@@ -285,7 +322,6 @@ function applyLanguage(lang) {
   // Update section titles
   const todayTitle = document.querySelector('#section-home .upcoming-section:first-of-type .section-title');
   if (todayTitle) todayTitle.textContent = langData.today;
-
   const upcomingTitle = document.querySelector('#section-home .upcoming-section:last-of-type .section-title');
   if (upcomingTitle) upcomingTitle.textContent = langData.upcoming;
 
@@ -293,11 +329,16 @@ function applyLanguage(lang) {
   const focusTitle = document.querySelector('.focus-title');
   if (focusTitle) focusTitle.textContent = langData.todayFocus;
 
-  // Update empty states
+  // Update empty states currently visible in the DOM
   const focusEmpty = document.querySelector('#focusItems .focus-empty');
   if (focusEmpty) focusEmpty.textContent = langData.noTasksToday;
-}
 
+  const todayEmpty = document.querySelector('#todayList .focus-empty');
+  if (todayEmpty) todayEmpty.textContent = langData.nothingDueToday;
+
+  const taskEmpty = document.querySelector('#taskList .focus-empty');
+  if (taskEmpty) taskEmpty.textContent = langData.noUpcoming;
+}
 
 // ────────────────────────────────────────────────────────────
 // ITEMS (tasks) — stored in localStorage
@@ -321,7 +362,6 @@ sortList('taskList');
 ['assignment','quiz','mids','presentation','final','notice'].forEach(type => sortList('list-' + type));
 updateCounts();
 
-
 // ────────────────────────────────────────────────────────────
 // SETTINGS — load saved values on page load
 // ────────────────────────────────────────────────────────────
@@ -332,25 +372,23 @@ const savedProgram = localStorage.getItem('amigo_program');
 const savedLang    = localStorage.getItem('amigo_lang') || 'en';
 
 if (savedName) {
-  document.querySelector('.greeting h2').textContent    = `Hello, ${savedName} 👋`;
+  // Use the translation greeting so it respects saved language from the start
+  const greetingWord = (TRANSLATIONS[savedLang] || TRANSLATIONS['en']).greeting;
+  document.querySelector('.greeting h2').textContent    = `${greetingWord}, ${savedName} 👋`;
   document.querySelector('.profile-info p').textContent = savedName;
   document.querySelector('.avatar').textContent         = savedName.charAt(0).toUpperCase();
   const el = document.getElementById('nameInput');
   if (el) el.value = savedName;
 }
-
 if (savedPic) applyProfilePic(savedPic);
-
 if (savedUni) {
   const el = document.getElementById('uniInput');
   if (el) el.value = savedUni;
 }
-
 if (savedProgram) {
   const el = document.getElementById('programInput');
   if (el) el.value = savedProgram;
 }
-
 if (savedUni && savedProgram) {
   document.querySelector('.profile-info span').textContent = savedUni + ' · ' + savedProgram;
 }
@@ -360,21 +398,16 @@ const langDropdown = document.getElementById('languageInput');
 if (langDropdown) langDropdown.value = savedLang;
 applyLanguage(savedLang);
 
-
 // ────────────────────────────────────────────────────────────
 // NAVIGATION
 // ────────────────────────────────────────────────────────────
 function setNav(el, section) {
-  // Remove active class from all nav items
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-
-  // Hide all sections, then show the selected one
   document.querySelectorAll('.page-section').forEach(s => s.style.display = 'none');
   const target = document.getElementById('section-' + section);
   if (target) target.style.display = 'block';
 }
-
 
 // ────────────────────────────────────────────────────────────
 // AI FLOW — the step-by-step task adding process
@@ -383,7 +416,6 @@ function setInput(val) {
   document.getElementById('aiInput').value = val;
   document.getElementById('aiInput').focus();
 }
-
 document.getElementById('aiInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') organizePrompt();
 });
@@ -391,9 +423,7 @@ document.getElementById('aiInput').addEventListener('keydown', e => {
 function organizePrompt() {
   const text = document.getElementById('aiInput').value.trim();
   if (!text) return;
-
   flowData = { raw: text };
-
   const flow = document.getElementById('aiFlow');
   flow.innerHTML = `
     <div class="ai-question">"${text}" — ${t('whatType')}</div>
@@ -419,12 +449,9 @@ function pickType(type) {
   showFlowStep();
 }
 
-// Shows the correct step in the task-adding flow
 function showFlowStep() {
   const flow = document.getElementById('aiFlow');
-
   if (flowStep === 2) {
-    // Step 2: Ask for subject
     flow.innerHTML = `
       <div class="ai-question">${t('whichSubject')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -435,9 +462,7 @@ function showFlowStep() {
     document.getElementById('subjectInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') pickSubject();
     });
-
   } else if (flowStep === 3) {
-    // Step 3: Ask for priority
     flow.innerHTML = `
       <div class="ai-question">${t('priority')}</div>
       <div class="ai-options">
@@ -445,9 +470,7 @@ function showFlowStep() {
         <button class="ai-opt" onclick="pickPriority('Medium')">${t('medium')}</button>
         <button class="ai-opt" onclick="pickPriority('Low')">${t('low')}</button>
       </div>`;
-
   } else if (flowStep === 4) {
-    // Step 4: Ask for due date
     flow.innerHTML = `
       <div class="ai-question">${t('dueDate')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -458,9 +481,7 @@ function showFlowStep() {
     document.getElementById('dateInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') pickDue();
     });
-
   } else if (flowStep === 5) {
-    // Step 5: Optional note
     flow.innerHTML = `
       <div class="ai-question">${t('addNote')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -484,13 +505,11 @@ function pickSubject() {
   flowStep = 3;
   showFlowStep();
 }
-
 function pickPriority(p) {
   flowData.priority = p;
   flowStep = 4;
   showFlowStep();
 }
-
 function pickDue() {
   const val = document.getElementById('dateInput').value.trim();
   if (!val) return;
@@ -498,19 +517,15 @@ function pickDue() {
   flowStep = 5;
   showFlowStep();
 }
-
 function pickNote() {
   const input = document.getElementById('noteInput');
   flowData.note = input ? input.value.trim() : '';
   saveItem();
 }
 
-
 // ────────────────────────────────────────────────────────────
 // DATE HELPERS
 // ────────────────────────────────────────────────────────────
-
-// Converts text like "24may2026" into a proper Date object
 function normalizeDate(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   const months = {
@@ -518,7 +533,6 @@ function normalizeDate(due) {
     january:0, february:1, march:2, april:3, june:5, july:6, august:7,
     september:8, october:9, november:10, december:11
   };
-
   for (const [name, idx] of Object.entries(months)) {
     if (d.includes(name)) {
       const withoutMonth = d.replace(name, '');
@@ -537,11 +551,9 @@ function normalizeDate(due) {
   return null;
 }
 
-// Checks if a due date string means today
 function isToday(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return true;
-
   const today     = new Date();
   const dd        = String(today.getDate()).padStart(2, '0');
   const d2        = String(today.getDate());
@@ -553,9 +565,7 @@ function isToday(due) {
     dd+'/'+mm+'/'+yyyy, mm+'/'+dd+'/'+yyyy, yyyy+'-'+mm+'-'+dd,
     d2+monthName+yyyy,  dd+monthName+yyyy,  monthName+d2+yyyy, monthName+dd+yyyy,
   ];
-
   if (formats.some(f => d.includes(f))) return true;
-
   const normalized = normalizeDate(due);
   if (normalized) {
     return normalized.getDate()     === today.getDate() &&
@@ -565,7 +575,6 @@ function isToday(due) {
   return false;
 }
 
-// Converts a due date string to a Date object for sorting
 function parseDate(due) {
   const d = due.toLowerCase().trim();
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return new Date();
@@ -580,14 +589,12 @@ function parseDate(due) {
   if (!isNaN(parsed)) return parsed;
   const parts = due.split('/');
   if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
-  return new Date(9999, 0, 1); // Unknown dates go to the end
+  return new Date(9999, 0, 1);
 }
-
 
 // ────────────────────────────────────────────────────────────
 // SAVE & RENDER ITEMS
 // ────────────────────────────────────────────────────────────
-
 function saveItem() {
   const item = {
     id:       Date.now(),
@@ -598,19 +605,12 @@ function saveItem() {
     due:      flowData.due,
     note:     flowData.note || ''
   };
-
   items.push(item);
   localStorage.setItem('amigo_items', JSON.stringify(items));
-
-  // Clear the input flow
   document.getElementById('aiFlow').innerHTML = '';
   document.getElementById('aiInput').value   = '';
-
-  // Show success message
   document.getElementById('aiStatus').textContent = t('saved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2500);
-
-  // Add to the correct lists and refresh
   renderItem(item);
   sortList('taskList');
   sortList('list-' + item.type);
@@ -627,7 +627,6 @@ function renderItem(item) {
   addToList('list-' + item.type, item);
 }
 
-// Sort a task list by due date (earliest first)
 function sortList(listId) {
   const list = document.getElementById(listId);
   if (!list) return;
@@ -640,11 +639,9 @@ function sortList(listId) {
   cards.forEach(c => list.appendChild(c));
 }
 
-// Update the count badges in the sidebar and stat cards
 function updateCounts() {
   const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0 };
   items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
-
   document.getElementById('sc-assign').textContent = c.assignment;
   document.getElementById('sc-quiz').textContent   = c.quiz;
   document.getElementById('sc-pres').textContent   = c.presentation;
@@ -654,7 +651,6 @@ function updateCounts() {
   document.getElementById('nb-mids').textContent   = c.mids;
 }
 
-
 // ────────────────────────────────────────────────────────────
 // ICON HELPERS
 // ────────────────────────────────────────────────────────────
@@ -662,30 +658,25 @@ function iconClass(type) {
   const map = { quiz:'ti-quiz', presentation:'ti-pres', final:'ti-final', notice:'ti-notice', mids:'ti-final' };
   return map[type] || 'ti-assign';
 }
-
 function iconName(type) {
   const map = { quiz:'ti-pencil', presentation:'ti-presentation', final:'ti-certificate', notice:'ti-bell', mids:'ti-writing' };
   return map[type] || 'ti-file-text';
 }
-
 function urgencyClass(p) {
   if (p === 'High')   return 'u-high';
   if (p === 'Medium') return 'u-med';
   return 'u-low';
 }
-
 function dotColor(p) {
   if (p === 'High')   return 'dot-red';
   if (p === 'Medium') return 'dot-amber';
   return 'dot-blue';
 }
-
 function tagClass(p) {
   if (p === 'High')   return 'tag-high';
   if (p === 'Medium') return 'tag-med';
   return 'tag-low';
 }
-
 
 // ────────────────────────────────────────────────────────────
 // LIST & FOCUS CARD RENDERING
@@ -693,11 +684,8 @@ function tagClass(p) {
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
-
-  // Remove the "empty" placeholder if it exists
   const empty = list.querySelector('.focus-empty');
   if (empty) empty.remove();
-
   const div = document.createElement('div');
   div.className = 'task-item';
   div.setAttribute('data-id', item.id);
@@ -718,17 +706,15 @@ function addToList(listId, item) {
 function deleteItem(id) {
   items = items.filter(i => i.id !== id);
   localStorage.setItem('amigo_items', JSON.stringify(items));
-
-  // Remove all cards with this id from the DOM
   document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
   updateCounts();
 
-  // Add "empty" message back to any list that is now empty
+  // Restore translated empty messages to lists that are now empty
   const allLists = ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'];
   allLists.forEach(listId => {
     const list = document.getElementById(listId);
     if (list && list.querySelectorAll('.task-item').length === 0) {
-      list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">Nothing here yet.</div>';
+      list.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('nothingHereYet')}</div>`;
     }
   });
 
@@ -743,7 +729,6 @@ function addToFocus(item) {
   const focus = document.getElementById('focusItems');
   const empty = focus.querySelector('.focus-empty');
   if (empty) empty.remove();
-
   const div = document.createElement('div');
   div.className = 'focus-item';
   div.setAttribute('data-id', item.id);
@@ -754,16 +739,11 @@ function addToFocus(item) {
   focus.appendChild(div);
 }
 
-
 // ============================================================
 // FOLDERS & UPLOADS
-// Files are stored in IndexedDB (supports large files).
-// Folder names/metadata are stored in localStorage.
 // ============================================================
 let folders = JSON.parse(localStorage.getItem('amigo_folders') || '[]');
-
 function saveFolders() {
-  // Only save metadata (not file contents) to localStorage
   const meta = folders.map(f => ({
     id:    f.id,
     name:  f.name,
@@ -781,7 +761,6 @@ function openDB() {
     req.onerror   = () => reject(req.error);
   });
 }
-
 async function saveFileToDB(key, dataUrl) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -791,7 +770,6 @@ async function saveFileToDB(key, dataUrl) {
     tx.onerror    = () => reject(tx.error);
   });
 }
-
 async function getFileFromDB(key) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -801,7 +779,6 @@ async function getFileFromDB(key) {
     req.onerror   = () => reject(req.error);
   });
 }
-
 async function deleteFileFromDB(key) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -817,23 +794,19 @@ function createFolder() {
   const input = document.getElementById('folderNameInput');
   const name  = input.value.trim();
   if (!name) return;
-
   const folder = { id: Date.now(), name, files: [] };
   folders.push(folder);
   saveFolders();
   input.value = '';
-
   const container = document.getElementById('folderList');
   const empty     = container.querySelector('.focus-empty');
   if (empty) empty.remove();
-
   renderFolder(folder);
 }
 
 function renderFolder(folder) {
   const container = document.getElementById('folderList');
   if (!container) return;
-
   const div = document.createElement('div');
   div.className = 'folder-card';
   div.setAttribute('data-folder-id', folder.id);
@@ -857,8 +830,6 @@ function renderFolder(folder) {
     </div>
     <div class="folder-files" id="files-${folder.id}" style="display:none;"></div>`;
   container.appendChild(div);
-
-  // Render any files that were previously saved in this folder
   folder.files.forEach(f => renderFile(folder.id, f));
 }
 
@@ -877,22 +848,18 @@ function getFileIcon(filename) {
   if (['txt','md'].includes(ext))                                         return 'ti-notes';
   return 'ti-file';
 }
-
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '—';
   if (bytes < 1024)          return bytes + ' B';
   if (bytes < 1024 * 1024)   return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
-
 function renderFile(folderId, fileData) {
   const list = document.getElementById('files-' + folderId);
   if (!list) return;
-
   const icon     = getFileIcon(fileData.name);
   const size     = formatBytes(fileData.size);
   const safeName = fileData.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
   const div     = document.createElement('div');
   div.className = 'file-item';
   div.setAttribute('data-file-name', fileData.name);
@@ -915,35 +882,27 @@ function renderFile(folderId, fileData) {
 function handleUpload(input, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
-
   const MAX_MB    = 200;
   const MAX_BYTES = MAX_MB * 1024 * 1024;
   const status    = document.getElementById('aiStatus');
-
   Array.from(input.files).forEach(file => {
     if (file.size > MAX_BYTES) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
       return;
     }
-
     if (status) status.textContent = `Uploading "${file.name}"...`;
-
     const reader = new FileReader();
     reader.onload = async function(e) {
       const key      = `file_${folderId}_${Date.now()}_${file.name}`;
       await saveFileToDB(key, e.target.result);
-
       const fileData = { name: file.name, key, size: file.size, uploadedAt: Date.now() };
       folder.files.push(fileData);
       saveFolders();
       renderFile(folderId, fileData);
       updateFolderCount(folderId);
-
-      // Auto-open the folder after upload
       document.getElementById('files-' + folderId).style.display = 'block';
       const chev = document.getElementById('fchev-' + folderId);
       if (chev) chev.style.transform = 'rotate(180deg)';
-
       if (status) {
         status.textContent = `"${file.name}" uploaded!`;
         setTimeout(() => status.textContent = '', 2500);
@@ -960,20 +919,17 @@ async function openFile(fileName, folderId) {
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
   if (!fileData) return;
-
   const dataUrl = await getFileFromDB(fileData.key);
   if (!dataUrl) {
     alert('File not found. It may have been cleared by the browser.');
     return;
   }
-
   const ext     = fileName.split('.').pop().toLowerCase();
   const isImage = ['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext);
   const isPdf   = ext === 'pdf';
   const isVideo = ['mp4','mov','webm','avi'].includes(ext);
   const isAudio = ['mp3','wav','ogg','m4a','flac'].includes(ext);
   const isText  = ['txt','md','json','js','ts','py','html','css','csv','php','c','cpp','java'].includes(ext);
-
   if (isText) {
     const content = atob(dataUrl.split(',')[1]);
     const win = window.open('', '_blank');
@@ -987,18 +943,14 @@ async function openFile(fileName, folderId) {
     win.document.close();
     return;
   }
-
   const res     = await fetch(dataUrl);
   const blob    = await res.blob();
   const blobUrl = URL.createObjectURL(blob);
-
   if (isPdf || isImage || isVideo || isAudio) {
     window.open(blobUrl, '_blank');
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     return;
   }
-
-  // For other file types, trigger a download
   const a  = document.createElement('a');
   a.href     = blobUrl;
   a.download = fileName;
@@ -1009,15 +961,12 @@ async function openFile(fileName, folderId) {
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
   if (!confirm(`Delete "${fileName}"?`)) return;
-
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
   if (fileData && fileData.key) await deleteFileFromDB(fileData.key);
-
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
-
   const list = document.getElementById('files-' + folderId);
   if (list) {
     const item = list.querySelector(`[data-file-name="${fileName}"]`);
@@ -1031,19 +980,16 @@ async function deleteFolder(folderId) {
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
   if (!confirm(`Delete folder "${folder.name}" and all its files?`)) return;
-
   for (const f of folder.files) {
     if (f.key) await deleteFileFromDB(f.key);
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();
-
   const card = document.querySelector(`[data-folder-id="${folderId}"]`);
   if (card) card.remove();
-
   const container = document.getElementById('folderList');
   if (container && container.querySelectorAll('.folder-card').length === 0) {
-    container.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No folders yet — create one above!</div>';
+    container.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('noFoldersYet')}</div>`;
   }
 }
 
@@ -1058,38 +1004,31 @@ function toggleFolder(folderId) {
   const chev   = document.getElementById('fchev-' + folderId);
   const icon   = document.getElementById('ficon-' + folderId);
   const isOpen = files.style.display === 'block';
-
   files.style.display = isOpen ? 'none' : 'block';
   if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   if (icon) icon.className = `ti ${isOpen ? 'ti-folder' : 'ti-folder-open'} ` + icon.className.split(' ').slice(2).join(' ');
 }
 
-// Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
-
 
 // ============================================================
 // TO-DO
 // ============================================================
 let todos = JSON.parse(localStorage.getItem('amigo_todos') || '[]');
-
 function addTodo() {
   const input = document.getElementById('todoInput');
   const text  = input.value.trim();
   if (!text) return;
   input.value = '';
-
   const todo = { id: Date.now(), text, done: false };
   todos.push(todo);
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
   renderTodoItem(todo);
 }
-
 function renderTodoItem(todo) {
   const list  = document.getElementById('todoList');
   const empty = list.querySelector('.focus-empty');
   if (empty) empty.remove();
-
   const div   = document.createElement('div');
   div.className = 'todo-item';
   div.id        = 'todo-item-' + todo.id;
@@ -1099,26 +1038,22 @@ function renderTodoItem(todo) {
     <button class="del-reminder" onclick="deleteTodo(${todo.id})"><i class="ti ti-trash"></i></button>`;
   list.appendChild(div);
 }
-
 function toggleTodo(checkbox, id) {
   document.getElementById('todo-' + id).classList.toggle('done', checkbox.checked);
   const todo = todos.find(td => td.id === id);
   if (todo) todo.done = checkbox.checked;
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
 }
-
 function deleteTodo(id) {
   todos = todos.filter(td => td.id !== id);
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
   const item = document.getElementById('todo-item-' + id);
   if (item) item.remove();
-
   const list = document.getElementById('todoList');
   if (list && list.querySelectorAll('.todo-item').length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No tasks yet.</div>';
+    list.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('noTasksYet')}</div>`;
   }
 }
-
 todos.forEach(td => renderTodoItem(td));
 const todoListEl = document.getElementById('todoList');
 if (todoListEl && todos.length > 0) {
@@ -1126,19 +1061,22 @@ if (todoListEl && todos.length > 0) {
   if (empty) empty.remove();
 }
 
-
 // ============================================================
 // SETTINGS
 // ============================================================
 function saveSettings() {
   const name    = document.getElementById('nameInput').value.trim();
-  const uni     = document.getElementById('uniInput')     ? document.getElementById('uniInput').value.trim()     : '';
-  const program = document.getElementById('programInput') ? document.getElementById('programInput').value.trim() : '';
-  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value : 'en';
+  const uni     = document.getElementById('uniInput')      ? document.getElementById('uniInput').value.trim()      : '';
+  const program = document.getElementById('programInput')  ? document.getElementById('programInput').value.trim()  : '';
+  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value        : 'en';
 
-  // Save name
+  // Save and apply language first so t() and greeting use the new lang
+  localStorage.setItem('amigo_lang', lang);
+
   if (name) {
-    document.querySelector('.greeting h2').textContent    = `Hello, ${name} 👋`;
+    // Use the newly selected language's greeting word
+    const greetingWord = (TRANSLATIONS[lang] || TRANSLATIONS['en']).greeting;
+    document.querySelector('.greeting h2').textContent    = `${greetingWord}, ${name} 👋`;
     document.querySelector('.profile-info p').textContent = name;
     document.querySelector('.avatar').textContent         = name.charAt(0).toUpperCase();
     const sd = document.getElementById('settingsNameDisplay');
@@ -1146,18 +1084,14 @@ function saveSettings() {
     localStorage.setItem('amigo_name', name);
   }
 
-  // Save university and program
   if (uni)     localStorage.setItem('amigo_uni', uni);
   if (program) localStorage.setItem('amigo_program', program);
   if (uni && program) {
     document.querySelector('.profile-info span').textContent = uni + ' · ' + program;
   }
 
-  // Save and apply language
-  localStorage.setItem('amigo_lang', lang);
   applyLanguage(lang);
 
-  // Show success message then go home
   document.getElementById('aiStatus').textContent = t('settingsSaved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2000);
   setNav(document.querySelector('.nav-item'), 'home');
@@ -1187,7 +1121,6 @@ function applyProfilePic(src) {
   if (avatar)  avatar.innerHTML  = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
 }
 
-
 // ============================================================
 // CALENDAR
 // ============================================================
@@ -1199,17 +1132,13 @@ function renderCalendar() {
   const year        = calDate.getFullYear();
   const month       = calDate.getMonth();
   document.getElementById('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
-
   const grid        = document.getElementById('calGrid');
   grid.innerHTML    = '';
-
   const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev  = new Date(year, month, 0).getDate();
   const today       = new Date();
   const eventDates  = new Set();
-
-  // Collect dates that have tasks or reminders
   items.forEach(item => {
     const d = parseDate(item.due);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
@@ -1218,16 +1147,12 @@ function renderCalendar() {
     const d = new Date(r.date);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
   });
-
-  // Fill in previous month's trailing days
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell other-month';
     cell.textContent = daysInPrev - i;
     grid.appendChild(cell);
   }
-
-  // Fill in this month's days
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell';
@@ -1240,8 +1165,6 @@ function renderCalendar() {
     cell.onclick = () => openReminderModal(dateStr);
     grid.appendChild(cell);
   }
-
-  // Fill in next month's leading days to complete the last row
   const remaining = (grid.children.length % 7 === 0) ? 0 : 7 - (grid.children.length % 7);
   for (let d = 1; d <= remaining; d++) {
     const cell = document.createElement('div');
@@ -1255,7 +1178,6 @@ function changeMonth(dir) {
   calDate.setMonth(calDate.getMonth() + dir);
   renderCalendar();
 }
-
 function openReminderModal(dateStr) {
   selectedDate = dateStr;
   const label  = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
@@ -1263,18 +1185,15 @@ function openReminderModal(dateStr) {
   document.getElementById('reminderModal').style.display  = 'block';
   document.getElementById('reminderTitle').focus();
 }
-
 function closeReminderModal() {
   document.getElementById('reminderModal').style.display = 'none';
   document.getElementById('reminderTitle').value         = '';
 }
-
 function saveReminder() {
   const title = document.getElementById('reminderTitle').value.trim();
   const type  = document.getElementById('reminderType').value;
   const time  = document.getElementById('reminderTime').value;
   if (!title) return;
-
   const reminder = { id: Date.now(), title, type, date: selectedDate, time: time || '08:00' };
   reminders.push(reminder);
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
@@ -1284,20 +1203,16 @@ function saveReminder() {
   scheduleNotification(reminder);
   updateNotifBadge();
 }
-
 function renderReminderList() {
   const list = document.getElementById('reminderList');
   list.innerHTML = '';
-
   if (reminders.length === 0) {
-    list.innerHTML = '<div class="focus-empty">No reminders yet — click a date to add one!</div>';
+    list.innerHTML = `<div class="focus-empty">${t('noRemindersYet')}</div>`;
     document.getElementById('reminderCount').textContent = '0 reminders';
     return;
   }
-
   const sorted = [...reminders].sort((a, b) => new Date(a.date) - new Date(b.date));
   document.getElementById('reminderCount').textContent = sorted.length + ' reminder' + (sorted.length > 1 ? 's' : '');
-
   sorted.forEach(r => {
     const div       = document.createElement('div');
     div.className   = 'task-item';
@@ -1313,7 +1228,6 @@ function renderReminderList() {
     list.appendChild(div);
   });
 }
-
 function deleteReminder(id) {
   reminders = reminders.filter(r => r.id !== id);
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
@@ -1321,7 +1235,6 @@ function deleteReminder(id) {
   renderCalendar();
   updateNotifBadge();
 }
-
 function scheduleNotification(reminder) {
   if (!('Notification' in window)) return;
   Notification.requestPermission().then(permission => {
@@ -1334,14 +1247,11 @@ function scheduleNotification(reminder) {
     setTimeout(() => new Notification('Amigo Reminder', { body: reminder.title, icon: '/favicon.ico' }), delay);
   });
 }
-
 if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
-
 renderCalendar();
 renderReminderList();
-
 
 // ============================================================
 // SEARCH
@@ -1353,25 +1263,21 @@ function toggleSearch() {
   if (!isOpen) setTimeout(() => document.getElementById('searchInput').focus(), 100);
   document.getElementById('notifPanel').style.display = 'none';
 }
-
 function doSearch() {
   const query   = document.getElementById('searchInput').value.trim().toLowerCase();
   const results = document.getElementById('searchResults');
   results.innerHTML = '';
   if (!query) return;
-
   const matches = items.filter(i =>
     i.title.toLowerCase().includes(query)   ||
     i.subject.toLowerCase().includes(query) ||
     i.type.toLowerCase().includes(query)    ||
     (i.note && i.note.toLowerCase().includes(query))
   );
-
   if (matches.length === 0) {
-    results.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No results found.</div>';
+    results.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('noResultsFound')}</div>`;
     return;
   }
-
   matches.forEach(item => {
     const div     = document.createElement('div');
     div.className = 'task-item';
@@ -1388,7 +1294,6 @@ function doSearch() {
   });
 }
 
-
 // ============================================================
 // NOTIFICATIONS
 // ============================================================
@@ -1399,7 +1304,6 @@ function toggleNotifications() {
   document.getElementById('searchPanel').style.display = 'none';
   if (!isOpen) renderNotifPanel();
 }
-
 function getUpcomingReminders() {
   const now        = new Date();
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -1408,17 +1312,14 @@ function getUpcomingReminders() {
     return d >= now && d <= endOfMonth;
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 }
-
 function renderNotifPanel() {
   const list     = document.getElementById('notifList');
   const upcoming = getUpcomingReminders();
   list.innerHTML  = '';
-
   if (upcoming.length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;">No upcoming reminders this month.</div>';
+    list.innerHTML = `<div class="focus-empty" style="padding:16px;color:#94A3B8;">${t('noUpcomingReminders')}</div>`;
     return;
   }
-
   upcoming.forEach(r => {
     const div       = document.createElement('div');
     div.className   = 'task-item';
@@ -1432,7 +1333,6 @@ function renderNotifPanel() {
     list.appendChild(div);
   });
 }
-
 function updateNotifBadge() {
   const badge = document.getElementById('notifBadge');
   const count = getUpcomingReminders().length;
@@ -1443,17 +1343,13 @@ function updateNotifBadge() {
     badge.style.display = 'none';
   }
 }
-
-// Close panels when clicking anywhere outside them
 document.addEventListener('click', e => {
   const notifPanel  = document.getElementById('notifPanel');
   const searchPanel = document.getElementById('searchPanel');
   if (!e.target.closest('#notifPanel')  && !e.target.closest('.icon-btn')) notifPanel.style.display  = 'none';
   if (!e.target.closest('#searchPanel') && !e.target.closest('.icon-btn')) searchPanel.style.display = 'none';
 });
-
 updateNotifBadge();
-
 
 // ============================================================
 // AUTH HANDLERS
@@ -1466,24 +1362,20 @@ function switchTab(tab) {
   document.getElementById('tab-login').style.color  = tab === 'login'  ? '#0F172A' : '#64748B';
   document.getElementById('tab-signup').style.color = tab === 'signup' ? '#0F172A' : '#64748B';
 }
-
 async function handleLogin() {
   const email    = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const errEl    = document.getElementById('loginError');
   errEl.style.display = 'none';
-
   if (!email || !password) {
     errEl.textContent = 'fill in everything bestie 🙏';
     errEl.style.display = 'block';
     return;
   }
-
   errEl.textContent = 'signing you in...';
   errEl.style.color = '#1a3a6b';
   errEl.style.background = '#e8eef7';
   errEl.style.display = 'block';
-
   const error = await signInWithEmail(email, password);
   if (error) {
     errEl.textContent = 'wrong email or password 😬';
@@ -1494,7 +1386,6 @@ async function handleLogin() {
   }
   initAuth();
 }
-
 async function handleSignup() {
   const name     = document.getElementById('signupName').value.trim();
   const email    = document.getElementById('signupEmail').value.trim();
@@ -1503,24 +1394,20 @@ async function handleSignup() {
   const sucEl    = document.getElementById('signupSuccess');
   errEl.style.display = 'none';
   sucEl.style.display = 'none';
-
   if (!name || !email || !password) {
     errEl.textContent = 'fill in everything bestie 🙏';
     errEl.style.display = 'block';
     return;
   }
-
   if (password.length < 6) {
     errEl.textContent = 'password too short — at least 6 chars 🔐';
     errEl.style.display = 'block';
     return;
   }
-
   errEl.textContent = 'creating your account...';
   errEl.style.color = '#1a3a6b';
   errEl.style.background = '#e8eef7';
   errEl.style.display = 'block';
-
   const error = await signUpWithEmail(email, password, name);
   if (error) {
     errEl.textContent = error;
@@ -1533,11 +1420,9 @@ async function handleSignup() {
   sucEl.textContent = 'account created! check your email to confirm ✅';
   sucEl.style.display = 'block';
 }
-
 async function handleForgotPassword() {
   const email = document.getElementById('loginEmail').value.trim();
   const errEl = document.getElementById('loginError');
-
   if (!email) {
     errEl.textContent = 'enter your email first 📧';
     errEl.style.color = '#EF4444';
@@ -1545,11 +1430,9 @@ async function handleForgotPassword() {
     errEl.style.display = 'block';
     return;
   }
-
   const { error } = await _supabase.auth.resetPasswordForEmail(email, {
     redirectTo: 'https://amigo-lilac.vercel.app'
   });
-
   if (error) {
     errEl.textContent = 'something went wrong 😬';
     errEl.style.color = '#EF4444';
@@ -1557,25 +1440,21 @@ async function handleForgotPassword() {
     errEl.style.display = 'block';
     return;
   }
-
   errEl.textContent = 'reset link sent! check your email 📩';
   errEl.style.color = '#16A34A';
   errEl.style.background = '#DCFCE7';
   errEl.style.display = 'block';
 }
 
-
 // ============================================================
 // FEEDBACK / EMAILJS
 // ============================================================
 emailjs.init('82oFX8G_FfVMfS3Uj');
-
 async function sendFeedback() {
   const name    = document.getElementById('feedbackName').value.trim();
   const email   = document.getElementById('feedbackEmail').value.trim();
   const message = document.getElementById('feedbackMessage').value.trim();
   const status  = document.getElementById('feedbackStatus');
-
   if (!name || !email || !message) {
     status.textContent = 'fill in everything bestie 🙏';
     status.style.background = '#FEE2E2';
@@ -1583,12 +1462,10 @@ async function sendFeedback() {
     status.style.display = 'block';
     return;
   }
-
   status.textContent = 'sending...';
   status.style.background = '#e8eef7';
   status.style.color = '#1a3a6b';
   status.style.display = 'block';
-
   try {
     await emailjs.send('service_64oaeq2', 'template_mf8v8kh', {
       from_name:  name,

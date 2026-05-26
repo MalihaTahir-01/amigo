@@ -1,3 +1,4 @@
+
 // ============================================================
 // AMIGO — app.js  (with Language Support)
 // ============================================================
@@ -46,12 +47,6 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Presentation',
     notice: 'Notice',
-    nothingHereYet: 'Nothing here yet.',
-    noTasksYet: 'No tasks yet.',
-    noFoldersYet: 'No folders yet — create one above!',
-    noResultsFound: 'No results found.',
-    noRemindersYet: 'No reminders yet — click a date to add one!',
-    noUpcomingReminders: 'No upcoming reminders this month.',
   },
   ur: {
     dir: 'rtl',
@@ -91,12 +86,6 @@ const TRANSLATIONS = {
     final: 'فائنل',
     presentation: 'پریزنٹیشن',
     notice: 'نوٹس',
-    nothingHereYet: 'ابھی کچھ نہیں۔',
-    noTasksYet: 'ابھی کوئی کام نہیں۔',
-    noFoldersYet: 'کوئی فولڈر نہیں — اوپر سے بنائیں!',
-    noResultsFound: 'کوئی نتیجہ نہیں ملا۔',
-    noRemindersYet: 'کوئی یاددہانی نہیں — تاریخ پر کلک کریں!',
-    noUpcomingReminders: 'اس مہینے کوئی آنے والی یاددہانی نہیں۔',
   },
   ar: {
     dir: 'rtl',
@@ -136,12 +125,6 @@ const TRANSLATIONS = {
     final: 'نهائي',
     presentation: 'عرض',
     notice: 'إشعار',
-    nothingHereYet: 'لا شيء هنا بعد.',
-    noTasksYet: 'لا مهام بعد.',
-    noFoldersYet: 'لا مجلدات بعد — أنشئ واحداً أعلاه!',
-    noResultsFound: 'لا نتائج.',
-    noRemindersYet: 'لا تذكيرات — انقر على تاريخ لإضافة واحد!',
-    noUpcomingReminders: 'لا تذكيرات قادمة هذا الشهر.',
   },
   fr: {
     dir: 'ltr',
@@ -181,12 +164,6 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Présentation',
     notice: 'Avis',
-    nothingHereYet: 'Rien ici pour l\'instant.',
-    noTasksYet: 'Pas encore de tâches.',
-    noFoldersYet: 'Aucun dossier — créez-en un ci-dessus!',
-    noResultsFound: 'Aucun résultat.',
-    noRemindersYet: 'Aucun rappel — cliquez sur une date!',
-    noUpcomingReminders: 'Aucun rappel ce mois-ci.',
   },
   zh: {
     dir: 'ltr',
@@ -226,12 +203,6 @@ const TRANSLATIONS = {
     final: '期末',
     presentation: '演示',
     notice: '通知',
-    nothingHereYet: '暂无内容。',
-    noTasksYet: '暂无任务。',
-    noFoldersYet: '暂无文件夹 — 在上方创建一个！',
-    noResultsFound: '未找到结果。',
-    noRemindersYet: '暂无提醒 — 点击日期添加！',
-    noUpcomingReminders: '本月暂无即将到来的提醒。',
   },
   es: {
     dir: 'ltr',
@@ -271,15 +242,8 @@ const TRANSLATIONS = {
     final: 'Final',
     presentation: 'Presentación',
     notice: 'Aviso',
-    nothingHereYet: 'Nada aquí todavía.',
-    noTasksYet: 'Sin tareas aún.',
-    noFoldersYet: 'Sin carpetas — ¡crea una arriba!',
-    noResultsFound: 'Sin resultados.',
-    noRemindersYet: 'Sin recordatorios — ¡haz clic en una fecha!',
-    noUpcomingReminders: 'Sin recordatorios este mes.',
   },
 };
-
 // ────────────────────────────────────────────────────────────
 // LANGUAGE HELPER
 // Call t('key') anywhere to get the translated text
@@ -291,53 +255,36 @@ function t(key) {
   const lang = getLang();
   return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS['en'][key] || key;
 }
-
 // Apply language direction and update visible UI text
 function applyLanguage(lang) {
   const langData = TRANSLATIONS[lang] || TRANSLATIONS['en'];
-
   // Set text direction (RTL for Urdu/Arabic)
   document.documentElement.dir = langData.dir;
-
   // Update greeting
   const name = localStorage.getItem('amigo_name') || 'Student';
   const greetingEl = document.querySelector('.greeting h2');
   if (greetingEl) greetingEl.textContent = `${langData.greeting}, ${name} 👋`;
-
-  // Update AI bar placeholder
+  // Update AI bar placeholder and button
   const aiInput = document.getElementById('aiInput');
   if (aiInput) aiInput.placeholder = langData.addPlaceholder;
-
-  // Update Add button
-  const addBtn = document.getElementById('addBtn');
-  if (addBtn) addBtn.textContent = langData.addBtn;
-
   // Update chips
   const chips = document.querySelectorAll('.chip');
   const chipKeys = ['chipAssignment', 'chipQuiz', 'chipMids', 'chipFinal'];
+  const chipActions = ['Assignment due today', 'Quiz on Monday', 'Mids next week', 'Final exam on 10 June'];
   chips.forEach((chip, i) => {
     if (chipKeys[i]) chip.textContent = langData[chipKeys[i]];
   });
-
   // Update section titles
   const todayTitle = document.querySelector('#section-home .upcoming-section:first-of-type .section-title');
   if (todayTitle) todayTitle.textContent = langData.today;
   const upcomingTitle = document.querySelector('#section-home .upcoming-section:last-of-type .section-title');
   if (upcomingTitle) upcomingTitle.textContent = langData.upcoming;
-
   // Update focus card title
   const focusTitle = document.querySelector('.focus-title');
   if (focusTitle) focusTitle.textContent = langData.todayFocus;
-
-  // Update empty states currently visible in the DOM
+  // Update empty states
   const focusEmpty = document.querySelector('#focusItems .focus-empty');
   if (focusEmpty) focusEmpty.textContent = langData.noTasksToday;
-
-  const todayEmpty = document.querySelector('#todayList .focus-empty');
-  if (todayEmpty) todayEmpty.textContent = langData.nothingDueToday;
-
-  const taskEmpty = document.querySelector('#taskList .focus-empty');
-  if (taskEmpty) taskEmpty.textContent = langData.noUpcoming;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -346,7 +293,6 @@ function applyLanguage(lang) {
 let items = JSON.parse(localStorage.getItem('amigo_items') || '[]');
 let flowData = {};
 let flowStep = 0;
-
 // Show today's date in the topbar and focus card
 const now = new Date();
 document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', {
@@ -355,7 +301,6 @@ document.getElementById('topDate').textContent = now.toLocaleDateString('en-US',
 document.getElementById('focusDate').textContent = now.toLocaleDateString('en-US', {
   day: 'numeric', month: 'short', year: 'numeric'
 });
-
 // Render all saved items on page load
 items.forEach(item => renderItem(item));
 sortList('taskList');
@@ -370,11 +315,8 @@ const savedPic     = localStorage.getItem('amigo_pic');
 const savedUni     = localStorage.getItem('amigo_uni');
 const savedProgram = localStorage.getItem('amigo_program');
 const savedLang    = localStorage.getItem('amigo_lang') || 'en';
-
 if (savedName) {
-  // Use the translation greeting so it respects saved language from the start
-  const greetingWord = (TRANSLATIONS[savedLang] || TRANSLATIONS['en']).greeting;
-  document.querySelector('.greeting h2').textContent    = `${greetingWord}, ${savedName} 👋`;
+  document.querySelector('.greeting h2').textContent    = `Hello, ${savedName} 👋`;
   document.querySelector('.profile-info p').textContent = savedName;
   document.querySelector('.avatar').textContent         = savedName.charAt(0).toUpperCase();
   const el = document.getElementById('nameInput');
@@ -392,7 +334,6 @@ if (savedProgram) {
 if (savedUni && savedProgram) {
   document.querySelector('.profile-info span').textContent = savedUni + ' · ' + savedProgram;
 }
-
 // Load saved language into the dropdown and apply it
 const langDropdown = document.getElementById('languageInput');
 if (langDropdown) langDropdown.value = savedLang;
@@ -402,8 +343,10 @@ applyLanguage(savedLang);
 // NAVIGATION
 // ────────────────────────────────────────────────────────────
 function setNav(el, section) {
+  // Remove active class from all nav items
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
+  // Hide all sections, then show the selected one
   document.querySelectorAll('.page-section').forEach(s => s.style.display = 'none');
   const target = document.getElementById('section-' + section);
   if (target) target.style.display = 'block';
@@ -419,7 +362,6 @@ function setInput(val) {
 document.getElementById('aiInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') organizePrompt();
 });
-
 function organizePrompt() {
   const text = document.getElementById('aiInput').value.trim();
   if (!text) return;
@@ -437,21 +379,20 @@ function organizePrompt() {
       <button class="ai-opt" onclick="cancelFlow()">${t('cancel')}</button>
     </div>`;
 }
-
 function cancelFlow() {
   document.getElementById('aiFlow').innerHTML = '';
   document.getElementById('aiInput').value   = '';
 }
-
 function pickType(type) {
   flowData.type = type;
   flowStep = 2;
   showFlowStep();
 }
-
+// Shows the correct step in the task-adding flow
 function showFlowStep() {
   const flow = document.getElementById('aiFlow');
   if (flowStep === 2) {
+    // Step 2: Ask for subject
     flow.innerHTML = `
       <div class="ai-question">${t('whichSubject')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -463,6 +404,7 @@ function showFlowStep() {
       if (e.key === 'Enter') pickSubject();
     });
   } else if (flowStep === 3) {
+    // Step 3: Ask for priority
     flow.innerHTML = `
       <div class="ai-question">${t('priority')}</div>
       <div class="ai-options">
@@ -471,6 +413,7 @@ function showFlowStep() {
         <button class="ai-opt" onclick="pickPriority('Low')">${t('low')}</button>
       </div>`;
   } else if (flowStep === 4) {
+    // Step 4: Ask for due date
     flow.innerHTML = `
       <div class="ai-question">${t('dueDate')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -482,6 +425,7 @@ function showFlowStep() {
       if (e.key === 'Enter') pickDue();
     });
   } else if (flowStep === 5) {
+    // Step 5: Optional note
     flow.innerHTML = `
       <div class="ai-question">${t('addNote')}</div>
       <div style="display:flex;gap:8px;margin-top:6px;">
@@ -497,7 +441,6 @@ function showFlowStep() {
     });
   }
 }
-
 function pickSubject() {
   const val = document.getElementById('subjectInput').value.trim();
   if (!val) return;
@@ -526,6 +469,7 @@ function pickNote() {
 // ────────────────────────────────────────────────────────────
 // DATE HELPERS
 // ────────────────────────────────────────────────────────────
+// Converts text like "24may2026" into a proper Date object
 function normalizeDate(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   const months = {
@@ -550,7 +494,7 @@ function normalizeDate(due) {
   }
   return null;
 }
-
+// Checks if a due date string means today
 function isToday(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return true;
@@ -574,7 +518,7 @@ function isToday(due) {
   }
   return false;
 }
-
+// Converts a due date string to a Date object for sorting
 function parseDate(due) {
   const d = due.toLowerCase().trim();
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return new Date();
@@ -589,7 +533,7 @@ function parseDate(due) {
   if (!isNaN(parsed)) return parsed;
   const parts = due.split('/');
   if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
-  return new Date(9999, 0, 1);
+  return new Date(9999, 0, 1); // Unknown dates go to the end
 }
 
 // ────────────────────────────────────────────────────────────
@@ -607,16 +551,18 @@ function saveItem() {
   };
   items.push(item);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+  // Clear the input flow
   document.getElementById('aiFlow').innerHTML = '';
   document.getElementById('aiInput').value   = '';
+  // Show success message
   document.getElementById('aiStatus').textContent = t('saved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2500);
+  // Add to the correct lists and refresh
   renderItem(item);
   sortList('taskList');
   sortList('list-' + item.type);
   updateCounts();
 }
-
 function renderItem(item) {
   if (isToday(item.due)) {
     addToFocus(item);
@@ -626,7 +572,7 @@ function renderItem(item) {
   }
   addToList('list-' + item.type, item);
 }
-
+// Sort a task list by due date (earliest first)
 function sortList(listId) {
   const list = document.getElementById(listId);
   if (!list) return;
@@ -638,7 +584,7 @@ function sortList(listId) {
   });
   cards.forEach(c => list.appendChild(c));
 }
-
+// Update the count badges in the sidebar and stat cards
 function updateCounts() {
   const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0 };
   items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
@@ -684,6 +630,7 @@ function tagClass(p) {
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
+  // Remove the "empty" placeholder if it exists
   const empty = list.querySelector('.focus-empty');
   if (empty) empty.remove();
   const div = document.createElement('div');
@@ -702,29 +649,26 @@ function addToList(listId, item) {
     </button>`;
   list.appendChild(div);
 }
-
 function deleteItem(id) {
   items = items.filter(i => i.id !== id);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+  // Remove all cards with this id from the DOM
   document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
   updateCounts();
-
-  // Restore translated empty messages to lists that are now empty
+  // Add "empty" message back to any list that is now empty
   const allLists = ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'];
   allLists.forEach(listId => {
     const list = document.getElementById(listId);
     if (list && list.querySelectorAll('.task-item').length === 0) {
-      list.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('nothingHereYet')}</div>`;
+      list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">Nothing here yet.</div>';
     }
   });
-
   // Also check the focus card
   const focus = document.getElementById('focusItems');
   if (focus && focus.querySelectorAll('.focus-item').length === 0) {
     focus.innerHTML = `<div class="focus-empty">${t('noTasksToday')}</div>`;
   }
 }
-
 function addToFocus(item) {
   const focus = document.getElementById('focusItems');
   const empty = focus.querySelector('.focus-empty');
@@ -741,9 +685,12 @@ function addToFocus(item) {
 
 // ============================================================
 // FOLDERS & UPLOADS
+// Files are stored in IndexedDB (supports large files).
+// Folder names/metadata are stored in localStorage.
 // ============================================================
 let folders = JSON.parse(localStorage.getItem('amigo_folders') || '[]');
 function saveFolders() {
+  // Only save metadata (not file contents) to localStorage
   const meta = folders.map(f => ({
     id:    f.id,
     name:  f.name,
@@ -751,7 +698,6 @@ function saveFolders() {
   }));
   localStorage.setItem('amigo_folders', JSON.stringify(meta));
 }
-
 // ── IndexedDB helpers ────────────────────────────────────────
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -788,7 +734,6 @@ async function deleteFileFromDB(key) {
     tx.onerror    = () => reject(tx.error);
   });
 }
-
 // ── Folder CRUD ──────────────────────────────────────────────
 function createFolder() {
   const input = document.getElementById('folderNameInput');
@@ -803,7 +748,6 @@ function createFolder() {
   if (empty) empty.remove();
   renderFolder(folder);
 }
-
 function renderFolder(folder) {
   const container = document.getElementById('folderList');
   if (!container) return;
@@ -830,9 +774,9 @@ function renderFolder(folder) {
     </div>
     <div class="folder-files" id="files-${folder.id}" style="display:none;"></div>`;
   container.appendChild(div);
+  // Render any files that were previously saved in this folder
   folder.files.forEach(f => renderFile(folder.id, f));
 }
-
 // ── File helpers ─────────────────────────────────────────────
 function getFileIcon(filename) {
   const ext = filename.split('.').pop().toLowerCase();
@@ -877,7 +821,6 @@ function renderFile(folderId, fileData) {
     </button>`;
   list.appendChild(div);
 }
-
 // ── Upload ───────────────────────────────────────────────────
 function handleUpload(input, folderId) {
   const folder   = folders.find(f => f.id === folderId);
@@ -900,6 +843,7 @@ function handleUpload(input, folderId) {
       saveFolders();
       renderFile(folderId, fileData);
       updateFolderCount(folderId);
+      // Auto-open the folder after upload
       document.getElementById('files-' + folderId).style.display = 'block';
       const chev = document.getElementById('fchev-' + folderId);
       if (chev) chev.style.transform = 'rotate(180deg)';
@@ -912,7 +856,6 @@ function handleUpload(input, folderId) {
   });
   input.value = '';
 }
-
 // ── Open file ────────────────────────────────────────────────
 async function openFile(fileName, folderId) {
   const folder = folders.find(f => f.id === folderId);
@@ -951,13 +894,13 @@ async function openFile(fileName, folderId) {
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     return;
   }
+  // For other file types, trigger a download
   const a  = document.createElement('a');
   a.href     = blobUrl;
   a.download = fileName;
   a.click();
   setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 }
-
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
   if (!confirm(`Delete "${fileName}"?`)) return;
@@ -974,7 +917,6 @@ async function deleteFile(fileName, folderId) {
   }
   updateFolderCount(folderId);
 }
-
 // ── Delete folder ────────────────────────────────────────────
 async function deleteFolder(folderId) {
   const folder = folders.find(f => f.id === folderId);
@@ -989,16 +931,14 @@ async function deleteFolder(folderId) {
   if (card) card.remove();
   const container = document.getElementById('folderList');
   if (container && container.querySelectorAll('.folder-card').length === 0) {
-    container.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('noFoldersYet')}</div>`;
+    container.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No folders yet — create one above!</div>';
   }
 }
-
 function updateFolderCount(folderId) {
   const folder = folders.find(f => f.id === folderId);
   const el     = document.getElementById('fcount-' + folderId);
   if (folder && el) el.textContent = folder.files.length + ' file' + (folder.files.length !== 1 ? 's' : '');
 }
-
 function toggleFolder(folderId) {
   const files  = document.getElementById('files-' + folderId);
   const chev   = document.getElementById('fchev-' + folderId);
@@ -1008,7 +948,7 @@ function toggleFolder(folderId) {
   if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   if (icon) icon.className = `ti ${isOpen ? 'ti-folder' : 'ti-folder-open'} ` + icon.className.split(' ').slice(2).join(' ');
 }
-
+// Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
 
 // ============================================================
@@ -1051,7 +991,7 @@ function deleteTodo(id) {
   if (item) item.remove();
   const list = document.getElementById('todoList');
   if (list && list.querySelectorAll('.todo-item').length === 0) {
-    list.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('noTasksYet')}</div>`;
+    list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No tasks yet.</div>';
   }
 }
 todos.forEach(td => renderTodoItem(td));
@@ -1066,37 +1006,32 @@ if (todoListEl && todos.length > 0) {
 // ============================================================
 function saveSettings() {
   const name    = document.getElementById('nameInput').value.trim();
-  const uni     = document.getElementById('uniInput')      ? document.getElementById('uniInput').value.trim()      : '';
-  const program = document.getElementById('programInput')  ? document.getElementById('programInput').value.trim()  : '';
-  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value        : 'en';
-
-  // Save and apply language first so t() and greeting use the new lang
-  localStorage.setItem('amigo_lang', lang);
-
+  const uni     = document.getElementById('uniInput')     ? document.getElementById('uniInput').value.trim()     : '';
+  const program = document.getElementById('programInput') ? document.getElementById('programInput').value.trim() : '';
+  const lang    = document.getElementById('languageInput') ? document.getElementById('languageInput').value : 'en';
+  // Save name
   if (name) {
-    // Use the newly selected language's greeting word
-    const greetingWord = (TRANSLATIONS[lang] || TRANSLATIONS['en']).greeting;
-    document.querySelector('.greeting h2').textContent    = `${greetingWord}, ${name} 👋`;
+    document.querySelector('.greeting h2').textContent    = `Hello, ${name} 👋`;
     document.querySelector('.profile-info p').textContent = name;
     document.querySelector('.avatar').textContent         = name.charAt(0).toUpperCase();
     const sd = document.getElementById('settingsNameDisplay');
     if (sd) sd.textContent = name;
     localStorage.setItem('amigo_name', name);
   }
-
+  // Save university and program
   if (uni)     localStorage.setItem('amigo_uni', uni);
   if (program) localStorage.setItem('amigo_program', program);
   if (uni && program) {
     document.querySelector('.profile-info span').textContent = uni + ' · ' + program;
   }
-
+  // Save and apply language
+  localStorage.setItem('amigo_lang', lang);
   applyLanguage(lang);
-
+  // Show success message then go home
   document.getElementById('aiStatus').textContent = t('settingsSaved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2000);
   setNav(document.querySelector('.nav-item'), 'home');
 }
-
 function uploadProfilePic(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1113,7 +1048,6 @@ function uploadProfilePic(input) {
   };
   reader.readAsDataURL(file);
 }
-
 function applyProfilePic(src) {
   const display = document.getElementById('profilePicDisplay');
   const avatar  = document.querySelector('.avatar');
@@ -1127,7 +1061,6 @@ function applyProfilePic(src) {
 let calDate      = new Date();
 let selectedDate = null;
 let reminders    = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
-
 function renderCalendar() {
   const year        = calDate.getFullYear();
   const month       = calDate.getMonth();
@@ -1139,6 +1072,7 @@ function renderCalendar() {
   const daysInPrev  = new Date(year, month, 0).getDate();
   const today       = new Date();
   const eventDates  = new Set();
+  // Collect dates that have tasks or reminders
   items.forEach(item => {
     const d = parseDate(item.due);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
@@ -1147,12 +1081,14 @@ function renderCalendar() {
     const d = new Date(r.date);
     if (d.getFullYear() === year && d.getMonth() === month) eventDates.add(d.getDate());
   });
+  // Fill in previous month's trailing days
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell other-month';
     cell.textContent = daysInPrev - i;
     grid.appendChild(cell);
   }
+  // Fill in this month's days
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement('div');
     cell.className   = 'cal-cell';
@@ -1165,6 +1101,7 @@ function renderCalendar() {
     cell.onclick = () => openReminderModal(dateStr);
     grid.appendChild(cell);
   }
+  // Fill in next month's leading days to complete the last row
   const remaining = (grid.children.length % 7 === 0) ? 0 : 7 - (grid.children.length % 7);
   for (let d = 1; d <= remaining; d++) {
     const cell = document.createElement('div');
@@ -1173,7 +1110,6 @@ function renderCalendar() {
     grid.appendChild(cell);
   }
 }
-
 function changeMonth(dir) {
   calDate.setMonth(calDate.getMonth() + dir);
   renderCalendar();
@@ -1207,7 +1143,7 @@ function renderReminderList() {
   const list = document.getElementById('reminderList');
   list.innerHTML = '';
   if (reminders.length === 0) {
-    list.innerHTML = `<div class="focus-empty">${t('noRemindersYet')}</div>`;
+    list.innerHTML = '<div class="focus-empty">No reminders yet — click a date to add one!</div>';
     document.getElementById('reminderCount').textContent = '0 reminders';
     return;
   }
@@ -1275,7 +1211,7 @@ function doSearch() {
     (i.note && i.note.toLowerCase().includes(query))
   );
   if (matches.length === 0) {
-    results.innerHTML = `<div class="focus-empty" style="color:#94A3B8;">${t('noResultsFound')}</div>`;
+    results.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No results found.</div>';
     return;
   }
   matches.forEach(item => {
@@ -1317,7 +1253,7 @@ function renderNotifPanel() {
   const upcoming = getUpcomingReminders();
   list.innerHTML  = '';
   if (upcoming.length === 0) {
-    list.innerHTML = `<div class="focus-empty" style="padding:16px;color:#94A3B8;">${t('noUpcomingReminders')}</div>`;
+    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;">No upcoming reminders this month.</div>';
     return;
   }
   upcoming.forEach(r => {
@@ -1343,6 +1279,7 @@ function updateNotifBadge() {
     badge.style.display = 'none';
   }
 }
+// Close panels when clicking anywhere outside them
 document.addEventListener('click', e => {
   const notifPanel  = document.getElementById('notifPanel');
   const searchPanel = document.getElementById('searchPanel');

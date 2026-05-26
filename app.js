@@ -544,6 +544,7 @@ function saveItem() {
   };
   items.push(item);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+  saveUserData();
   // Clear the input flow
   document.getElementById('aiFlow').innerHTML = '';
   document.getElementById('aiInput').value   = '';
@@ -692,6 +693,7 @@ function addToList(listId, item) {
 function deleteItem(id) {
   items = items.filter(i => i.id !== id);
   localStorage.setItem('amigo_items', JSON.stringify(items));
+  saveUserData();
   // Remove all cards with this id from the DOM
   document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
   updateCounts();
@@ -1002,6 +1004,7 @@ function addTodo() {
   todos.push(todo);
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
   renderTodoItem(todo);
+  saveUserData();
 }
 function renderTodoItem(todo) {
   const list  = document.getElementById('todoList');
@@ -1021,10 +1024,12 @@ function toggleTodo(checkbox, id) {
   const todo = todos.find(td => td.id === id);
   if (todo) todo.done = checkbox.checked;
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
+  saveUserData();
 }
 function deleteTodo(id) {
   todos = todos.filter(td => td.id !== id);
   localStorage.setItem('amigo_todos', JSON.stringify(todos));
+  saveUserData();
   const item = document.getElementById('todo-item-' + id);
   if (item) item.remove();
   const list = document.getElementById('todoList');
@@ -1064,6 +1069,7 @@ function saveSettings() {
   // Save and apply language
   localStorage.setItem('amigo_lang', lang);
   applyLanguage(lang);
+  saveUserData();
   // Show success message then go home
   document.getElementById('aiStatus').textContent = t('settingsSaved');
   setTimeout(() => document.getElementById('aiStatus').textContent = '', 2000);
@@ -1169,6 +1175,7 @@ function saveReminder() {
   const reminder = { id: Date.now(), title, type, date: selectedDate, time: time || '08:00' };
   reminders.push(reminder);
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
+  saveUserData();
   closeReminderModal();
   renderReminderList();
   renderCalendar();
@@ -1203,6 +1210,7 @@ function renderReminderList() {
 function deleteReminder(id) {
   reminders = reminders.filter(r => r.id !== id);
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
+  saveUserData();
   renderReminderList();
   renderCalendar();
   updateNotifBadge();

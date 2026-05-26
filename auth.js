@@ -46,6 +46,8 @@ async function signUpWithEmail(email, password, name) {
 
 // ── Sign out ──────────────────────────────────────────────
 async function signOut() {
+  await saveUserData();
+  clearLocalData();
   await _supabase.auth.signOut();
   window.location.reload();
 }
@@ -99,6 +101,9 @@ async function initAuth() {
 
   const session = await getSession();
   if (session) {
+    // Load data from Supabase before showing the app
+    await loadUserData();
+
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('appScreen').style.display  = 'flex';
     const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
@@ -106,7 +111,60 @@ async function initAuth() {
     document.querySelector('.profile-info p').textContent = name;
     document.querySelector('.avatar').textContent         = name.charAt(0).toUpperCase();
   } else {
+    clearLocalData();
     document.getElementById('authScreen').style.display = 'flex';
     document.getElementById('appScreen').style.display  = 'none';
   }
+}
+// ── Load user data from Supabase ──────────────────────────
+async function loadUserData() {
+  const session = await getSession();
+  if (!session) return;
+  const userId = session.user.id;
+  const { data, error } = await _supabase
+    .from('user_data')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  if (error || !data) return;
+  if (data.items)    localStorage.setItem('amigo_items',     JSON.stringify(data.items));
+  if (data.todos)    localStorage.setItem('amigo_todos',     JSON.stringify(data.todos));
+  if (data.reminders)localStorage.setItem('amigo_reminders', JSON.stringify(data.reminders));
+  if (data.folders)  localStorage.setItem('amigo_folders',   JSON.stringify(data.folders));
+  if (data.settings) {
+    const s = data.settings;
+    if (s.name)    localStorage.setItem('amigo_name',    s.name);
+    if (s.uni)     localStorage.setItem('amigo_uni',     s.uni);
+    if (s.program) localStorage.setItem('amigo_program', s.program);
+    if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
+  }
+}
+
+// ── Save user data to Supabase ────────────────────────────
+async function saveUserData() {
+  const session = await getSession();
+  if (!session) return;
+  const userId = session.user.id;
+  const payload = {
+    user_id:    userId,
+    items:      JSON.parse(localStorage.getItem('amigo_items')     || '[]'),
+    todos:      JSON.parse(localStorage.getItem('amigo_todos')     || '[]'),
+    reminders:  JSON.parse(localStorage.getItem('amigo_reminders') || '[]'),
+    folders:    JSON.parse(localStorage.getItem('amigo_folders')   || '[]'),
+    settings: {
+      name:    localStorage.getItem('amigo_name')    || '',
+      uni:     localStorage.getItem('amigo_uni')     || '',
+      program: localStorage.getItem('amigo_program') || '',
+      lang:    localStorage.getItem('amigo_lang')    || 'en',
+    },
+    updated_at: new Date().toISOString(),
+  };
+  await _supabase.from('user_data').upsert(payload, { onConflict: 'user_id' });
+}
+
+// ── Clear local data on logout ────────────────────────────
+function clearLocalData() {
+  const keys = ['amigo_items','amigo_todos','amigo_reminders','amigo_folders',
+                 'amigo_name','amigo_uni','amigo_program','amigo_lang','amigo_pic'];
+  keys.forEach(k => localStorage.removeItem(k));
 }

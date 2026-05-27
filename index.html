@@ -390,7 +390,13 @@
     <!-- END APP SCREEN -->
   </div>
   <script src="auth.js"></script>
-  <script src="app.js"></script>
-  <script>initAuth();</script>
+<script>
+  // Block app.js from running until Supabase data is loaded
+  initAuth().then(() => {
+    const script = document.createElement('script');
+    script.src = 'app.js';
+    document.body.appendChild(script);
+  });
+</script>
 </body>
 </html>

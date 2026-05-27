@@ -196,7 +196,11 @@ async function saveUserData() {
     },
     updated_at: new Date().toISOString(),
   };
-  await _supabase.from('user_data').upsert(payload, { onConflict: 'user_id' });
+  const { error } = await _supabase
+    .from('user_data')
+    .upsert(payload, { onConflict: 'user_id' });
+  if (error) console.error('Supabase save error:', error.message);
+  else console.log('Supabase saved ok');
 }
 
 // ── Clear local data on logout ────────────────────────────

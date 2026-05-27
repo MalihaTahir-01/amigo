@@ -121,16 +121,50 @@ async function loadUserData() {
   const session = await getSession();
   if (!session) return;
   const userId = session.user.id;
+
   const { data, error } = await _supabase
     .from('user_data')
     .select('*')
     .eq('user_id', userId)
     .single();
-  if (error || !data) return;
-  if (data.items)    localStorage.setItem('amigo_items',     JSON.stringify(data.items));
-  if (data.todos)    localStorage.setItem('amigo_todos',     JSON.stringify(data.todos));
-  if (data.reminders)localStorage.setItem('amigo_reminders', JSON.stringify(data.reminders));
-  if (data.folders)  localStorage.setItem('amigo_folders',   JSON.stringify(data.folders));
+
+  // If no data in Supabase yet, upload whatever is in localStorage
+  if (error || !data || !data.items) {
+    await saveUserData();
+    return;
+  }
+
+  // Supabase has data — merge with localStorage
+  // Keep whichever has more items (in case user added stuff offline)
+  const cloudItems    = data.items    || [];
+  const cloudTodos    = data.todos    || [];
+  const cloudRem      = data.reminders|| [];
+  const cloudFolders  = data.folders  || [];
+
+  const localItems    = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
+  const localTodos    = JSON.parse(localStorage.getItem('amigo_todos')     || '[]');
+  const localRem      = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
+  const localFolders  = JSON.parse(localStorage.getItem('amigo_folders')   || '[]');
+
+  // Merge by id — avoid duplicates
+  function mergeById(cloud, local) {
+    const map = {};
+    cloud.forEach(i => map[i.id] = i);
+    local.forEach(i => map[i.id] = i);
+    return Object.values(map);
+  }
+
+  const mergedItems   = mergeById(cloudItems, localItems);
+  const mergedTodos   = mergeById(cloudTodos, localTodos);
+  const mergedRem     = mergeById(cloudRem, localRem);
+  const mergedFolders = mergeById(cloudFolders, localFolders);
+
+  localStorage.setItem('amigo_items',     JSON.stringify(mergedItems));
+  localStorage.setItem('amigo_todos',     JSON.stringify(mergedTodos));
+  localStorage.setItem('amigo_reminders', JSON.stringify(mergedRem));
+  localStorage.setItem('amigo_folders',   JSON.stringify(mergedFolders));
+
+  // Settings — cloud takes priority if they exist
   if (data.settings) {
     const s = data.settings;
     if (s.name)    localStorage.setItem('amigo_name',    s.name);
@@ -138,6 +172,9 @@ async function loadUserData() {
     if (s.program) localStorage.setItem('amigo_program', s.program);
     if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
   }
+
+  // Upload the merged result back to Supabase
+  await saveUserData();
 }
 
 // ── Save user data to Supabase ────────────────────────────

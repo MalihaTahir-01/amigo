@@ -128,6 +128,9 @@ async function loadUserData() {
     .eq('user_id', userId)
     .single();
 
+      console.log('Supabase data:', data);
+      console.log('Supabase error:', error);
+
   // If no data in Supabase yet, upload whatever is in localStorage
   if (error || !data || !data.items) {
     await saveUserData();

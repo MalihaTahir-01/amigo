@@ -29,6 +29,27 @@ async function signInWithEmail(email, password) {
 }
 
 async function signUpWithEmail(email, password, name) {
+  
+  // Pre-check: try signing in first to see if email exists
+  const { data: signInData, error: signInError } = await _supabase.auth.signInWithPassword({
+    email,
+    password: 'CHECK_IF_EXISTS_DUMMY_12345!'
+  });
+  
+  // If error is "Invalid login credentials" = email EXISTS (wrong password = account exists)
+  // If error is "Email not confirmed" = email EXISTS but not confirmed
+  if (signInError) {
+    if (signInError.message.includes('Invalid login credentials') ||
+        signInError.message.includes('invalid_credentials')) {
+      return 'this email is already registered — try signing in instead 👋';
+    }
+    if (signInError.message.includes('Email not confirmed') ||
+        signInError.message.includes('email_not_confirmed')) {
+      return 'this email is already registered but not confirmed — check your inbox 📧';
+    }
+  }
+
+  // Email doesn't exist, proceed with signup
   const { data, error } = await _supabase.auth.signUp({
     email,
     password,
@@ -40,7 +61,6 @@ async function signUpWithEmail(email, password, name) {
 
   if (error) {
     console.error('Supabase signUp error:', error);
-    // User friendly error messages
     if (error.message.includes('already registered') || 
         error.message.includes('already exists') ||
         error.message.toLowerCase().includes('duplicate')) {
@@ -49,17 +69,10 @@ async function signUpWithEmail(email, password, name) {
     if (error.message.includes('invalid email')) {
       return 'that email doesn\'t look right 📧';
     }
-    if (error.message.includes('weak password') || 
-        error.message.includes('password')) {
-      return 'password too weak — try something stronger 🔐';
-    }
     return error.message;
   }
 
-  // Supabase sometimes doesn't return error for existing unconfirmed emails
-  // but returns a user with no session — catch that case
   if (data.user && !data.session && !data.user.confirmed_at) {
-    // Check if user was created_at more than 1 minute ago = already existed
     const createdAt = new Date(data.user.created_at);
     const now = new Date();
     const diffSeconds = (now - createdAt) / 1000;
@@ -78,7 +91,6 @@ async function signUpWithEmail(email, password, name) {
 
   return null;
 }
-
 async function signOut() {
   await saveUserData();
   clearLocalData();

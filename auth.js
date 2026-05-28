@@ -38,10 +38,34 @@ async function signUpWithEmail(email, password, name) {
     }
   });
 
-  // ← ADD THIS temporarily
   if (error) {
     console.error('Supabase signUp error:', error);
+    // User friendly error messages
+    if (error.message.includes('already registered') || 
+        error.message.includes('already exists') ||
+        error.message.toLowerCase().includes('duplicate')) {
+      return 'this email is already registered — try signing in instead 👋';
+    }
+    if (error.message.includes('invalid email')) {
+      return 'that email doesn\'t look right 📧';
+    }
+    if (error.message.includes('weak password') || 
+        error.message.includes('password')) {
+      return 'password too weak — try something stronger 🔐';
+    }
     return error.message;
+  }
+
+  // Supabase sometimes doesn't return error for existing unconfirmed emails
+  // but returns a user with no session — catch that case
+  if (data.user && !data.session && !data.user.confirmed_at) {
+    // Check if user was created_at more than 1 minute ago = already existed
+    const createdAt = new Date(data.user.created_at);
+    const now = new Date();
+    const diffSeconds = (now - createdAt) / 1000;
+    if (diffSeconds > 60) {
+      return 'this email is already registered — try signing in instead 👋';
+    }
   }
 
   if (data.session) {

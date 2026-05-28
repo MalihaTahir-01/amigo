@@ -1372,30 +1372,51 @@ async function handleSignup() {
   const sucEl    = document.getElementById('signupSuccess');
   errEl.style.display = 'none';
   sucEl.style.display = 'none';
+
   if (!name || !email || !password) {
-    errEl.textContent = 'fill in everything bestie 🙏';
-    errEl.style.display = 'block';
+    errEl.textContent        = 'fill in everything bestie 🙏';
+    errEl.style.color        = '#EF4444';
+    errEl.style.background   = '#FEE2E2';
+    errEl.style.display      = 'block';
     return;
   }
   if (password.length < 6) {
-    errEl.textContent = 'password too short — at least 6 chars 🔐';
-    errEl.style.display = 'block';
+    errEl.textContent        = 'password too short — at least 6 chars 🔐';
+    errEl.style.color        = '#EF4444';
+    errEl.style.background   = '#FEE2E2';
+    errEl.style.display      = 'block';
     return;
   }
-  errEl.textContent = 'creating your account...';
-  errEl.style.color = '#1a3a6b';
-  errEl.style.background = '#e8eef7';
-  errEl.style.display = 'block';
-  const error = await signUpWithEmail(email, password, name);
-  if (error) {
-    errEl.textContent = error;
-    errEl.style.color = '#EF4444';
-    errEl.style.background = '#FEE2E2';
-    errEl.style.display = 'block';
+
+  // Basic email format check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    errEl.textContent        = 'that email doesn\'t look right 📧';
+    errEl.style.color        = '#EF4444';
+    errEl.style.background   = '#FEE2E2';
+    errEl.style.display      = 'block';
     return;
   }
+
+  errEl.textContent        = 'creating your account...';
+  errEl.style.color        = '#1a3a6b';
+  errEl.style.background   = '#e8eef7';
+  errEl.style.display      = 'block';
+
+  const result = await signUpWithEmail(email, password, name);
+
+  if (result === 'AUTO_LOGIN') return;
+
+  if (result !== null) {
+    errEl.textContent        = result;
+    errEl.style.color        = '#EF4444';
+    errEl.style.background   = '#FEE2E2';
+    errEl.style.display      = 'block';
+    return;
+  }
+
   errEl.style.display = 'none';
-  sucEl.textContent = 'account created! check your email to confirm ✅';
+  sucEl.textContent   = 'account created! check your email to confirm ✅';
   sucEl.style.display = 'block';
 }
 // ============================================================

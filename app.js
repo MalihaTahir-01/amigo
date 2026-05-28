@@ -1279,7 +1279,7 @@ function doSearch() {
 // ============================================================
 
 // ── Local date helper (avoids UTC shift for PKT/UTC+5) ──────
-unction getAllNotifItems() {
+function getAllNotifItems() {
   const today   = new Date();
   const todayStr = localDateStr(today); // ✅ fixed
 
@@ -1446,16 +1446,18 @@ function buildNotifCard(n, period) {
 }
 
 function updateNotifBadge() {
-  const badge = document.getElementById('notifBadge');
   const count = getAllNotifItems().length;
+  const badge = document.getElementById('notifBadge');
+  const dot   = document.getElementById('notifDot');
+
   if (count > 0) {
-    badge.style.display = 'block';
-    badge.textContent   = count > 9 ? '9+' : count;
+    if (badge) { badge.style.display = 'block'; badge.textContent = count > 9 ? '9+' : count; }
+    if (dot)   dot.style.display = 'block';
   } else {
-    badge.style.display = 'none';
+    if (badge) badge.style.display = 'none';
+    if (dot)   dot.style.display   = 'none';
   }
 }
-
 // Run cleanup on load, then schedule midnight cleanup
 removePastItems();
 scheduleMidnightCleanup();

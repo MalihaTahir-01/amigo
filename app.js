@@ -1273,8 +1273,109 @@ function doSearch() {
   });
 }
 // ============================================================
-// NOTIFICATIONS
 // ============================================================
+// NOTIFICATIONS — FIXED (UTC timezone bug resolved)
+// Uses local date strings everywhere instead of toISOString()
+// ============================================================
+
+// ── Local date helper (avoids UTC shift for PKT/UTC+5) ──────
+function localDateStr(date) {
+  return date.getFullYear() + '-' +
+    String(date.getMonth() + 1).padStart(2, '0') + '-' +
+    String(date.getDate()).padStart(2, '0');
+}
+
+// ── Auto-cleanup: remove past reminders on load & at midnight ──
+function removePastItems() {
+  const todayStr = localDateStr(new Date()); // ✅ fixed
+
+  const before = reminders.length;
+  reminders = reminders.filter(r => r.date >= todayStr);
+  if (reminders.length !== before) {
+    localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
+    saveUserData();
+    renderReminderList();
+    renderCalendar();
+  }
+}
+
+// ── Build unified notification items from reminders + tasks ──
+function getAllNotifItems() {
+  const today   = new Date();
+  const todayStr = localDateStr(today); // ✅ fixed
+
+  const in7Days = new Date();
+  in7Days.setDate(in7Days.getDate() + 7);
+  const in7Str  = localDateStr(in7Days); // ✅ fixed
+
+  const all = [];
+
+  // 1) Calendar reminders
+  reminders.forEach(r => {
+    if (r.date >= todayStr && r.date <= in7Str) {
+      all.push({
+        id:     r.id,
+        title:  r.title,
+        type:   r.type,
+        date:   r.date,
+        time:   r.time || '08:00',
+        source: 'reminder'
+      });
+    }
+  });
+
+  // 2) Assignments & Quizzes from items
+  items.forEach(item => {
+    if (item.type !== 'assignment' && item.type !== 'quiz') return;
+
+    const d = parseDate(item.due);
+    if (!d || isNaN(d)) return;
+
+    const dueDateStr = localDateStr(d); // ✅ fixed — was d.toISOString().split('T')[0]
+
+    if (dueDateStr < todayStr || dueDateStr > in7Str) return;
+
+    // Due-day notification
+    all.push({
+      id:      item.id + '_due',
+      title:   item.title,
+      type:    item.type,
+      subject: item.subject,
+      date:    dueDateStr,
+      time:    '08:00',
+      source:  'task',
+      label:   'Due'
+    });
+
+    // 1-day-prior reminder
+    const dayBefore = new Date(d);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+    const dbStr = localDateStr(dayBefore); // ✅ fixed
+
+    if (dbStr >= todayStr) {
+      all.push({
+        id:      item.id + '_prior',
+        title:   item.title,
+        type:    item.type,
+        subject: item.subject,
+        date:    dbStr,
+        time:    '08:00',
+        source:  'task',
+        label:   'Tomorrow!'
+      });
+    }
+  });
+
+  // Sort by date then time
+  all.sort((a, b) => {
+    const da = new Date(a.date + 'T' + a.time);
+    const db = new Date(b.date + 'T' + b.time);
+    return da - db;
+  });
+
+  return all;
+}
+
 function toggleNotifications() {
   const panel  = document.getElementById('notifPanel');
   const isOpen = panel.style.display === 'block';
@@ -1282,45 +1383,105 @@ function toggleNotifications() {
   document.getElementById('searchPanel').style.display = 'none';
   if (!isOpen) renderNotifPanel();
 }
-function getUpcomingReminders() {
-  const now        = new Date();
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-  return reminders.filter(r => {
-    const d = new Date(r.date + 'T00:00:00');
-    return d >= now && d <= endOfMonth;
-  }).sort((a, b) => new Date(a.date) - new Date(b.date));
-}
+
 function renderNotifPanel() {
-  const list     = document.getElementById('notifList');
-  const upcoming = getUpcomingReminders();
-  list.innerHTML  = '';
-  if (upcoming.length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;">No upcoming reminders this month.</div>';
+  const list    = document.getElementById('notifList');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const all     = getAllNotifItems();
+  list.innerHTML = '';
+
+  if (all.length === 0) {
+    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;text-align:center;">All clear for the next 7 days 🎉</div>';
     return;
   }
-  upcoming.forEach(r => {
-    const div       = document.createElement('div');
-    div.className   = 'task-item';
-    const dateLabel = new Date(r.date + 'T00:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-    div.innerHTML   = `
-      <div class="task-icon ${iconClass(r.type)}"><i class="ti ${iconName(r.type)}"></i></div>
-      <div class="task-info">
-        <div class="task-title">${r.title}</div>
-        <div class="task-sub">${dateLabel} at ${r.time}</div>
-      </div>`;
-    list.appendChild(div);
-  });
+
+  const todayItems    = all.filter(n => n.date === todayStr);
+  const upcomingItems = all.filter(n => n.date >  todayStr);
+
+  // ── TODAY section ──────────────────────────────────────
+  if (todayItems.length > 0) {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#D97706;text-transform:uppercase;letter-spacing:0.8px;padding:4px 4px 6px;';
+    hdr.textContent = 'Today';
+    list.appendChild(hdr);
+
+    todayItems.forEach(n => {
+      list.appendChild(buildNotifCard(n, 'today'));
+    });
+  }
+
+  // ── UPCOMING section ────────────────────────────────────
+  if (upcomingItems.length > 0) {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#1a3a6b;text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px;';
+    hdr.textContent = 'Next 7 Days';
+    list.appendChild(hdr);
+
+    upcomingItems.forEach(n => {
+      list.appendChild(buildNotifCard(n, 'upcoming'));
+    });
+  }
 }
+
+function buildNotifCard(n, period) {
+  const div = document.createElement('div');
+
+  // Color scheme: today = amber tones, upcoming = blue tones
+  const isToday = period === 'today';
+  const bg      = isToday ? '#FFF7ED' : '#EFF6FF';
+  const border  = isToday ? '#FED7AA' : '#BFDBFE';
+  const iconBg  = isToday ? '#FEF3C7' : '#DBEAFE';
+  const iconCol = isToday ? '#D97706' : '#1d4ed8';
+  const titleCol = '#0F172A';
+  const subCol  = '#64748B';
+
+  const dateLabel = new Date(n.date + 'T00:00:00').toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric'
+  });
+
+  const subText = n.source === 'task'
+    ? `${n.subject || ''} — ${n.label || 'Due'} ${isToday ? 'today' : 'on ' + dateLabel}`
+    : `${n.type} — ${dateLabel} at ${n.time}`;
+
+  div.style.cssText = `
+    display:flex;align-items:center;gap:10px;
+    background:${bg};border:0.5px solid ${border};
+    border-radius:10px;padding:10px 12px;margin-bottom:4px;
+  `;
+
+  div.innerHTML = `
+    <div style="width:32px;height:32px;border-radius:8px;background:${iconBg};
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i class="ti ${iconName(n.type)}" style="font-size:15px;color:${iconCol};"></i>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:12px;font-weight:600;color:${titleCol};
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.title}</div>
+      <div style="font-size:11px;color:${subCol};margin-top:1px;">${subText}</div>
+    </div>
+    ${isToday ? `<span style="font-size:9px;font-weight:700;color:#D97706;
+      background:#FEF3C7;border-radius:20px;padding:2px 7px;flex-shrink:0;">TODAY</span>` : ''}
+  `;
+
+  return div;
+}
+
 function updateNotifBadge() {
   const badge = document.getElementById('notifBadge');
-  const count = getUpcomingReminders().length;
+  const count = getAllNotifItems().length;
   if (count > 0) {
     badge.style.display = 'block';
-    badge.textContent   = count;
+    badge.textContent   = count > 9 ? '9+' : count;
   } else {
     badge.style.display = 'none';
   }
 }
+
+// Run cleanup on load, then schedule midnight cleanup
+removePastItems();
+scheduleMidnightCleanup();
+
+
 // Close panels when clicking anywhere outside them
 document.addEventListener('click', e => {
   const notifPanel  = document.getElementById('notifPanel');
@@ -1419,39 +1580,7 @@ async function handleSignup() {
   sucEl.textContent   = 'account created! check your email to confirm ✅';
   sucEl.style.display = 'block';
 }
-// ============================================================
-// FORGOT PASSWORD
-// ============================================================
-async function handleForgotPassword() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const errEl = document.getElementById('loginError');
-  if (!email) {
-    errEl.textContent      = 'enter your email first 📧';
-    errEl.style.color      = '#EF4444';
-    errEl.style.background = '#FEE2E2';
-    errEl.style.display    = 'block';
-    return;
-  }
-  errEl.textContent      = 'sending reset link...';
-  errEl.style.color      = '#1a3a6b';
-  errEl.style.background = '#e8eef7';
-  errEl.style.display    = 'block';
 
-  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin
-  });
-  if (error) {
-    errEl.textContent      = 'something went wrong 😬';
-    errEl.style.color      = '#EF4444';
-    errEl.style.background = '#FEE2E2';
-    errEl.style.display    = 'block';
-    return;
-  }
-  errEl.textContent      = 'reset link sent! check your email 📩';
-  errEl.style.color      = '#16A34A';
-  errEl.style.background = '#DCFCE7';
-  errEl.style.display    = 'block';
-}
 // ============================================================
 // FEEDBACK / EMAILJS
 // ============================================================

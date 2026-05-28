@@ -1279,28 +1279,7 @@ function doSearch() {
 // ============================================================
 
 // ── Local date helper (avoids UTC shift for PKT/UTC+5) ──────
-function localDateStr(date) {
-  return date.getFullYear() + '-' +
-    String(date.getMonth() + 1).padStart(2, '0') + '-' +
-    String(date.getDate()).padStart(2, '0');
-}
-
-// ── Auto-cleanup: remove past reminders on load & at midnight ──
-function removePastItems() {
-  const todayStr = localDateStr(new Date()); // ✅ fixed
-
-  const before = reminders.length;
-  reminders = reminders.filter(r => r.date >= todayStr);
-  if (reminders.length !== before) {
-    localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
-    saveUserData();
-    renderReminderList();
-    renderCalendar();
-  }
-}
-
-// ── Build unified notification items from reminders + tasks ──
-function getAllNotifItems() {
+unction getAllNotifItems() {
   const today   = new Date();
   const todayStr = localDateStr(today); // ✅ fixed
 

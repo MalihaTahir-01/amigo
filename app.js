@@ -1398,46 +1398,6 @@ async function handleSignup() {
   sucEl.textContent = 'account created! check your email to confirm ✅';
   sucEl.style.display = 'block';
 }
-async function handleForgotPassword() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const errEl = document.getElementById('loginError');
-  if (!email) {
-    errEl.textContent        = 'enter your email first 📧';
-    errEl.style.color        = '#EF4444';
-    errEl.style.background   = '#FEE2E2';
-    errEl.style.display      = 'block';
-    return;
-  }
-  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin   // ← dynamic, not hardcoded
-  });
-  if (error) {
-    errEl.textContent        = 'something went wrong 😬';
-    errEl.style.color        = '#EF4444';
-    errEl.style.background   = '#FEE2E2';
-    errEl.style.display      = 'block';
-    return;
-  }
-  errEl.textContent        = 'reset link sent! check your email 📩';
-  errEl.style.color        = '#16A34A';
-  errEl.style.background   = '#DCFCE7';
-  errEl.style.display      = 'block';
-}
-  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://amigo-lilac.vercel.app'
-  });
-  if (error) {
-    errEl.textContent = 'something went wrong 😬';
-    errEl.style.color = '#EF4444';
-    errEl.style.background = '#FEE2E2';
-    errEl.style.display = 'block';
-    return;
-  }
-  errEl.textContent = 'reset link sent! check your email 📩';
-  errEl.style.color = '#16A34A';
-  errEl.style.background = '#DCFCE7';
-  errEl.style.display = 'block';
-}
 // ============================================================
 // FEEDBACK / EMAILJS
 // ============================================================

@@ -52,6 +52,14 @@ async function signOut() {
   window.location.reload();
 }
 
+// ── Apply session to UI ───────────────────────────────────
+function applySessionToUI(session) {
+  const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+  document.querySelector('.greeting h2').textContent    = `Hello, ${name} 👋`;
+  document.querySelector('.profile-info p').textContent = name;
+  document.querySelector('.avatar').textContent         = name.charAt(0).toUpperCase();
+}
+
 // ── Password reset form ───────────────────────────────────
 function showPasswordResetForm() {
   const loginForm = document.getElementById('form-login');
@@ -72,15 +80,15 @@ function showPasswordResetForm() {
 
 async function handlePasswordReset() {
   const password = document.getElementById('newPassword').value.trim();
-  const errEl = document.getElementById('resetError');
+  const errEl    = document.getElementById('resetError');
   if (!password || password.length < 6) {
-    errEl.textContent = 'at least 6 characters please 🔐';
+    errEl.textContent   = 'at least 6 characters please 🔐';
     errEl.style.display = 'block';
     return;
   }
   const { error } = await _supabase.auth.updateUser({ password });
   if (error) {
-    errEl.textContent = error.message;
+    errEl.textContent   = error.message;
     errEl.style.display = 'block';
     return;
   }
@@ -90,32 +98,49 @@ async function handlePasswordReset() {
 
 // ── Auth state listener ───────────────────────────────────
 async function initAuth() {
-  // Check if this is a password reset callback
   const hash = window.location.hash;
+
+  // ── Handle password recovery link ────────────────────
   if (hash && hash.includes('type=recovery')) {
     document.getElementById('authScreen').style.display = 'flex';
-    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display  = 'none';
     showPasswordResetForm();
     return;
   }
 
+  // ── Handle email confirmation link ────────────────────
+  // When user clicks the confirmation email, Supabase redirects back
+  // with #access_token=...&type=signup in the URL hash.
+  // Supabase JS v2 auto-processes the token — we just need to read the session.
+  if (hash && hash.includes('type=signup')) {
+    // Small delay to let Supabase JS finish processing the hash token
+    await new Promise(r => setTimeout(r, 600));
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session) {
+      // Clean the token out of the URL bar
+      window.history.replaceState(null, '', window.location.pathname);
+      await loadUserData();
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display  = 'flex';
+      applySessionToUI(session);
+      return;
+    }
+  }
+
+  // ── Normal session check (returning user) ─────────────
   const session = await getSession();
   if (session) {
-    // Load data from Supabase before showing the app
     await loadUserData();
-
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('appScreen').style.display  = 'flex';
-    const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
-    document.querySelector('.greeting h2').textContent    = `Hello, ${name} 👋`;
-    document.querySelector('.profile-info p').textContent = name;
-    document.querySelector('.avatar').textContent         = name.charAt(0).toUpperCase();
+    applySessionToUI(session);
   } else {
     clearLocalData();
     document.getElementById('authScreen').style.display = 'flex';
     document.getElementById('appScreen').style.display  = 'none';
   }
 }
+
 // ── Load user data from Supabase ──────────────────────────
 async function loadUserData() {
   const session = await getSession();
@@ -128,28 +153,21 @@ async function loadUserData() {
     .eq('user_id', userId)
     .single();
 
-      console.log('Supabase data:', data);
-      console.log('Supabase error:', error);
-
-  // If no data in Supabase yet, upload whatever is in localStorage
   if (error || !data || !data.items) {
     await saveUserData();
     return;
   }
 
-  // Supabase has data — merge with localStorage
-  // Keep whichever has more items (in case user added stuff offline)
-  const cloudItems    = data.items    || [];
-  const cloudTodos    = data.todos    || [];
-  const cloudRem      = data.reminders|| [];
-  const cloudFolders  = data.folders  || [];
+  const cloudItems   = data.items     || [];
+  const cloudTodos   = data.todos     || [];
+  const cloudRem     = data.reminders || [];
+  const cloudFolders = data.folders   || [];
 
-  const localItems    = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
-  const localTodos    = JSON.parse(localStorage.getItem('amigo_todos')     || '[]');
-  const localRem      = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
-  const localFolders  = JSON.parse(localStorage.getItem('amigo_folders')   || '[]');
+  const localItems   = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
+  const localTodos   = JSON.parse(localStorage.getItem('amigo_todos')     || '[]');
+  const localRem     = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
+  const localFolders = JSON.parse(localStorage.getItem('amigo_folders')   || '[]');
 
-  // Merge by id — avoid duplicates
   function mergeById(cloud, local) {
     const map = {};
     cloud.forEach(i => map[i.id] = i);
@@ -157,17 +175,11 @@ async function loadUserData() {
     return Object.values(map);
   }
 
-  const mergedItems   = mergeById(cloudItems, localItems);
-  const mergedTodos   = mergeById(cloudTodos, localTodos);
-  const mergedRem     = mergeById(cloudRem, localRem);
-  const mergedFolders = mergeById(cloudFolders, localFolders);
+  localStorage.setItem('amigo_items',     JSON.stringify(mergeById(cloudItems,   localItems)));
+  localStorage.setItem('amigo_todos',     JSON.stringify(mergeById(cloudTodos,   localTodos)));
+  localStorage.setItem('amigo_reminders', JSON.stringify(mergeById(cloudRem,     localRem)));
+  localStorage.setItem('amigo_folders',   JSON.stringify(mergeById(cloudFolders, localFolders)));
 
-  localStorage.setItem('amigo_items',     JSON.stringify(mergedItems));
-  localStorage.setItem('amigo_todos',     JSON.stringify(mergedTodos));
-  localStorage.setItem('amigo_reminders', JSON.stringify(mergedRem));
-  localStorage.setItem('amigo_folders',   JSON.stringify(mergedFolders));
-
-  // Settings — cloud takes priority if they exist
   if (data.settings) {
     const s = data.settings;
     if (s.name)    localStorage.setItem('amigo_name',    s.name);
@@ -176,7 +188,6 @@ async function loadUserData() {
     if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
   }
 
-  // Upload the merged result back to Supabase
   await saveUserData();
 }
 
@@ -184,7 +195,7 @@ async function loadUserData() {
 async function saveUserData() {
   const session = await getSession();
   if (!session) return;
-  const userId = session.user.id;
+  const userId  = session.user.id;
   const payload = {
     user_id:    userId,
     items:      JSON.parse(localStorage.getItem('amigo_items')     || '[]'),
@@ -203,7 +214,6 @@ async function saveUserData() {
     .from('user_data')
     .upsert(payload, { onConflict: 'user_id' });
   if (error) console.error('Supabase save error:', error.message);
-  else console.log('Supabase saved ok');
 }
 
 // ── Clear local data on logout ────────────────────────────

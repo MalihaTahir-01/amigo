@@ -1420,6 +1420,39 @@ async function handleSignup() {
   sucEl.style.display = 'block';
 }
 // ============================================================
+// FORGOT PASSWORD
+// ============================================================
+async function handleForgotPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const errEl = document.getElementById('loginError');
+  if (!email) {
+    errEl.textContent      = 'enter your email first 📧';
+    errEl.style.color      = '#EF4444';
+    errEl.style.background = '#FEE2E2';
+    errEl.style.display    = 'block';
+    return;
+  }
+  errEl.textContent      = 'sending reset link...';
+  errEl.style.color      = '#1a3a6b';
+  errEl.style.background = '#e8eef7';
+  errEl.style.display    = 'block';
+
+  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+  if (error) {
+    errEl.textContent      = 'something went wrong 😬';
+    errEl.style.color      = '#EF4444';
+    errEl.style.background = '#FEE2E2';
+    errEl.style.display    = 'block';
+    return;
+  }
+  errEl.textContent      = 'reset link sent! check your email 📩';
+  errEl.style.color      = '#16A34A';
+  errEl.style.background = '#DCFCE7';
+  errEl.style.display    = 'block';
+}
+// ============================================================
 // FEEDBACK / EMAILJS
 // ============================================================
 emailjs.init('82oFX8G_FfVMfS3Uj');

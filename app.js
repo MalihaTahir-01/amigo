@@ -1365,7 +1365,7 @@ function toggleNotifications() {
 
 function renderNotifPanel() {
   const list    = document.getElementById('notifList');
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr(new Date());
   const all     = getAllNotifItems();
   list.innerHTML = '';
 
@@ -1458,7 +1458,32 @@ function updateNotifBadge() {
     if (dot)   dot.style.display   = 'none';
   }
 }
-// Run cleanup on load, then schedule midnight cleanup
+function localDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function removePastItems() {
+  const todayStr = localDateStr(new Date());
+  reminders = reminders.filter(r => r.date >= todayStr);
+  localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
+}
+
+function scheduleMidnightCleanup() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+  const msUntilMidnight = midnight - now;
+  setTimeout(() => {
+    removePastItems();
+    renderReminderList();
+    renderCalendar();
+    updateNotifBadge();
+    scheduleMidnightCleanup();
+  }, msUntilMidnight);
+}
+
 removePastItems();
 scheduleMidnightCleanup();
 

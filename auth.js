@@ -212,8 +212,7 @@ async function loadUserData() {
     return;
   }
 
-  // ── ALWAYS trust cloud data — no merging ──────────────────
-  // Merging caused deleted items to resurrect from other devices
+  // Always trust cloud data — overwrite local completely
   if (data.items)     localStorage.setItem('amigo_items',     JSON.stringify(data.items));
   if (data.todos)     localStorage.setItem('amigo_todos',     JSON.stringify(data.todos));
   if (data.reminders) localStorage.setItem('amigo_reminders', JSON.stringify(data.reminders));
@@ -226,38 +225,6 @@ async function loadUserData() {
     if (s.program) localStorage.setItem('amigo_program', s.program);
     if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
   }
-
-  const cloudItems   = data.items     || [];
-  const cloudTodos   = data.todos     || [];
-  const cloudRem     = data.reminders || [];
-  const cloudFolders = data.folders   || [];
-
-  const localItems   = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
-  const localTodos   = JSON.parse(localStorage.getItem('amigo_todos')     || '[]');
-  const localRem     = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
-  const localFolders = JSON.parse(localStorage.getItem('amigo_folders')   || '[]');
-
-  function mergeById(cloud, local) {
-    const map = {};
-    cloud.forEach(i => map[i.id] = i);
-    local.forEach(i => map[i.id] = i);
-    return Object.values(map);
-  }
-
-  localStorage.setItem('amigo_items',     JSON.stringify(mergeById(cloudItems,   localItems)));
-  localStorage.setItem('amigo_todos',     JSON.stringify(mergeById(cloudTodos,   localTodos)));
-  localStorage.setItem('amigo_reminders', JSON.stringify(mergeById(cloudRem,     localRem)));
-  localStorage.setItem('amigo_folders',   JSON.stringify(mergeById(cloudFolders, localFolders)));
-
-  if (data.settings) {
-    const s = data.settings;
-    if (s.name)    localStorage.setItem('amigo_name',    s.name);
-    if (s.uni)     localStorage.setItem('amigo_uni',     s.uni);
-    if (s.program) localStorage.setItem('amigo_program', s.program);
-    if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
-  }
-
-  await saveUserData();
 }
 
 async function saveUserData() {

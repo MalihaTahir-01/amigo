@@ -1292,7 +1292,7 @@ function getAllNotifItems() {
   const todayStr  = localDateStr(today);
 
   const in7Days = new Date(today);
-  in7Days.setDate(today.getDate() + 7);
+  in7Days.setDate(today.getDate() +30);
   const in7Str = localDateStr(in7Days);
 
   const all = [];
@@ -1344,7 +1344,7 @@ function getAllNotifItems() {
 }
 
 function toggleNotifications() {
-  // Always re-read fresh from storage (fixes mobile stale-state bug)
+  // Always re-read fresh from storage — fixes mobile stale-state
   items     = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
   reminders = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
 
@@ -1362,7 +1362,7 @@ function renderNotifPanel() {
   list.innerHTML = '';
 
   if (all.length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;text-align:center;">All clear for the next 7 days 🎉</div>';
+    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;text-align:center;">All clear for the next 30 days 🎉</div>';
     return;
   }
 
@@ -1380,7 +1380,7 @@ function renderNotifPanel() {
   if (upcomingItems.length > 0) {
     const hdr = document.createElement('div');
     hdr.style.cssText = 'font-size:10px;font-weight:600;color:#1a3a6b;text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px;';
-    hdr.textContent   = 'Next 7 Days';
+    hdr.textContent   = 'Next 30 Days';
     list.appendChild(hdr);
     upcomingItems.forEach(n => list.appendChild(buildNotifCard(n, 'upcoming')));
   }
@@ -1470,15 +1470,6 @@ function scheduleMidnightCleanup() {
 removePastItems();
 scheduleMidnightCleanup();
 updateNotifBadge();
-
-// Re-read items fresh from localStorage every time notifications open
-// This fixes mobile where items array may not be populated yet
-const _origToggleNotif = toggleNotifications;
-toggleNotifications = function() {
-  items     = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
-  reminders = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
-  _origToggleNotif();
-};
 
 
 // Close panels when clicking anywhere outside them

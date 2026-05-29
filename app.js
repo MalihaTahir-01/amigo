@@ -743,6 +743,10 @@ function deleteItem(id) {
   if (focus && focus.querySelectorAll('.focus-item').length === 0) {
     focus.innerHTML = `<div class="focus-empty">${t('noTasksToday')}</div>`;
   }
+  updateNotifBadge();
+  if (document.getElementById('notifPanel').style.display === 'block') {
+    renderNotifPanel();
+  }
 }
 function addToFocus(item) {
   const focus = document.getElementById('focusItems');
@@ -1469,7 +1473,7 @@ function buildNotifCard(n, period) {
     ? `${n.subject || ''} — ${n.label}${isToday ? '' : ' · ' + (n.rawDue || dateLabel)}`
     : `${n.type} — ${isToday ? n.time : dateLabel + ' at ' + n.time}`;
 
-    
+
   div.style.cssText = `
     display:flex;align-items:center;gap:10px;
     background:${bg};border:0.5px solid ${border};

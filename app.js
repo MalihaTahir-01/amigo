@@ -525,7 +525,7 @@ function parseDate(due) {
   const parsed = new Date(due);
   if (!isNaN(parsed)) return parsed;
   const parts = due.split('/');
-  if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
   return new Date(9999, 0, 1); // Unknown dates go to the end
 }
 // ────────────────────────────────────────────────────────────

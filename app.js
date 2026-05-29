@@ -1462,6 +1462,15 @@ function scheduleMidnightCleanup() {
 removePastItems();
 scheduleMidnightCleanup();
 
+// Re-read items fresh from localStorage every time notifications open
+// This fixes mobile where items array may not be populated yet
+const _origToggleNotif = toggleNotifications;
+toggleNotifications = function() {
+  items     = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
+  reminders = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
+  _origToggleNotif();
+};
+
 
 // Close panels when clicking anywhere outside them
 document.addEventListener('click', e => {

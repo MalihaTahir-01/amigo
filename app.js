@@ -1386,16 +1386,9 @@ function renderNotifPanel() {
     return;
   }
 
-  const hdr = document.createElement('div');
-  hdr.style.cssText = 'font-size:10px;font-weight:600;color:#D97706;text-transform:uppercase;letter-spacing:0.8px;padding:4px 4px 8px;';
-  hdr.textContent = 'Today';
-  list.appendChild(hdr);
-
-  all.forEach(n => list.appendChild(buildNotifCard(n, 'today')));
-}
-
+  const todayStr      = localDateStr(new Date());
   const todayItems    = all.filter(n => n.date === todayStr);
-  const upcomingItems = all.filter(n => n.date >  todayStr);
+  const upcomingItems = all.filter(n => n.date > todayStr);
 
   if (todayItems.length > 0) {
     const hdr = document.createElement('div');

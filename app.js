@@ -513,21 +513,55 @@ function isToday(due) {
 }
 // Converts a due date string to a Date object for sorting
 function parseDate(due) {
+  if (!due) return new Date(9999, 0, 1);
   const d = due.toLowerCase().trim();
+
   if (d.includes('today') || d.includes('tonight') || d.includes('aaj')) return new Date();
+
   if (d.includes('tomorrow')) {
-    const t = new Date();
-    t.setDate(t.getDate() + 1);
-    return t;
+    const t = new Date(); t.setDate(t.getDate() + 1); return t;
   }
+
+  // "next week" / "next month"
+  if (d.includes('next week')) {
+    const t = new Date(); t.setDate(t.getDate() + 7); return t;
+  }
+  if (d.includes('next month')) {
+    const t = new Date(); t.setMonth(t.getMonth() + 1); return t;
+  }
+
+  // Day names: "monday", "on monday", "this monday"
+  const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  for (let i = 0; i < dayNames.length; i++) {
+    if (d.includes(dayNames[i])) {
+      const today = new Date();
+      const todayDay = today.getDay();
+      let diff = i - todayDay;
+      if (diff <= 0) diff += 7; // always next occurrence
+      const t = new Date();
+      t.setDate(today.getDate() + diff);
+      return t;
+    }
+  }
+
+  // Try normalizeDate (handles "24may2026", "24/05/2026" etc)
   const normalized = normalizeDate(due);
   if (normalized && !isNaN(normalized)) return normalized;
+
+  // Try DD/MM/YYYY
+  const parts = due.split('/');
+  if (parts.length === 3) {
+    const attempt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    if (!isNaN(attempt)) return attempt;
+  }
+
+  // Try native Date parse as last resort
   const parsed = new Date(due);
   if (!isNaN(parsed)) return parsed;
-  const parts = due.split('/');
-if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-  return new Date(9999, 0, 1); // Unknown dates go to the end
+
+  return new Date(9999, 0, 1);
 }
+
 // ────────────────────────────────────────────────────────────
 // SAVE & RENDER ITEMS
 // ────────────────────────────────────────────────────────────
@@ -1289,17 +1323,17 @@ function getAllNotifItems() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr  = localDateStr(today);
+  const todayStr = localDateStr(today);
 
-  const in7Days = new Date(today);
-  in7Days.setDate(today.getDate() +30);
-  const in7Str = localDateStr(in7Days);
+  const in30Days = new Date(today);
+  in30Days.setDate(today.getDate() + 30);
+  const in30Str = localDateStr(in30Days);
 
   const all = [];
 
-  // Add reminders that fall in the window
+  // Add reminders in the window
   storedReminders.forEach(r => {
-    if (r.date >= todayStr && r.date <= in7Str) {
+    if (r.date >= todayStr && r.date <= in30Str) {
       all.push({
         id: r.id, title: r.title, type: r.type,
         date: r.date, time: r.time || '08:00', source: 'reminder'
@@ -1307,35 +1341,63 @@ function getAllNotifItems() {
     }
   });
 
-  // Add tasks whose due date falls in the window
+  // Add tasks
   storedItems.forEach(item => {
     const parsed = parseDate(item.due);
-    if (!parsed || isNaN(parsed)) return;
+    const isFallback = !parsed || isNaN(parsed) || parsed.getFullYear() === 9999;
 
-    // Normalise to midnight local time so string comparison works
-    const dueMidnight = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-    const dueDateStr  = localDateStr(dueMidnight);
+    let dueDateStr;
 
-    if (dueDateStr < todayStr || dueDateStr > in7Str) return;
+    if (isFallback) {
+      // Can't parse the date — still show it as "upcoming" using today as sort anchor
+      // but only if it doesn't look like a past keyword
+      const dueLower = (item.due || '').toLowerCase().trim();
+      // Skip obviously past/vague entries with no date info
+      if (!dueLower || dueLower === 'unknown') return;
+      // Treat unparseable future-sounding dates as 30 days out so they appear
+      dueDateStr = in30Str;
+    } else {
+      const dueMidnight = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      dueDateStr = localDateStr(dueMidnight);
+      // Skip if before today
+      if (dueDateStr < todayStr) return;
+      // Skip if beyond 30 days
+      if (dueDateStr > in30Str) return;
+    }
 
-    // "Due" notification on the actual due date
+    // Due notification
     all.push({
-      id: item.id + '_due', title: item.title, type: item.type,
-      subject: item.subject, date: dueDateStr, time: '08:00',
-      source: 'task', label: 'Due'
+      id: item.id + '_due',
+      title: item.title,
+      type: item.type,
+      subject: item.subject,
+      date: dueDateStr,
+      time: '08:00',
+      source: 'task',
+      label: 'Due',
+      rawDue: item.due   // keep original text for display
     });
 
-    // "Due tomorrow" warning on the day before
-    const dayBefore    = new Date(dueMidnight);
-    dayBefore.setDate(dayBefore.getDate() - 1);
-    const dayBeforeStr = localDateStr(dayBefore);
+    // Day-before warning (only if we have a real parsed date)
+    if (!isFallback) {
+      const dueMidnight = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      const dayBefore = new Date(dueMidnight);
+      dayBefore.setDate(dayBefore.getDate() - 1);
+      const dayBeforeStr = localDateStr(dayBefore);
 
-    if (dayBeforeStr >= todayStr && dayBeforeStr <= in7Str) {
-      all.push({
-        id: item.id + '_prior', title: item.title, type: item.type,
-        subject: item.subject, date: dayBeforeStr, time: '08:00',
-        source: 'task', label: 'Due tomorrow'
-      });
+      if (dayBeforeStr >= todayStr && dayBeforeStr <= in30Str) {
+        all.push({
+          id: item.id + '_prior',
+          title: item.title,
+          type: item.type,
+          subject: item.subject,
+          date: dayBeforeStr,
+          time: '08:00',
+          source: 'task',
+          label: 'Due tomorrow',
+          rawDue: item.due
+        });
+      }
     }
   });
 
@@ -1404,9 +1466,10 @@ function buildNotifCard(n, period) {
   });
 
   const subText = n.source === 'task'
-    ? `${n.subject || ''} — ${n.label}${isToday ? '' : ' · ' + dateLabel}`
+    ? `${n.subject || ''} — ${n.label}${isToday ? '' : ' · ' + (n.rawDue || dateLabel)}`
     : `${n.type} — ${isToday ? n.time : dateLabel + ' at ' + n.time}`;
 
+    
   div.style.cssText = `
     display:flex;align-items:center;gap:10px;
     background:${bg};border:0.5px solid ${border};

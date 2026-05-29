@@ -1283,52 +1283,64 @@ function localDateStr(date) {
 }
 
 function getAllNotifItems() {
-  const today    = new Date();
+  items     = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
+  reminders = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
+
+  const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = localDateStr(today);
 
-  const in7Days  = new Date();
-  in7Days.setDate(in7Days.getDate() + 7);
-  in7Days.setHours(23, 59, 59, 999);
-  const in7Str   = localDateStr(in7Days);
+  const in30Days = new Date();
+  in30Days.setDate(in30Days.getDate() + 30);
+  in30Days.setHours(23, 59, 59, 999);
+  const in30Str = localDateStr(in30Days);
 
-  const all = [];
+  const all  = [];
+  const seen = new Set();
 
   reminders.forEach(r => {
-    if (r.date >= todayStr && r.date <= in7Str) {
-      all.push({ id: r.id, title: r.title, type: r.type, date: r.date, time: r.time || '08:00', source: 'reminder' });
+    if (r.date >= todayStr && r.date <= in30Str) {
+      const key = 'rem_' + r.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        all.push({ id: r.id, title: r.title, type: r.type || 'notice', date: r.date, time: r.time || '08:00', source: 'reminder', label: r.date === todayStr ? 'Reminder today' : 'Reminder' });
+      }
     }
   });
 
   items.forEach(item => {
+    if (!item.due) return;
     const d = parseDate(item.due);
-    if (!d || isNaN(d)) return;
+    if (!d || isNaN(d.getTime())) return;
 
     const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const dueDateStr = localDateStr(normalized);
 
-    if (dueDateStr < todayStr || dueDateStr > in7Str) return;
-
-    all.push({
-      id: item.id + '_due', title: item.title, type: item.type,
-      subject: item.subject, date: dueDateStr, time: '08:00', source: 'task', label: 'Due'
-    });
+    if (dueDateStr >= todayStr && dueDateStr <= in30Str) {
+      const key = 'due_' + item.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        all.push({ id: item.id + '_due', title: item.title, type: item.type, subject: item.subject, date: dueDateStr, time: '08:00', source: 'task', label: dueDateStr === todayStr ? 'Due today' : 'Due' });
+      }
+    }
 
     const dayBefore = new Date(normalized);
     dayBefore.setDate(dayBefore.getDate() - 1);
     const dbStr = localDateStr(dayBefore);
 
-    if (dbStr >= todayStr && dbStr <= in7Str) {
-      all.push({
-        id: item.id + '_prior', title: item.title, type: item.type,
-        subject: item.subject, date: dbStr, time: '08:00', source: 'task', label: 'Tomorrow!'
-      });
+    if (dbStr >= todayStr && dbStr <= in30Str) {
+      const key = 'prior_' + item.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        all.push({ id: item.id + '_prior', title: item.title, type: item.type, subject: item.subject, date: dbStr, time: '08:00', source: 'task', label: 'Due tomorrow' });
+      }
     }
   });
 
   all.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
   return all;
 }
+
 function toggleNotifications() {
   const panel  = document.getElementById('notifPanel');
   const isOpen = panel.style.display === 'block';
@@ -1338,84 +1350,75 @@ function toggleNotifications() {
 }
 
 function renderNotifPanel() {
-  const list    = document.getElementById('notifList');
+  const list     = document.getElementById('notifList');
   const todayStr = localDateStr(new Date());
-  const all     = getAllNotifItems();
+  const all      = getAllNotifItems();
   list.innerHTML = '';
 
   if (all.length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;text-align:center;">All clear for the next 7 days 🎉</div>';
+    list.innerHTML = '<div style="padding:20px 16px;text-align:center;"><div style="font-size:22px;margin-bottom:8px;">🎉</div><div style="font-size:13px;font-weight:500;color:#0F172A;">All clear!</div><div style="font-size:12px;color:#94A3B8;margin-top:4px;">Nothing due in the next 30 days</div></div>';
     return;
   }
 
   const todayItems    = all.filter(n => n.date === todayStr);
   const upcomingItems = all.filter(n => n.date >  todayStr);
 
-  // ── TODAY section ──────────────────────────────────────
   if (todayItems.length > 0) {
     const hdr = document.createElement('div');
-    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#D97706;text-transform:uppercase;letter-spacing:0.8px;padding:4px 4px 6px;';
-    hdr.textContent = 'Today';
+    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#92400E;text-transform:uppercase;letter-spacing:0.8px;padding:6px 4px 8px;display:flex;align-items:center;gap:6px;';
+    hdr.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:#D97706;display:inline-block;"></span> Today <span style="background:#FEF3C7;color:#92400E;font-size:9px;padding:1px 6px;border-radius:20px;">${todayItems.length}</span>`;
     list.appendChild(hdr);
-
-    todayItems.forEach(n => {
-      list.appendChild(buildNotifCard(n, 'today'));
-    });
+    todayItems.forEach(n => list.appendChild(buildNotifCard(n, 'today')));
   }
 
-  // ── UPCOMING section ────────────────────────────────────
   if (upcomingItems.length > 0) {
     const hdr = document.createElement('div');
-    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#1a3a6b;text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px;';
-    hdr.textContent = 'Next 30 Days';
+    hdr.style.cssText = `font-size:10px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:0.8px;padding:${todayItems.length > 0 ? '12px' : '6px'} 4px 8px;display:flex;align-items:center;gap:6px;`;
+    hdr.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:#1a3a6b;display:inline-block;"></span> Next 30 Days <span style="background:#DBEAFE;color:#1e40af;font-size:9px;padding:1px 6px;border-radius:20px;">${upcomingItems.length}</span>`;
     list.appendChild(hdr);
-
-    upcomingItems.forEach(n => {
-      list.appendChild(buildNotifCard(n, 'upcoming'));
-    });
+    upcomingItems.forEach(n => list.appendChild(buildNotifCard(n, 'upcoming')));
   }
 }
 
 function buildNotifCard(n, period) {
-  const div = document.createElement('div');
-
-  // Color scheme: today = amber tones, upcoming = blue tones
+  const div     = document.createElement('div');
   const isToday = period === 'today';
-  const bg      = isToday ? '#FFF7ED' : '#EFF6FF';
-  const border  = isToday ? '#FED7AA' : '#BFDBFE';
+  const bg      = isToday ? '#FFFBEB' : '#EFF6FF';
+  const border  = isToday ? '#FDE68A' : '#BFDBFE';
   const iconBg  = isToday ? '#FEF3C7' : '#DBEAFE';
   const iconCol = isToday ? '#D97706' : '#1d4ed8';
-  const titleCol = '#0F172A';
-  const subCol  = '#64748B';
+  const tagBg   = isToday ? '#FEF3C7' : '#DBEAFE';
+  const tagCol  = isToday ? '#92400E' : '#1e40af';
 
-  const dateLabel = new Date(n.date + 'T00:00:00').toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric'
-  });
+  const dateObj   = new Date(n.date + 'T00:00:00');
+  const dateLabel = dateObj.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  const todayBase = new Date(); todayBase.setHours(0,0,0,0);
+  const daysUntil = Math.round((dateObj - todayBase) / 86400000);
+  const daysText  = daysUntil === 1 ? 'Tomorrow' : daysUntil === 0 ? 'Today' : 'In ' + daysUntil + ' days';
 
+  const subjectPart = n.subject ? n.subject + ' · ' : '';
   const subText = n.source === 'task'
-    ? `${n.subject || ''} — ${n.label || 'Due'} ${isToday ? 'today' : 'on ' + dateLabel}`
-    : `${n.type} — ${dateLabel} at ${n.time}`;
+    ? subjectPart + n.label + (isToday ? '' : ' · ' + dateLabel)
+    : (n.type || 'reminder') + ' · ' + (isToday ? 'Today at ' + n.time : dateLabel + ' · ' + n.time);
 
-  div.style.cssText = `
-    display:flex;align-items:center;gap:10px;
-    background:${bg};border:0.5px solid ${border};
-    border-radius:10px;padding:10px 12px;margin-bottom:4px;
-  `;
+  const typeLabel = (n.type || 'reminder').charAt(0).toUpperCase() + (n.type || 'reminder').slice(1);
 
+  div.style.cssText = `display:flex;align-items:center;gap:10px;background:${bg};border:0.5px solid ${border};border-radius:10px;padding:10px 12px;margin-bottom:6px;`;
   div.innerHTML = `
-    <div style="width:32px;height:32px;border-radius:8px;background:${iconBg};
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <i class="ti ${iconName(n.type)}" style="font-size:15px;color:${iconCol};"></i>
+    <div style="width:34px;height:34px;border-radius:9px;background:${iconBg};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+      <i class="ti ${iconName(n.type || 'notice')}" style="font-size:16px;color:${iconCol};"></i>
     </div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:12px;font-weight:600;color:${titleCol};
-        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.title}</div>
-      <div style="font-size:11px;color:${subCol};margin-top:1px;">${subText}</div>
+      <div style="font-size:12px;font-weight:600;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.title}</div>
+      <div style="font-size:11px;color:#64748B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${subText}</div>
     </div>
-    ${isToday ? `<span style="font-size:9px;font-weight:700;color:#D97706;
-      background:#FEF3C7;border-radius:20px;padding:2px 7px;flex-shrink:0;">TODAY</span>` : ''}
-  `;
-
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
+      ${isToday
+        ? `<span style="font-size:9px;font-weight:700;color:#fff;background:#D97706;border-radius:20px;padding:2px 7px;">TODAY</span>`
+        : `<span style="font-size:9px;font-weight:600;color:#1e40af;background:#DBEAFE;border-radius:20px;padding:2px 7px;">${daysText}</span>`
+      }
+      <span style="font-size:9px;color:${tagCol};background:${tagBg};border-radius:20px;padding:2px 7px;text-transform:capitalize;">${typeLabel}</span>
+    </div>`;
   return div;
 }
 
@@ -1423,7 +1426,6 @@ function updateNotifBadge() {
   const count = getAllNotifItems().length;
   const badge = document.getElementById('notifBadge');
   const dot   = document.getElementById('notifDot');
-
   if (count > 0) {
     if (badge) { badge.style.display = 'block'; badge.textContent = count > 9 ? '9+' : count; }
     if (dot)   dot.style.display = 'block';
@@ -1433,13 +1435,6 @@ function updateNotifBadge() {
   }
 }
 
-function localDateStr(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + d;
-}
-
 function removePastItems() {
   const todayStr = localDateStr(new Date());
   reminders = reminders.filter(r => r.date >= todayStr);
@@ -1447,29 +1442,19 @@ function removePastItems() {
 }
 
 function scheduleMidnightCleanup() {
-  const now = new Date();
+  const now      = new Date();
   const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-  const msUntilMidnight = midnight - now;
   setTimeout(() => {
     removePastItems();
     renderReminderList();
     renderCalendar();
     updateNotifBadge();
     scheduleMidnightCleanup();
-  }, msUntilMidnight);
+  }, midnight - now);
 }
 
 removePastItems();
 scheduleMidnightCleanup();
-
-// Re-read items fresh from localStorage every time notifications open
-// This fixes mobile where items array may not be populated yet
-const _origToggleNotif = toggleNotifications;
-toggleNotifications = function() {
-  items     = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
-  reminders = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
-  _origToggleNotif();
-};
 
 
 // Close panels when clicking anywhere outside them

@@ -1329,87 +1329,38 @@ function getAllNotifItems() {
   const storedItems     = JSON.parse(localStorage.getItem('amigo_items')     || '[]');
   const storedReminders = JSON.parse(localStorage.getItem('amigo_reminders') || '[]');
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = localDateStr(today);
-
-  const in30Days = new Date(today);
-  in30Days.setDate(today.getDate() + 30);
-  const in30Str = localDateStr(in30Days);
-
+  const todayStr = localDateStr(new Date());
   const all = [];
 
-  // Add reminders in the window
-  storedReminders.forEach(r => {
-    if (r.date >= todayStr && r.date <= in30Str) {
+  // Only today's tasks
+  storedItems.forEach(item => {
+    if (isToday(item.due)) {
       all.push({
-        id: r.id, title: r.title, type: r.type,
-        date: r.date, time: r.time || '08:00', source: 'reminder'
+        id: item.id + '_due',
+        title: item.title,
+        type: item.type,
+        subject: item.subject,
+        source: 'task',
+        date: todayStr,
+        time: '08:00'
       });
     }
   });
 
-  // Add tasks
-  storedItems.forEach(item => {
-    const parsed = parseDate(item.due);
-    const isFallback = !parsed || isNaN(parsed) || parsed.getFullYear() === 9999;
-
-    let dueDateStr;
-
-    if (isFallback) {
-      // Can't parse the date — still show it as "upcoming" using today as sort anchor
-      // but only if it doesn't look like a past keyword
-      const dueLower = (item.due || '').toLowerCase().trim();
-      // Skip obviously past/vague entries with no date info
-      if (!dueLower || dueLower === 'unknown') return;
-      // Treat unparseable future-sounding dates as 30 days out so they appear
-      dueDateStr = in30Str;
-    } else {
-      const dueMidnight = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-      dueDateStr = localDateStr(dueMidnight);
-      // Skip if before today
-      if (dueDateStr < todayStr) return;
-      // Skip if beyond 30 days
-      if (dueDateStr > in30Str) return;
-    }
-
-    // Due notification
-    all.push({
-      id: item.id + '_due',
-      title: item.title,
-      type: item.type,
-      subject: item.subject,
-      date: dueDateStr,
-      time: '08:00',
-      source: 'task',
-      label: 'Due',
-      rawDue: item.due   // keep original text for display
-    });
-
-    // Day-before warning (only if we have a real parsed date)
-    if (!isFallback) {
-      const dueMidnight = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-      const dayBefore = new Date(dueMidnight);
-      dayBefore.setDate(dayBefore.getDate() - 1);
-      const dayBeforeStr = localDateStr(dayBefore);
-
-      if (dayBeforeStr >= todayStr && dayBeforeStr <= in30Str) {
-        all.push({
-          id: item.id + '_prior',
-          title: item.title,
-          type: item.type,
-          subject: item.subject,
-          date: dayBeforeStr,
-          time: '08:00',
-          source: 'task',
-          label: 'Due tomorrow',
-          rawDue: item.due
-        });
-      }
+  // Only today's reminders from calendar
+  storedReminders.forEach(r => {
+    if (r.date === todayStr) {
+      all.push({
+        id: r.id,
+        title: r.title,
+        type: r.type,
+        date: todayStr,
+        time: r.time || '08:00',
+        source: 'reminder'
+      });
     }
   });
 
-  all.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
   return all;
 }
 
@@ -1426,15 +1377,22 @@ function toggleNotifications() {
 }
 
 function renderNotifPanel() {
-  const list     = document.getElementById('notifList');
-  const todayStr = localDateStr(new Date());
-  const all      = getAllNotifItems();
+  const list = document.getElementById('notifList');
+  const all  = getAllNotifItems();
   list.innerHTML = '';
 
   if (all.length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="padding:16px;color:#94A3B8;text-align:center;">All clear for the next 30 days 🎉</div>';
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:#94A3B8;font-size:13px;">nothing due today 🎉<br><span style="font-size:11px;">enjoy your day!</span></div>';
     return;
   }
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'font-size:10px;font-weight:600;color:#D97706;text-transform:uppercase;letter-spacing:0.8px;padding:4px 4px 8px;';
+  hdr.textContent = 'Today';
+  list.appendChild(hdr);
+
+  all.forEach(n => list.appendChild(buildNotifCard(n, 'today')));
+}
 
   const todayItems    = all.filter(n => n.date === todayStr);
   const upcomingItems = all.filter(n => n.date >  todayStr);

@@ -1274,87 +1274,61 @@ function doSearch() {
 }
 // ============================================================
 // ============================================================
-// NOTIFICATIONS — FIXED (UTC timezone bug resolved)
-// Uses local date strings everywhere instead of toISOString()
-// ============================================================
 
 // ── Local date helper (avoids UTC shift for PKT/UTC+5) ──────
-function getAllNotifItems() {
-  const today   = new Date();
-  const todayStr = localDateStr(today); // ✅ fixed
+function localDateStr(date) {
+  return date.getFullYear() + '-' +
+    String(date.getMonth() + 1).padStart(2, '0') + '-' +
+    String(date.getDate()).padStart(2, '0');
+}
 
-  const in7Days = new Date();
+function getAllNotifItems() {
+  const today    = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = localDateStr(today);
+
+  const in7Days  = new Date();
   in7Days.setDate(in7Days.getDate() + 7);
-  const in7Str  = localDateStr(in7Days); // ✅ fixed
+  in7Days.setHours(23, 59, 59, 999);
+  const in7Str   = localDateStr(in7Days);
 
   const all = [];
 
-  // 1) Calendar reminders
   reminders.forEach(r => {
     if (r.date >= todayStr && r.date <= in7Str) {
-      all.push({
-        id:     r.id,
-        title:  r.title,
-        type:   r.type,
-        date:   r.date,
-        time:   r.time || '08:00',
-        source: 'reminder'
-      });
+      all.push({ id: r.id, title: r.title, type: r.type, date: r.date, time: r.time || '08:00', source: 'reminder' });
     }
   });
 
-  // 2) Assignments & Quizzes from items
   items.forEach(item => {
-    if (item.type !== 'assignment' && item.type !== 'quiz') return;
-
     const d = parseDate(item.due);
     if (!d || isNaN(d)) return;
 
-    const dueDateStr = localDateStr(d); // ✅ fixed — was d.toISOString().split('T')[0]
+    const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dueDateStr = localDateStr(normalized);
 
     if (dueDateStr < todayStr || dueDateStr > in7Str) return;
 
-    // Due-day notification
     all.push({
-      id:      item.id + '_due',
-      title:   item.title,
-      type:    item.type,
-      subject: item.subject,
-      date:    dueDateStr,
-      time:    '08:00',
-      source:  'task',
-      label:   'Due'
+      id: item.id + '_due', title: item.title, type: item.type,
+      subject: item.subject, date: dueDateStr, time: '08:00', source: 'task', label: 'Due'
     });
 
-    // 1-day-prior reminder
-    const dayBefore = new Date(d);
+    const dayBefore = new Date(normalized);
     dayBefore.setDate(dayBefore.getDate() - 1);
-    const dbStr = localDateStr(dayBefore); // ✅ fixed
+    const dbStr = localDateStr(dayBefore);
 
-    if (dbStr >= todayStr) {
+    if (dbStr >= todayStr && dbStr <= in7Str) {
       all.push({
-        id:      item.id + '_prior',
-        title:   item.title,
-        type:    item.type,
-        subject: item.subject,
-        date:    dbStr,
-        time:    '08:00',
-        source:  'task',
-        label:   'Tomorrow!'
+        id: item.id + '_prior', title: item.title, type: item.type,
+        subject: item.subject, date: dbStr, time: '08:00', source: 'task', label: 'Tomorrow!'
       });
     }
   });
 
-  // Sort by date then time
-  all.sort((a, b) => {
-    const da = new Date(a.date + 'T' + a.time);
-    const db = new Date(b.date + 'T' + b.time);
-    return da - db;
-  });
-
+  all.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
   return all;
 }
-
 function toggleNotifications() {
   const panel  = document.getElementById('notifPanel');
   const isOpen = panel.style.display === 'block';
@@ -1393,7 +1367,7 @@ function renderNotifPanel() {
   if (upcomingItems.length > 0) {
     const hdr = document.createElement('div');
     hdr.style.cssText = 'font-size:10px;font-weight:600;color:#1a3a6b;text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px;';
-    hdr.textContent = 'Next 7 Days';
+    hdr.textContent = 'Next 30 Days';
     list.appendChild(hdr);
 
     upcomingItems.forEach(n => {
@@ -1458,6 +1432,7 @@ function updateNotifBadge() {
     if (dot)   dot.style.display   = 'none';
   }
 }
+
 function localDateStr(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');

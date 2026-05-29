@@ -747,6 +747,10 @@ function deleteItem(id) {
   if (document.getElementById('notifPanel').style.display === 'block') {
     renderNotifPanel();
   }
+  updateNotifBadge();
+  if (document.getElementById('notifPanel').style.display === 'block') {
+    renderNotifPanel();
+  }
 }
 function addToFocus(item) {
   const focus = document.getElementById('focusItems');

@@ -207,9 +207,24 @@ async function loadUserData() {
     .eq('user_id', userId)
     .single();
 
-  if (error || !data || !data.items) {
+  if (error || !data) {
     await saveUserData();
     return;
+  }
+
+  // ── ALWAYS trust cloud data — no merging ──────────────────
+  // Merging caused deleted items to resurrect from other devices
+  if (data.items)     localStorage.setItem('amigo_items',     JSON.stringify(data.items));
+  if (data.todos)     localStorage.setItem('amigo_todos',     JSON.stringify(data.todos));
+  if (data.reminders) localStorage.setItem('amigo_reminders', JSON.stringify(data.reminders));
+  if (data.folders)   localStorage.setItem('amigo_folders',   JSON.stringify(data.folders));
+
+  if (data.settings) {
+    const s = data.settings;
+    if (s.name)    localStorage.setItem('amigo_name',    s.name);
+    if (s.uni)     localStorage.setItem('amigo_uni',     s.uni);
+    if (s.program) localStorage.setItem('amigo_program', s.program);
+    if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
   }
 
   const cloudItems   = data.items     || [];

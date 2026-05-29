@@ -29,27 +29,6 @@ async function signInWithEmail(email, password) {
 }
 
 async function signUpWithEmail(email, password, name) {
-  
-  // Pre-check: try signing in first to see if email exists
-  const { data: signInData, error: signInError } = await _supabase.auth.signInWithPassword({
-    email,
-    password: 'CHECK_IF_EXISTS_DUMMY_12345!'
-  });
-  
-  // If error is "Invalid login credentials" = email EXISTS (wrong password = account exists)
-  // If error is "Email not confirmed" = email EXISTS but not confirmed
-  if (signInError) {
-    if (signInError.message.includes('Invalid login credentials') ||
-        signInError.message.includes('invalid_credentials')) {
-      return 'this email is already registered — try signing in instead 👋';
-    }
-    if (signInError.message.includes('Email not confirmed') ||
-        signInError.message.includes('email_not_confirmed')) {
-      return 'this email is already registered but not confirmed — check your inbox 📧';
-    }
-  }
-
-  // Email doesn't exist, proceed with signup
   const { data, error } = await _supabase.auth.signUp({
     email,
     password,
@@ -60,7 +39,6 @@ async function signUpWithEmail(email, password, name) {
   });
 
   if (error) {
-    console.error('Supabase signUp error:', error);
     if (error.message.includes('already registered') || 
         error.message.includes('already exists') ||
         error.message.toLowerCase().includes('duplicate')) {
@@ -70,15 +48,6 @@ async function signUpWithEmail(email, password, name) {
       return 'that email doesn\'t look right 📧';
     }
     return error.message;
-  }
-
-  if (data.user && !data.session && !data.user.confirmed_at) {
-    const createdAt = new Date(data.user.created_at);
-    const now = new Date();
-    const diffSeconds = (now - createdAt) / 1000;
-    if (diffSeconds > 60) {
-      return 'this email is already registered — try signing in instead 👋';
-    }
   }
 
   if (data.session) {

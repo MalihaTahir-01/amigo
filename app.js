@@ -824,6 +824,7 @@ function createFolder() {
   const folder = { id: Date.now(), name, files: [] };
   folders.push(folder);
   saveFolders();
+  saveUserData();
   input.value = '';
   const container = document.getElementById('folderList');
   const empty     = container.querySelector('.focus-empty');
@@ -923,6 +924,7 @@ function handleUpload(input, folderId) {
       const fileData = { name: file.name, key, size: file.size, uploadedAt: Date.now() };
       folder.files.push(fileData);
       saveFolders();
+      saveUserData();
       renderFile(folderId, fileData);
       updateFolderCount(folderId);
       // Auto-open the folder after upload
@@ -992,6 +994,7 @@ async function deleteFile(fileName, folderId) {
   if (fileData && fileData.key) await deleteFileFromDB(fileData.key);
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
+  saveUserData();
   const list = document.getElementById('files-' + folderId);
   if (list) {
     const item = list.querySelector(`[data-file-name="${fileName}"]`);
@@ -1009,6 +1012,7 @@ async function deleteFolder(folderId) {
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();
+  saveUserData();
   const card = document.querySelector(`[data-folder-id="${folderId}"]`);
   if (card) card.remove();
   const container = document.getElementById('folderList');

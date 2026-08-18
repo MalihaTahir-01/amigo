@@ -905,60 +905,98 @@ function renderFile(folderId, fileData) {
   list.appendChild(div);
 }
 // ── Upload ───────────────────────────────────────────────────
-function handleUpload(input, folderId) {
+// Files now go to Supabase Storage (bucket: amigo-files) instead of
+// IndexedDB, so they're available on every device the user logs into.
+async function handleUpload(input, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
+  const session  = await getSession();
+  if (!session) { alert('Please log in again to upload files.'); return; }
+  const userId    = session.user.id;
   const MAX_MB    = 200;
   const MAX_BYTES = MAX_MB * 1024 * 1024;
   const status    = document.getElementById('aiStatus');
-  Array.from(input.files).forEach(file => {
+
+  for (const file of Array.from(input.files)) {
     if (file.size > MAX_BYTES) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
-      return;
+      continue;
     }
     if (status) status.textContent = `Uploading "${file.name}"...`;
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const key      = `file_${folderId}_${Date.now()}_${file.name}`;
-      await saveFileToDB(key, e.target.result);
-      const fileData = { name: file.name, key, size: file.size, uploadedAt: Date.now() };
-      folder.files.push(fileData);
-      saveFolders();
-      saveUserData();
-      renderFile(folderId, fileData);
-      updateFolderCount(folderId);
-      // Auto-open the folder after upload
-      document.getElementById('files-' + folderId).style.display = 'block';
-      const chev = document.getElementById('fchev-' + folderId);
-      if (chev) chev.style.transform = 'rotate(180deg)';
-      if (status) {
-        status.textContent = `"${file.name}" uploaded!`;
-        setTimeout(() => status.textContent = '', 2500);
-      }
-    };
-    reader.readAsDataURL(file);
-  });
+
+    // Path is scoped to the user's own folder — required by the RLS
+    // policies (storage.foldername(name))[1] = auth.uid()
+    const path = `${userId}/${folderId}/${Date.now()}_${file.name}`;
+
+    const { error } = await _supabase
+      .storage
+      .from('amigo-files')
+      .upload(path, file, { upsert: false });
+
+    if (error) {
+      console.error('Upload error:', error.message);
+      if (status) status.textContent = '';
+      alert(`Couldn't upload "${file.name}": ${error.message}`);
+      continue;
+    }
+
+    const fileData = { name: file.name, path, size: file.size, uploadedAt: Date.now() };
+    folder.files.push(fileData);
+    saveFolders();
+    saveUserData();
+    renderFile(folderId, fileData);
+    updateFolderCount(folderId);
+    // Auto-open the folder after upload
+    document.getElementById('files-' + folderId).style.display = 'block';
+    const chev = document.getElementById('fchev-' + folderId);
+    if (chev) chev.style.transform = 'rotate(180deg)';
+    if (status) {
+      status.textContent = `"${file.name}" uploaded!`;
+      setTimeout(() => status.textContent = '', 2500);
+    }
+  }
   input.value = '';
 }
 // ── Open file ────────────────────────────────────────────────
+// Files now live in Supabase Storage. We ask for a short-lived signed
+// URL (works on any device, since it's not tied to local browser storage)
+// and open/download from that instead of reading out of IndexedDB.
 async function openFile(fileName, folderId) {
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
   if (!fileData) return;
-  const dataUrl = await getFileFromDB(fileData.key);
-  if (!dataUrl) {
-    alert('File not found. It may have been cleared by the browser.');
+
+  // Legacy files uploaded before this fix only have an IndexedDB `key`,
+  // not a Storage `path` — they were never uploaded to the cloud, so
+  // they genuinely can't be opened on a different device.
+  if (!fileData.path) {
+    alert(`"${fileName}" was uploaded before cloud file storage was added, so it only exists on the original device. Please re-upload it here to make it available everywhere.`);
     return;
   }
+
+  const { data, error } = await _supabase
+    .storage
+    .from('amigo-files')
+    .createSignedUrl(fileData.path, 300); // valid 5 minutes
+
+  if (error || !data) {
+    console.error('Signed URL error:', error && error.message);
+    alert('Could not load this file. Please check your connection and try again.');
+    return;
+  }
+
+  const fileUrl = data.signedUrl;
   const ext     = fileName.split('.').pop().toLowerCase();
   const isImage = ['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext);
   const isPdf   = ext === 'pdf';
   const isVideo = ['mp4','mov','webm','avi'].includes(ext);
   const isAudio = ['mp3','wav','ogg','m4a','flac'].includes(ext);
   const isText  = ['txt','md','json','js','ts','py','html','css','csv','php','c','cpp','java'].includes(ext);
+
   if (isText) {
-    const content = atob(dataUrl.split(',')[1]);
+    const res     = await fetch(fileUrl);
+    const content = await res.text();
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html><html><head><title>${fileName}</title>
       <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0f172a;padding:24px;font-family:Inter,sans-serif}
@@ -970,20 +1008,17 @@ async function openFile(fileName, folderId) {
     win.document.close();
     return;
   }
-  const res     = await fetch(dataUrl);
-  const blob    = await res.blob();
-  const blobUrl = URL.createObjectURL(blob);
+
   if (isPdf || isImage || isVideo || isAudio) {
-    window.open(blobUrl, '_blank');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    window.open(fileUrl, '_blank');
     return;
   }
+
   // For other file types, trigger a download
   const a  = document.createElement('a');
-  a.href     = blobUrl;
+  a.href     = fileUrl;
   a.download = fileName;
   a.click();
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 }
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
@@ -991,7 +1026,13 @@ async function deleteFile(fileName, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
-  if (fileData && fileData.key) await deleteFileFromDB(fileData.key);
+  if (fileData && fileData.path) {
+    const { error } = await _supabase.storage.from('amigo-files').remove([fileData.path]);
+    if (error) console.error('Storage delete error:', error.message);
+  } else if (fileData && fileData.key) {
+    // legacy IndexedDB-only file
+    await deleteFileFromDB(fileData.key);
+  }
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
   saveUserData();
@@ -1007,8 +1048,13 @@ async function deleteFolder(folderId) {
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
   if (!confirm(`Delete folder "${folder.name}" and all its files?`)) return;
+  const cloudPaths = folder.files.filter(f => f.path).map(f => f.path);
+  if (cloudPaths.length) {
+    const { error } = await _supabase.storage.from('amigo-files').remove(cloudPaths);
+    if (error) console.error('Storage delete error:', error.message);
+  }
   for (const f of folder.files) {
-    if (f.key) await deleteFileFromDB(f.key);
+    if (!f.path && f.key) await deleteFileFromDB(f.key); // legacy fallback
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();

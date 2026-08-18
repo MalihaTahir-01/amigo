@@ -776,7 +776,7 @@ function saveFolders() {
   const meta = folders.map(f => ({
     id:    f.id,
     name:  f.name,
-    files: f.files.map(({ name, key, size, uploadedAt }) => ({ name, key, size, uploadedAt }))
+    files: f.files.map(({ name, path, key, size, uploadedAt }) => ({ name, path, key, size, uploadedAt }))
   }));
   localStorage.setItem('amigo_folders', JSON.stringify(meta));
 }
@@ -817,14 +817,14 @@ async function deleteFileFromDB(key) {
   });
 }
 // ── Folder CRUD ──────────────────────────────────────────────
-function createFolder() {
+async function createFolder() {
   const input = document.getElementById('folderNameInput');
   const name  = input.value.trim();
   if (!name) return;
   const folder = { id: Date.now(), name, files: [] };
   folders.push(folder);
   saveFolders();
-  saveUserData();
+  await saveUserData();
   input.value = '';
   const container = document.getElementById('folderList');
   const empty     = container.querySelector('.focus-empty');
@@ -943,7 +943,7 @@ async function handleUpload(input, folderId) {
     const fileData = { name: file.name, path, size: file.size, uploadedAt: Date.now() };
     folder.files.push(fileData);
     saveFolders();
-    saveUserData();
+    await saveUserData();
     renderFile(folderId, fileData);
     updateFolderCount(folderId);
     // Auto-open the folder after upload
@@ -1035,7 +1035,7 @@ async function deleteFile(fileName, folderId) {
   }
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
-  saveUserData();
+  await saveUserData();
   const list = document.getElementById('files-' + folderId);
   if (list) {
     const item = list.querySelector(`[data-file-name="${fileName}"]`);
@@ -1058,7 +1058,7 @@ async function deleteFolder(folderId) {
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();
-  saveUserData();
+  await saveUserData();
   const card = document.querySelector(`[data-folder-id="${folderId}"]`);
   if (card) card.remove();
   const container = document.getElementById('folderList');

@@ -389,8 +389,8 @@ function showFlowStep() {
     // Step 2: Ask for subject
     flow.innerHTML = `
       <div class="ai-question">${t('whichSubject')}</div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <input id="subjectInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('subjectPlaceholder')}" />
+      <div class="ai-flow-row">
+        <input id="subjectInput" class="ai-input-boxed" placeholder="${t('subjectPlaceholder')}" />
         <button class="ai-send" onclick="pickSubject()">${t('next')}</button>
       </div>`;
     setTimeout(() => document.getElementById('subjectInput').focus(), 100);
@@ -410,8 +410,8 @@ function showFlowStep() {
     // Step 4: Ask for due date
     flow.innerHTML = `
       <div class="ai-question">${t('dueDate')}</div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <input id="dateInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('duePlaceholder')}" />
+      <div class="ai-flow-row">
+        <input id="dateInput" class="ai-input-boxed" placeholder="${t('duePlaceholder')}" />
         <button class="ai-send" onclick="pickDue()">${t('next')}</button>
       </div>`;
     setTimeout(() => document.getElementById('dateInput').focus(), 100);
@@ -422,11 +422,11 @@ function showFlowStep() {
     // Step 5: Optional note
     flow.innerHTML = `
       <div class="ai-question">${t('addNote')}</div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <input id="noteInput" class="ai-input" style="border:0.5px solid #b8c9e0;border-radius:8px;padding:7px 12px;flex:1;" placeholder="${t('notePlaceholder')}" />
+      <div class="ai-flow-row">
+        <input id="noteInput" class="ai-input-boxed" placeholder="${t('notePlaceholder')}" />
         <button class="ai-send" onclick="pickNote()">${t('saveBtn')}</button>
       </div>
-      <div style="margin-top:6px;">
+      <div class="ai-flow-skip">
         <button class="ai-opt" onclick="pickNote()">${t('skip')}</button>
       </div>`;
     setTimeout(() => document.getElementById('noteInput').focus(), 100);
@@ -657,40 +657,40 @@ function showTaskDetail(item) {
   if (existing) existing.remove();
   const modal = document.createElement('div');
   modal.id = 'taskDetailModal';
-  modal.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,34,64,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center;`;
+  modal.className = 'task-detail-overlay';
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;box-shadow:0 -8px 32px rgba(0,0,0,0.15);">
-      <div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <div class="task-icon ${iconClass(item.type)}" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="task-detail-head">
+        <div class="task-icon task-icon-lg ${iconClass(item.type)}">
           <i class="ti ${iconName(item.type)}"></i>
         </div>
         <div>
-          <div style="font-size:16px;font-weight:600;color:#0F172A;">${item.title}</div>
-          <div style="font-size:12px;color:#94A3B8;margin-top:2px;">${item.subject}</div>
+          <div class="task-detail-title">${item.title}</div>
+          <div class="task-detail-subject">${item.subject}</div>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px;background:#f4f7fb;border-radius:12px;padding:14px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:#64748B;">Type</span>
-          <span style="font-size:12px;font-weight:500;color:#0F172A;text-transform:capitalize;">${item.type}</span>
+      <div class="task-detail-info">
+        <div class="task-detail-info-row">
+          <span class="task-detail-info-label">Type</span>
+          <span class="task-detail-info-value">${item.type}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:#64748B;">Due</span>
-          <span style="font-size:12px;font-weight:500;color:#0F172A;">${item.due}</span>
+        <div class="task-detail-info-row">
+          <span class="task-detail-info-label">Due</span>
+          <span class="task-detail-info-value">${item.due}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:#64748B;">Priority</span>
-          <span class="urgency ${urgencyClass(item.priority)}" style="font-size:11px;">${item.priority}</span>
+        <div class="task-detail-info-row">
+          <span class="task-detail-info-label">Priority</span>
+          <span class="urgency urgency-sm ${urgencyClass(item.priority)}">${item.priority}</span>
         </div>
-        ${item.note ? `<div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:#64748B;">Note</span>
-          <span style="font-size:12px;font-weight:500;color:#0F172A;">${item.note}</span>
+        ${item.note ? `<div class="task-detail-info-row">
+          <span class="task-detail-info-label">Note</span>
+          <span class="task-detail-info-value">${item.note}</span>
         </div>` : ''}
       </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="document.getElementById('taskDetailModal').remove()" style="flex:1;padding:12px;border:0.5px solid #b8c9e0;border-radius:10px;background:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#64748B;">Close</button>
-        <button onclick="deleteItem(${item.id});document.getElementById('taskDetailModal').remove();" style="flex:1;padding:12px;border:none;border-radius:10px;background:#FEE2E2;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#DC2626;">Delete</button>
+      <div class="task-detail-actions">
+        <button onclick="document.getElementById('taskDetailModal').remove()" class="task-detail-btn task-detail-btn-close">Close</button>
+        <button onclick="deleteItem(${item.id});document.getElementById('taskDetailModal').remove();" class="task-detail-btn task-detail-btn-delete">Delete</button>
       </div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -735,7 +735,7 @@ function deleteItem(id) {
   allLists.forEach(listId => {
     const list = document.getElementById(listId);
     if (list && list.querySelectorAll('.task-item').length === 0) {
-      list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">Nothing here yet.</div>';
+      list.innerHTML = '<div class="focus-empty focus-empty-light">Nothing here yet.</div>';
     }
   });
   // Also check the focus card
@@ -776,7 +776,7 @@ function saveFolders() {
   const meta = folders.map(f => ({
     id:    f.id,
     name:  f.name,
-    files: f.files.map(({ name, path, key, size, uploadedAt }) => ({ name, path, key, size, uploadedAt }))
+    files: f.files.map(({ name, key, size, uploadedAt }) => ({ name, key, size, uploadedAt }))
   }));
   localStorage.setItem('amigo_folders', JSON.stringify(meta));
 }
@@ -817,14 +817,14 @@ async function deleteFileFromDB(key) {
   });
 }
 // ── Folder CRUD ──────────────────────────────────────────────
-async function createFolder() {
+function createFolder() {
   const input = document.getElementById('folderNameInput');
   const name  = input.value.trim();
   if (!name) return;
   const folder = { id: Date.now(), name, files: [] };
   folders.push(folder);
   saveFolders();
-  await saveUserData();
+  saveUserData();
   input.value = '';
   const container = document.getElementById('folderList');
   const empty     = container.querySelector('.focus-empty');
@@ -838,21 +838,21 @@ function renderFolder(folder) {
   div.className = 'folder-card';
   div.setAttribute('data-folder-id', folder.id);
   div.innerHTML = `
-    <div class="folder-header" onclick="toggleFolder(${folder.id})" style="cursor:pointer;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <i class="ti ti-folder" id="ficon-${folder.id}" style="font-size:18px;color:#1a3a6b;"></i>
+    <div class="folder-header" onclick="toggleFolder(${folder.id})">
+      <div class="folder-header-left">
+        <i class="ti ti-folder folder-icon" id="ficon-${folder.id}"></i>
         <span class="folder-name">${folder.name}</span>
         <span class="folder-count" id="fcount-${folder.id}">${folder.files.length} file${folder.files.length !== 1 ? 's' : ''}</span>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <label class="ai-send" style="cursor:pointer;padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:4px;" onclick="event.stopPropagation()">
+      <div class="folder-header-right">
+        <label class="ai-send folder-upload-btn" onclick="event.stopPropagation()">
           <i class="ti ti-upload"></i> Upload
           <input type="file" multiple style="display:none" onchange="handleUpload(this, ${folder.id})">
         </label>
         <button class="del-reminder" onclick="event.stopPropagation(); deleteFolder(${folder.id})" title="Delete folder">
           <i class="ti ti-trash"></i>
         </button>
-        <i class="ti ti-chevron-down" id="fchev-${folder.id}" style="font-size:14px;color:#64748B;transition:transform 0.2s;"></i>
+        <i class="ti ti-chevron-down folder-chevron" id="fchev-${folder.id}"></i>
       </div>
     </div>
     <div class="folder-files" id="files-${folder.id}" style="display:none;"></div>`;
@@ -891,10 +891,10 @@ function renderFile(folderId, fileData) {
   div.className = 'file-item';
   div.setAttribute('data-file-name', fileData.name);
   div.innerHTML = `
-    <i class="ti ${icon}" style="font-size:16px;color:#1a3a6b;flex-shrink:0;"></i>
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fileData.name}</div>
-      <div style="font-size:11px;color:#94A3B8;margin-top:1px;">${size}</div>
+    <i class="ti ${icon} file-icon"></i>
+    <div class="file-info">
+      <div class="file-name">${fileData.name}</div>
+      <div class="file-size">${size}</div>
     </div>
     <button class="del-reminder" onclick="openFile('${safeName}', ${folderId})" title="Open">
       <i class="ti ti-eye"></i>
@@ -905,98 +905,60 @@ function renderFile(folderId, fileData) {
   list.appendChild(div);
 }
 // ── Upload ───────────────────────────────────────────────────
-// Files now go to Supabase Storage (bucket: amigo-files) instead of
-// IndexedDB, so they're available on every device the user logs into.
-async function handleUpload(input, folderId) {
+function handleUpload(input, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
-  const session  = await getSession();
-  if (!session) { alert('Please log in again to upload files.'); return; }
-  const userId    = session.user.id;
   const MAX_MB    = 200;
   const MAX_BYTES = MAX_MB * 1024 * 1024;
   const status    = document.getElementById('aiStatus');
-
-  for (const file of Array.from(input.files)) {
+  Array.from(input.files).forEach(file => {
     if (file.size > MAX_BYTES) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
-      continue;
+      return;
     }
     if (status) status.textContent = `Uploading "${file.name}"...`;
-
-    // Path is scoped to the user's own folder — required by the RLS
-    // policies (storage.foldername(name))[1] = auth.uid()
-    const path = `${userId}/${folderId}/${Date.now()}_${file.name}`;
-
-    const { error } = await _supabase
-      .storage
-      .from('amigo-files')
-      .upload(path, file, { upsert: false });
-
-    if (error) {
-      console.error('Upload error:', error.message);
-      if (status) status.textContent = '';
-      alert(`Couldn't upload "${file.name}": ${error.message}`);
-      continue;
-    }
-
-    const fileData = { name: file.name, path, size: file.size, uploadedAt: Date.now() };
-    folder.files.push(fileData);
-    saveFolders();
-    await saveUserData();
-    renderFile(folderId, fileData);
-    updateFolderCount(folderId);
-    // Auto-open the folder after upload
-    document.getElementById('files-' + folderId).style.display = 'block';
-    const chev = document.getElementById('fchev-' + folderId);
-    if (chev) chev.style.transform = 'rotate(180deg)';
-    if (status) {
-      status.textContent = `"${file.name}" uploaded!`;
-      setTimeout(() => status.textContent = '', 2500);
-    }
-  }
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const key      = `file_${folderId}_${Date.now()}_${file.name}`;
+      await saveFileToDB(key, e.target.result);
+      const fileData = { name: file.name, key, size: file.size, uploadedAt: Date.now() };
+      folder.files.push(fileData);
+      saveFolders();
+      saveUserData();
+      renderFile(folderId, fileData);
+      updateFolderCount(folderId);
+      // Auto-open the folder after upload
+      document.getElementById('files-' + folderId).style.display = 'block';
+      const chev = document.getElementById('fchev-' + folderId);
+      if (chev) chev.style.transform = 'rotate(180deg)';
+      if (status) {
+        status.textContent = `"${file.name}" uploaded!`;
+        setTimeout(() => status.textContent = '', 2500);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
   input.value = '';
 }
 // ── Open file ────────────────────────────────────────────────
-// Files now live in Supabase Storage. We ask for a short-lived signed
-// URL (works on any device, since it's not tied to local browser storage)
-// and open/download from that instead of reading out of IndexedDB.
 async function openFile(fileName, folderId) {
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
   if (!fileData) return;
-
-  // Legacy files uploaded before this fix only have an IndexedDB `key`,
-  // not a Storage `path` — they were never uploaded to the cloud, so
-  // they genuinely can't be opened on a different device.
-  if (!fileData.path) {
-    alert(`"${fileName}" was uploaded before cloud file storage was added, so it only exists on the original device. Please re-upload it here to make it available everywhere.`);
+  const dataUrl = await getFileFromDB(fileData.key);
+  if (!dataUrl) {
+    alert('File not found. It may have been cleared by the browser.');
     return;
   }
-
-  const { data, error } = await _supabase
-    .storage
-    .from('amigo-files')
-    .createSignedUrl(fileData.path, 300); // valid 5 minutes
-
-  if (error || !data) {
-    console.error('Signed URL error:', error && error.message);
-    alert('Could not load this file. Please check your connection and try again.');
-    return;
-  }
-
-  const fileUrl = data.signedUrl;
   const ext     = fileName.split('.').pop().toLowerCase();
   const isImage = ['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext);
   const isPdf   = ext === 'pdf';
   const isVideo = ['mp4','mov','webm','avi'].includes(ext);
   const isAudio = ['mp3','wav','ogg','m4a','flac'].includes(ext);
   const isText  = ['txt','md','json','js','ts','py','html','css','csv','php','c','cpp','java'].includes(ext);
-
   if (isText) {
-    const res     = await fetch(fileUrl);
-    const content = await res.text();
+    const content = atob(dataUrl.split(',')[1]);
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html><html><head><title>${fileName}</title>
       <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0f172a;padding:24px;font-family:Inter,sans-serif}
@@ -1008,17 +970,20 @@ async function openFile(fileName, folderId) {
     win.document.close();
     return;
   }
-
+  const res     = await fetch(dataUrl);
+  const blob    = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
   if (isPdf || isImage || isVideo || isAudio) {
-    window.open(fileUrl, '_blank');
+    window.open(blobUrl, '_blank');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     return;
   }
-
   // For other file types, trigger a download
   const a  = document.createElement('a');
-  a.href     = fileUrl;
+  a.href     = blobUrl;
   a.download = fileName;
   a.click();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 }
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
@@ -1026,16 +991,10 @@ async function deleteFile(fileName, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
-  if (fileData && fileData.path) {
-    const { error } = await _supabase.storage.from('amigo-files').remove([fileData.path]);
-    if (error) console.error('Storage delete error:', error.message);
-  } else if (fileData && fileData.key) {
-    // legacy IndexedDB-only file
-    await deleteFileFromDB(fileData.key);
-  }
+  if (fileData && fileData.key) await deleteFileFromDB(fileData.key);
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
-  await saveUserData();
+  saveUserData();
   const list = document.getElementById('files-' + folderId);
   if (list) {
     const item = list.querySelector(`[data-file-name="${fileName}"]`);
@@ -1048,22 +1007,17 @@ async function deleteFolder(folderId) {
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return;
   if (!confirm(`Delete folder "${folder.name}" and all its files?`)) return;
-  const cloudPaths = folder.files.filter(f => f.path).map(f => f.path);
-  if (cloudPaths.length) {
-    const { error } = await _supabase.storage.from('amigo-files').remove(cloudPaths);
-    if (error) console.error('Storage delete error:', error.message);
-  }
   for (const f of folder.files) {
-    if (!f.path && f.key) await deleteFileFromDB(f.key); // legacy fallback
+    if (f.key) await deleteFileFromDB(f.key);
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();
-  await saveUserData();
+  saveUserData();
   const card = document.querySelector(`[data-folder-id="${folderId}"]`);
   if (card) card.remove();
   const container = document.getElementById('folderList');
   if (container && container.querySelectorAll('.folder-card').length === 0) {
-    container.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No folders yet — create one above!</div>';
+    container.innerHTML = '<div class="focus-empty focus-empty-light">No folders yet — create one above!</div>';
   }
 }
 function updateFolderCount(folderId) {
@@ -1125,7 +1079,7 @@ function deleteTodo(id) {
   if (item) item.remove();
   const list = document.getElementById('todoList');
   if (list && list.querySelectorAll('.todo-item').length === 0) {
-    list.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No tasks yet.</div>';
+    list.innerHTML = '<div class="focus-empty focus-empty-light">No tasks yet.</div>';
   }
 }
 todos.forEach(td => renderTodoItem(td));
@@ -1345,13 +1299,13 @@ function doSearch() {
     (i.note && i.note.toLowerCase().includes(query))
   );
   if (matches.length === 0) {
-    results.innerHTML = '<div class="focus-empty" style="color:#94A3B8;">No results found.</div>';
+    results.innerHTML = '<div class="focus-empty focus-empty-light">No results found.</div>';
     return;
   }
   matches.forEach(item => {
     const div     = document.createElement('div');
     div.className = 'task-item';
-    div.style.background = '#fff';
+    div.style.background = 'var(--color-surface)';
     div.innerHTML = `
       <div class="task-icon ${iconClass(item.type)}"><i class="ti ${iconName(item.type)}"></i></div>
       <div class="task-info">
@@ -1432,7 +1386,7 @@ function renderNotifPanel() {
   list.innerHTML = '';
 
   if (all.length === 0) {
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:#94A3B8;font-size:13px;">nothing due today 🎉<br><span style="font-size:11px;">enjoy your day!</span></div>';
+    list.innerHTML = '<div class="notif-empty">nothing due today 🎉<br><small>enjoy your day!</small></div>';
     return;
   }
 
@@ -1442,16 +1396,16 @@ function renderNotifPanel() {
 
   if (todayItems.length > 0) {
     const hdr = document.createElement('div');
-    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#D97706;text-transform:uppercase;letter-spacing:0.8px;padding:4px 4px 6px;';
-    hdr.textContent   = 'Today';
+    hdr.className   = 'notif-section-hdr today-hdr';
+    hdr.textContent = 'Today';
     list.appendChild(hdr);
     todayItems.forEach(n => list.appendChild(buildNotifCard(n, 'today')));
   }
 
   if (upcomingItems.length > 0) {
     const hdr = document.createElement('div');
-    hdr.style.cssText = 'font-size:10px;font-weight:600;color:#1a3a6b;text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px;';
-    hdr.textContent   = 'Next 30 Days';
+    hdr.className   = 'notif-section-hdr upcoming-hdr';
+    hdr.textContent = 'Next 30 Days';
     list.appendChild(hdr);
     upcomingItems.forEach(n => list.appendChild(buildNotifCard(n, 'upcoming')));
   }
@@ -1461,15 +1415,6 @@ function buildNotifCard(n, period) {
   const div     = document.createElement('div');
   const isToday = period === 'today';
 
-  // TODAY  → warm amber palette
-  // UPCOMING → cool blue palette
-  const bg       = isToday ? '#FFF7ED' : '#EFF6FF';
-  const border   = isToday ? '#FED7AA' : '#BFDBFE';
-  const iconBg   = isToday ? '#FEF3C7' : '#DBEAFE';
-  const iconCol  = isToday ? '#D97706' : '#1d4ed8';
-  const titleCol = isToday ? '#92400E' : '#1e3a5f';
-  const subCol   = isToday ? '#B45309' : '#3B5FA0';
-
   const dateLabel = new Date(n.date + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric'
   });
@@ -1478,29 +1423,19 @@ function buildNotifCard(n, period) {
     ? `${n.subject || ''} — ${n.label}${isToday ? '' : ' · ' + (n.rawDue || dateLabel)}`
     : `${n.type} — ${isToday ? n.time : dateLabel + ' at ' + n.time}`;
 
-
-  div.style.cssText = `
-    display:flex;align-items:center;gap:10px;
-    background:${bg};border:0.5px solid ${border};
-    border-radius:10px;padding:10px 12px;margin-bottom:6px;
-    transition:opacity 0.2s;
-  `;
+  div.className = 'notif-card ' + (isToday ? 'today' : 'upcoming');
 
   div.innerHTML = `
-    <div style="width:34px;height:34px;border-radius:8px;background:${iconBg};
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <i class="ti ${iconName(n.type)}" style="font-size:16px;color:${iconCol};"></i>
+    <div class="notif-icon">
+      <i class="ti ${iconName(n.type)}"></i>
     </div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:12px;font-weight:600;color:${titleCol};
-        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.title}</div>
-      <div style="font-size:11px;color:${subCol};margin-top:2px;">${subText}</div>
+    <div class="notif-body">
+      <div class="notif-title">${n.title}</div>
+      <div class="notif-sub">${subText}</div>
     </div>
     ${isToday
-      ? `<span style="font-size:9px;font-weight:700;color:#92400E;
-           background:#FDE68A;border-radius:20px;padding:2px 8px;flex-shrink:0;letter-spacing:0.3px;">TODAY</span>`
-      : `<span style="font-size:9px;font-weight:600;color:#1d4ed8;
-           background:#DBEAFE;border-radius:20px;padding:2px 8px;flex-shrink:0;">${dateLabel}</span>`
+      ? `<span class="notif-date-badge today-badge">TODAY</span>`
+      : `<span class="notif-date-badge upcoming-badge">${dateLabel}</span>`
     }`;
 
   return div;
@@ -1558,31 +1493,25 @@ updateNotifBadge();
 function switchTab(tab) {
   document.getElementById('form-login').style.display  = tab === 'login'  ? 'block' : 'none';
   document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
-  document.getElementById('tab-login').style.background  = tab === 'login'  ? '#fff' : 'transparent';
-  document.getElementById('tab-signup').style.background = tab === 'signup' ? '#fff' : 'transparent';
-  document.getElementById('tab-login').style.color  = tab === 'login'  ? '#0F172A' : '#64748B';
-  document.getElementById('tab-signup').style.color = tab === 'signup' ? '#0F172A' : '#64748B';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
 }
 async function handleLogin() {
   const email    = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const errEl    = document.getElementById('loginError');
-  errEl.style.display = 'none';
+  errEl.classList.remove('show');
   if (!email || !password) {
     errEl.textContent = 'fill in everything bestie 🙏';
-    errEl.style.display = 'block';
+    errEl.className = 'auth-msg auth-msg-error show';
     return;
   }
   errEl.textContent = 'signing you in...';
-  errEl.style.color = '#1a3a6b';
-  errEl.style.background = '#e8eef7';
-  errEl.style.display = 'block';
+  errEl.className = 'auth-msg auth-msg-info show';
   const error = await signInWithEmail(email, password);
   if (error) {
     errEl.textContent = 'wrong email or password 😬';
-    errEl.style.color = '#EF4444';
-    errEl.style.background = '#FEE2E2';
-    errEl.style.display = 'block';
+    errEl.className = 'auth-msg auth-msg-error show';
     return;
   }
   initAuth();
@@ -1593,54 +1522,44 @@ async function handleSignup() {
   const password = document.getElementById('signupPassword').value.trim();
   const errEl    = document.getElementById('signupError');
   const sucEl    = document.getElementById('signupSuccess');
-  errEl.style.display = 'none';
-  sucEl.style.display = 'none';
+  errEl.classList.remove('show');
+  sucEl.classList.remove('show');
 
   if (!name || !email || !password) {
-    errEl.textContent        = 'fill in everything bestie 🙏';
-    errEl.style.color        = '#EF4444';
-    errEl.style.background   = '#FEE2E2';
-    errEl.style.display      = 'block';
+    errEl.textContent = 'fill in everything bestie 🙏';
+    errEl.className   = 'auth-msg auth-msg-error show';
     return;
   }
   if (password.length < 6) {
-    errEl.textContent        = 'password too short — at least 6 chars 🔐';
-    errEl.style.color        = '#EF4444';
-    errEl.style.background   = '#FEE2E2';
-    errEl.style.display      = 'block';
+    errEl.textContent = 'password too short — at least 6 chars 🔐';
+    errEl.className   = 'auth-msg auth-msg-error show';
     return;
   }
 
   // Basic email format check
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    errEl.textContent        = 'that email doesn\'t look right 📧';
-    errEl.style.color        = '#EF4444';
-    errEl.style.background   = '#FEE2E2';
-    errEl.style.display      = 'block';
+    errEl.textContent = 'that email doesn\'t look right 📧';
+    errEl.className   = 'auth-msg auth-msg-error show';
     return;
   }
 
-  errEl.textContent        = 'creating your account...';
-  errEl.style.color        = '#1a3a6b';
-  errEl.style.background   = '#e8eef7';
-  errEl.style.display      = 'block';
+  errEl.textContent = 'creating your account...';
+  errEl.className   = 'auth-msg auth-msg-info show';
 
   const result = await signUpWithEmail(email, password, name);
 
   if (result === 'AUTO_LOGIN') return;
 
   if (result !== null) {
-    errEl.textContent        = result;
-    errEl.style.color        = '#EF4444';
-    errEl.style.background   = '#FEE2E2';
-    errEl.style.display      = 'block';
+    errEl.textContent = result;
+    errEl.className   = 'auth-msg auth-msg-error show';
     return;
   }
 
-  errEl.style.display = 'none';
-  sucEl.textContent   = 'account created! check your email to confirm ✅';
-  sucEl.style.display = 'block';
+  errEl.classList.remove('show');
+  sucEl.textContent = 'account created! check your email to confirm ✅';
+  sucEl.className   = 'auth-msg auth-msg-success show';
 }
 
 // ============================================================
@@ -1654,15 +1573,11 @@ async function sendFeedback() {
   const status  = document.getElementById('feedbackStatus');
   if (!name || !email || !message) {
     status.textContent = 'fill in everything bestie 🙏';
-    status.style.background = '#FEE2E2';
-    status.style.color = '#DC2626';
-    status.style.display = 'block';
+    status.className   = 'feedback-status show msg-error';
     return;
   }
   status.textContent = 'sending...';
-  status.style.background = '#e8eef7';
-  status.style.color = '#1a3a6b';
-  status.style.display = 'block';
+  status.className   = 'feedback-status show msg-info';
   try {
     await emailjs.send('service_64oaeq2', 'template_mf8v8kh', {
       from_name:  name,
@@ -1670,14 +1585,12 @@ async function sendFeedback() {
       message:    message
     });
     status.textContent = 'sent! we got it and will get back to you 🙌';
-    status.style.background = '#DCFCE7';
-    status.style.color = '#16A34A';
+    status.className   = 'feedback-status show msg-success';
     document.getElementById('feedbackName').value    = '';
     document.getElementById('feedbackEmail').value   = '';
     document.getElementById('feedbackMessage').value = '';
   } catch (err) {
     status.textContent = 'something went wrong 😬 try again';
-    status.style.background = '#FEE2E2';
-    status.style.color = '#DC2626';
+    status.className   = 'feedback-status show msg-error';
   }
 }

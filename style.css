@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
 /* ============================================================
    AMIGO DESIGN SYSTEM — navy identity (reverted from lilac), tokens
    ============================================================ */
@@ -822,6 +824,105 @@ body {
   display: none; position: absolute; top: -4px; right: -4px; background: var(--color-danger);
   color: #fff; font-size: 9px; font-weight: 600; padding: 2px 5px; border-radius: var(--radius-full);
 }
+/* Note: "pulseDot" animation is referenced (below) exactly as in the original CSS/HTML,
+   but was never defined there either — this is a pre-existing no-op, not something
+   introduced in this pass. Left as-is; flagged in the Phase 1 report instead of "fixed". */
+
+/* ============================================================
+   AUTH SCREEN
+   ============================================================ */
+.auth-screen {
+  position: fixed; inset: 0;
+  background: var(--gradient-primary);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.auth-decor { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.06); }
+.auth-decor-1 { width: 300px; height: 300px; top: -80px; right: -80px; }
+.auth-decor-2 { width: 200px; height: 200px; bottom: -60px; left: -60px; background: rgba(255,255,255,0.05); }
+.auth-decor-3 { width: 150px; height: 150px; top: 40%; left: -40px; background: rgba(255,255,255,0.05); }
+
+.auth-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  width: 100%; max-width: 400px; margin: 20px;
+  box-shadow: var(--shadow-xl);
+  position: relative; z-index: 1;
+}
+.auth-card-head { text-align: center; margin-bottom: 28px; }
+.auth-logo {
+  width: 72px; height: 72px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 700; color: #fff;
+  box-shadow: 0 8px 24px rgba(91,63,191,0.35);
+}
+.auth-card-head h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--color-text); letter-spacing: -0.5px; margin-bottom: 4px; }
+.auth-card-head p { font-size: 13px; color: var(--color-text-secondary); }
+
+.auth-tabs { display: flex; gap: 4px; background: var(--color-surface-alt); border-radius: var(--radius-md); padding: 4px; margin-bottom: 24px; }
+.auth-tab {
+  flex: 1; padding: 9px; border: none; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  background: transparent; color: var(--color-text-secondary);
+  font-family: var(--font-body); transition: all var(--transition-base);
+}
+.auth-tab.active { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-sm); }
+
+.auth-form-body { display: flex; flex-direction: column; gap: 10px; }
+.auth-field { position: relative; }
+.auth-field-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); font-size: 16px; }
+.auth-input {
+  width: 100%; padding: 11px 14px 11px 38px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  font-size: 13px; font-family: var(--font-body); outline: none; box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+.auth-input:focus { border-color: var(--color-primary); }
+
+.auth-msg { font-size: 12px; display: none; padding: 8px 12px; border-radius: var(--radius-sm); }
+.auth-msg.show { display: block; }
+.auth-msg-error   { color: var(--color-danger-text); background: var(--color-danger-bg); }
+.auth-msg-success { color: var(--color-success); background: var(--color-success-bg); }
+.auth-msg-info    { color: var(--color-primary-dark); background: var(--color-primary-light); }
+
+/* Generic status-color utilities — reused by feedback-status and anywhere else that
+   needs the same error/success/info palette without pulling in auth-msg's sizing */
+.msg-error   { color: var(--color-danger-text); background: var(--color-danger-bg); }
+.msg-success { color: var(--color-success); background: var(--color-success-bg); }
+.msg-info    { color: var(--color-primary-dark); background: var(--color-primary-light); }
+
+.auth-submit {
+  padding: 12px; background: var(--gradient-primary); color: #fff; border: none;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); box-shadow: 0 4px 14px rgba(91,63,191,0.35); letter-spacing: 0.2px;
+  transition: opacity var(--transition-fast);
+}
+.auth-submit:hover { opacity: 0.92; }
+
+.auth-forgot { text-align: center; font-size: 12px; color: var(--color-text-secondary); margin-top: 8px; cursor: pointer; }
+.auth-forgot span { color: var(--color-primary-dark); font-weight: 500; }
+.auth-terms { text-align: center; font-size: 11px; color: var(--color-text-muted); margin-top: 14px; }
+.auth-reset-head { text-align: center; margin-bottom: 16px; }
+.auth-reset-head p:first-child { font-size: 14px; font-weight: 500; color: var(--color-text); }
+.auth-reset-head p:last-child { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+
+/* ============================================================
+   SEARCH PANEL
+   ============================================================ */
+.search-panel { padding: 0 24px 12px; }
+.search-row {
+  display: flex; gap: 8px; align-items: center;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); padding: 8px 14px;
+}
+.search-icon { color: var(--color-text-muted); font-size: 16px; }
+.search-results { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 
 /* ============================================================
    NOTIFICATION PANEL

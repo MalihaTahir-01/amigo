@@ -955,7 +955,6 @@ body {
   .amigo { flex-direction: column; height: 100vh; overflow: hidden; }
 
   #appScreen {
-    display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
     height: 100vh !important;

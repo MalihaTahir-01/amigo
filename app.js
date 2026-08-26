@@ -428,7 +428,6 @@ function showAIReview() {
     <div class="ai-flow-row">
       <input id="reviewDue" type="date" class="ai-input-boxed" value="${escapeAttr(flowData.due || '')}" />
     </div>
-
         </div>
     <div class="ai-flow-row">
       <input id="reviewNote" class="ai-input-boxed" placeholder="${t('notePlaceholder')}" value="${escapeAttr(flowData.note || '')}" />
@@ -900,7 +899,6 @@ async function saveFileToDB(key, dataUrl) {
     const tx = db.transaction('files', 'readwrite');
     tx.objectStore('files').put({ key, dataUrl });
     tx.oncomplete = resolve;
-
         tx.oncomplete = resolve;
     tx.onerror    = () => reject(tx.error);
   });
@@ -1372,8 +1370,7 @@ function scheduleNotification(reminder) {
   Notification.requestPermission().then(permission => {
     if (permission !== 'granted') return;
     const [hours, minutes] = reminder.time.split(':').map(Number);
-
-    const [hours, minutes] = reminder.time.split(':').map(Number);
+        const [hours, minutes] = reminder.time.split(':').map(Number);
     const notifTime        = new Date(reminder.date + 'T00:00:00');
     notifTime.setHours(hours, minutes, 0, 0);
     const delay = notifTime.getTime() - Date.now();

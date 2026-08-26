@@ -290,6 +290,18 @@ function applyLanguage(lang) {
 let items = JSON.parse(localStorage.getItem('amigo_items') || '[]');
 let flowData = {};
 let flowStep = 0;
+// One-time migration: tasks saved before the date-resolution fix may still hold
+// raw relative text ("today", "tomorrow", "monday"...) as their due date instead
+// of an absolute YYYY-MM-DD. Normalize those now so they sort/expire correctly.
+const isoDateRe = /^\d{4}-\d{2}-\d{2}$/;
+let itemsMigrated = false;
+items.forEach(item => {
+  if (item.due && !isoDateRe.test(item.due)) {
+    item.due = localDateStr(parseDate(item.due));
+    itemsMigrated = true;
+  }
+});
+if (itemsMigrated) localStorage.setItem('amigo_items', JSON.stringify(items));
 // Show today's date in the topbar and focus card
 const now = new Date();
 document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', {
@@ -298,6 +310,9 @@ document.getElementById('topDate').textContent = now.toLocaleDateString('en-US',
 document.getElementById('focusDate').textContent = now.toLocaleDateString('en-US', {
   day: 'numeric', month: 'short', year: 'numeric'
 });
+// Remove any tasks whose (now-absolute) due date has already passed, then render the rest
+expireOldTasks();
+if (itemsMigrated) saveUserData();
 // Render all saved items on page load
 items.forEach(item => renderItem(item));
 sortList('taskList');
@@ -347,7 +362,8 @@ function setNav(el, section) {
   if (target) target.style.display = 'block';
 }
 // ────────────────────────────────────────────────────────────
-// AI FLOW — the step-by-step task adding process
+// AI FLOW — real AI parsing (calls /api/parse-task), with the old
+// scripted button flow kept as an automatic fallback if the AI call fails
 // ────────────────────────────────────────────────────────────
 function setInput(val) {
   document.getElementById('aiInput').value = val;
@@ -356,9 +372,93 @@ function setInput(val) {
 document.getElementById('aiInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') organizePrompt();
 });
-function organizePrompt() {
+async function organizePrompt() {
   const text = document.getElementById('aiInput').value.trim();
   if (!text) return;
+  flowData = { raw: text };
+  const flow = document.getElementById('aiFlow');
+  flow.innerHTML = `<div class="ai-question">"${text}" — reading this...</div>`;
+  try {
+    const res = await fetch('/api/parse-task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error('AI service unavailable');
+    const parsed = await res.json();
+    if (!parsed || !parsed.type) throw new Error('AI response missing fields');
+    flowData.type     = parsed.type;
+    flowData.subject  = parsed.subject;
+    flowData.priority = parsed.priority;
+    flowData.due      = parsed.due; // already an absolute YYYY-MM-DD from the server
+    flowData.note     = parsed.note || '';
+    showAIReview();
+  } catch (err) {
+    console.warn('AI parsing failed, falling back to manual flow:', err);
+    startManualFlow(text);
+  }
+}
+// Editable review step shown after a successful AI parse — nothing is saved
+// until the person confirms, so a wrong AI guess never silently goes in.
+function escapeAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+function showAIReview() {
+  const flow = document.getElementById('aiFlow');
+  flow.innerHTML = `
+    <div class="ai-question">Got it — check the details and save:</div>
+    <div class="ai-flow-row">
+      <select id="reviewType" class="reminder-select">
+        <option value="assignment">${t('assignment')}</option>
+        <option value="quiz">${t('quiz')}</option>
+        <option value="mids">${t('mids')}</option>
+        <option value="final">${t('final')}</option>
+        <option value="presentation">${t('presentation')}</option>
+        <option value="notice">${t('notice')}</option>
+      </select>
+    </div>
+    <div class="ai-flow-row">
+      <input id="reviewSubject" class="ai-input-boxed" placeholder="${t('subjectPlaceholder')}" value="${escapeAttr(flowData.subject || '')}" />
+    </div>
+    <div class="ai-options" id="reviewPriorityOpts">
+      <button type="button" class="ai-opt" onclick="setReviewPriority('High')" data-p="High">${t('high')}</button>
+      <button type="button" class="ai-opt" onclick="setReviewPriority('Medium')" data-p="Medium">${t('medium')}</button>
+      <button type="button" class="ai-opt" onclick="setReviewPriority('Low')" data-p="Low">${t('low')}</button>
+    </div>
+    <div class="ai-flow-row">
+      <input id="reviewDue" type="date" class="ai-input-boxed" value="${escapeAttr(flowData.due || '')}" />
+    </div>
+
+        </div>
+    <div class="ai-flow-row">
+      <input id="reviewNote" class="ai-input-boxed" placeholder="${t('notePlaceholder')}" value="${escapeAttr(flowData.note || '')}" />
+      <button class="ai-send" onclick="confirmAIReview()">${t('saveBtn')}</button>
+    </div>
+    <div class="ai-flow-skip">
+      <button class="ai-opt" onclick="startManualFlow(flowData.raw)">Not right? Fill in manually</button>
+    </div>`;
+  document.getElementById('reviewType').value = flowData.type || 'assignment';
+  setReviewPriority(flowData.priority || 'Medium');
+}
+function setReviewPriority(p) {
+  flowData.priority = p;
+  document.querySelectorAll('#reviewPriorityOpts .ai-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.p === p);
+  });
+}
+function confirmAIReview() {
+  flowData.type    = document.getElementById('reviewType').value;
+  flowData.subject = document.getElementById('reviewSubject').value.trim() || 'General';
+  flowData.due     = document.getElementById('reviewDue').value || flowData.due;
+  flowData.note    = document.getElementById('reviewNote').value.trim();
+  if (!flowData.priority) flowData.priority = 'Medium';
+  saveItem();
+}
+// ────────────────────────────────────────────────────────────
+// MANUAL FLOW — fallback only, used when the AI call fails
+// (kept fully intact so the app still works if the API key isn't set yet)
+// ────────────────────────────────────────────────────────────
+function startManualFlow(text) {
   flowData = { raw: text };
   const flow = document.getElementById('aiFlow');
   flow.innerHTML = `
@@ -566,13 +666,18 @@ function parseDate(due) {
 // SAVE & RENDER ITEMS
 // ────────────────────────────────────────────────────────────
 function saveItem() {
+  // Resolve whatever the person typed ("today", "tomorrow", "24 may", "monday"...)
+  // into an absolute calendar date ONCE, at save time. Without this, a task saved
+  // as "today" would keep re-evaluating as "today" forever, since parseDate()/isToday()
+  // re-read the raw word fresh every render — it never actually expires.
+  const resolvedDue = localDateStr(parseDate(flowData.due));
   const item = {
     id:       Date.now(),
     title:    flowData.raw,
     type:     flowData.type,
     subject:  flowData.subject,
     priority: flowData.priority,
-    due:      flowData.due,
+    due:      resolvedDue,
     note:     flowData.note || ''
   };
   items.push(item);
@@ -613,15 +718,15 @@ function sortList(listId) {
 }
 // Update the count badges in the sidebar and stat cards
 function updateCounts() {
-  const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0 };
+  const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0, notice:0 };
   items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
   document.getElementById('sc-assign').textContent = c.assignment;
   document.getElementById('sc-quiz').textContent   = c.quiz;
   document.getElementById('sc-pres').textContent   = c.presentation;
   document.getElementById('sc-final').textContent  = c.final;
-  document.getElementById('nb-assign').textContent = c.assignment;
-  document.getElementById('nb-quiz').textContent   = c.quiz;
-  document.getElementById('nb-mids').textContent   = c.mids;
+  const total = c.assignment + c.quiz + c.presentation + c.final + c.mids + c.notice;
+  const nbTasks = document.getElementById('nb-tasks');
+  if (nbTasks) nbTasks.textContent = total;
 }
 // ────────────────────────────────────────────────────────────
 // ICON HELPERS
@@ -795,6 +900,8 @@ async function saveFileToDB(key, dataUrl) {
     const tx = db.transaction('files', 'readwrite');
     tx.objectStore('files').put({ key, dataUrl });
     tx.oncomplete = resolve;
+
+        tx.oncomplete = resolve;
     tx.onerror    = () => reject(tx.error);
   });
 }
@@ -1265,6 +1372,8 @@ function scheduleNotification(reminder) {
   Notification.requestPermission().then(permission => {
     if (permission !== 'granted') return;
     const [hours, minutes] = reminder.time.split(':').map(Number);
+
+    const [hours, minutes] = reminder.time.split(':').map(Number);
     const notifTime        = new Date(reminder.date + 'T00:00:00');
     notifTime.setHours(hours, minutes, 0, 0);
     const delay = notifTime.getTime() - Date.now();
@@ -1461,12 +1570,40 @@ function removePastItems() {
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
 }
 
+// Tasks now store an absolute YYYY-MM-DD due date (resolved once at save time in
+// saveItem()), so this is a plain string comparison — no re-parsing of "today"/
+// "tomorrow" needed here, and it's what makes expired tasks actually disappear.
+function expireOldTasks() {
+  const todayStr = localDateStr(new Date());
+  const expiredIds = items.filter(i => i.due && i.due < todayStr).map(i => i.id);
+  if (expiredIds.length === 0) return;
+  items = items.filter(i => !expiredIds.includes(i.id));
+  localStorage.setItem('amigo_items', JSON.stringify(items));
+  saveUserData();
+  expiredIds.forEach(id => {
+    document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
+  });
+  const allLists = ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'];
+  allLists.forEach(listId => {
+    const list = document.getElementById(listId);
+    if (list && list.querySelectorAll('.task-item').length === 0) {
+      list.innerHTML = '<div class="focus-empty focus-empty-light">Nothing here yet.</div>';
+    }
+  });
+  const focus = document.getElementById('focusItems');
+  if (focus && focus.querySelectorAll('.focus-item').length === 0) {
+    focus.innerHTML = `<div class="focus-empty">${t('noTasksToday')}</div>`;
+  }
+  updateCounts();
+}
+
 function scheduleMidnightCleanup() {
   const now       = new Date();
   const midnight  = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
   const msUntil   = midnight - now;
   setTimeout(() => {
     removePastItems();
+    expireOldTasks();
     renderReminderList();
     renderCalendar();
     updateNotifBadge();

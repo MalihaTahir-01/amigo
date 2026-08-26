@@ -1,3 +1,8 @@
+Good catch — that's actually the real problem. After the color/Tasks/AI edits, I only pasted the new `api/parse-task.js` in chat. The updated `index.html`, `style.css`, and `app.js` were only sent as file cards — which you said don't show you the code. So those 3 files were probably never actually updated on your end at all.
+
+Let's fix that properly this time — full code, pasted directly, one at a time like before. Starting with `index.html`:Full `index.html` — replace your entire file with this:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#7B5FE0" />
+  <meta name="theme-color" content="#1a3a6b" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -100,12 +105,7 @@
         <div class="sidebar-nav">
           <div class="nav-label">Main</div>
           <div class="nav-item active" onclick="setNav(this,'home')"><i class="ti ti-home"></i> Home</div>
-          <div class="nav-item" onclick="setNav(this,'assignment')"><i class="ti ti-file-text"></i> Assignments <span class="nav-badge" id="nb-assign">0</span></div>
-          <div class="nav-item" onclick="setNav(this,'quiz')"><i class="ti ti-pencil"></i> Quizzes <span class="nav-badge" id="nb-quiz">0</span></div>
-          <div class="nav-item" onclick="setNav(this,'mids')"><i class="ti ti-writing"></i> Mids <span class="nav-badge" id="nb-mids">0</span></div>
-          <div class="nav-item" onclick="setNav(this,'presentation')"><i class="ti ti-presentation"></i> Presentations</div>
-          <div class="nav-item" onclick="setNav(this,'final')"><i class="ti ti-certificate"></i> Finals</div>
-          <div class="nav-item" onclick="setNav(this,'notice')"><i class="ti ti-speakerphone"></i> Notices</div>
+          <div class="nav-item" onclick="setNav(this,'tasks')"><i class="ti ti-file-text"></i> Tasks <span class="nav-badge" id="nb-tasks">0</span></div>
           <div class="nav-label">Tools</div>
           <div class="nav-item" onclick="setNav(this,'uploads')"><i class="ti ti-upload"></i> Uploads</div>
           <div class="nav-item" onclick="setNav(this,'todo')"><i class="ti ti-checkbox"></i> To-Do</div>
@@ -209,40 +209,39 @@
             </div>
           </div>
 
-          <!-- ASSIGNMENTS -->
-          <div id="section-assignment" class="page-section" style="display:none;">
-            <div class="greeting"><h2>Assignments</h2><p>All your assignments in one place.</p></div>
-            <div class="task-list" id="list-assignment"><div class="focus-empty-light">No assignments yet.</div></div>
-          </div>
+          <!-- TASKS (merged: assignments, quizzes, mids, presentations, finals, notices) -->
+          <div id="section-tasks" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Tasks</h2><p>Everything you're tracking, grouped by type.</p></div>
 
-          <!-- QUIZZES -->
-          <div id="section-quiz" class="page-section" style="display:none;">
-            <div class="greeting"><h2>Quizzes</h2><p>Track all your upcoming quizzes.</p></div>
-            <div class="task-list" id="list-quiz"><div class="focus-empty-light">No quizzes yet.</div></div>
-          </div>
+            <div class="task-block">
+              <div class="section-header"><span class="section-title"><i class="ti ti-file-text"></i> Assignments</span></div>
+              <div class="task-list" id="list-assignment"><div class="focus-empty-light">No assignments yet.</div></div>
+            </div>
 
-          <!-- MIDS -->
-          <div id="section-mids" class="page-section" style="display:none;">
-            <div class="greeting"><h2>Mids</h2><p>Midterm exams and preparation.</p></div>
-            <div class="task-list" id="list-mids"><div class="focus-empty-light">No mids added yet.</div></div>
-          </div>
+            <div class="task-block">
+              <div class="section-header"><span class="section-title"><i class="ti ti-pencil"></i> Quizzes</span></div>
+              <div class="task-list" id="list-quiz"><div class="focus-empty-light">No quizzes yet.</div></div>
+            </div>
 
-          <!-- PRESENTATIONS -->
-          <div id="section-presentation" class="page-section" style="display:none;">
-            <div class="greeting"><h2>Presentations</h2><p>All your presentations.</p></div>
-            <div class="task-list" id="list-presentation"><div class="focus-empty-light">No presentations yet.</div></div>
-          </div>
+            <div class="task-block">
+              <div class="section-header"><span class="section-title"><i class="ti ti-writing"></i> Mids</span></div>
+              <div class="task-list" id="list-mids"><div class="focus-empty-light">No mids added yet.</div></div>
+            </div>
 
-          <!-- FINALS -->
-          <div id="section-final" class="page-section" style="display:none;">
-            <div class="greeting"><h2>Finals</h2><p>Final exams tracker.</p></div>
-            <div class="task-list" id="list-final"><div class="focus-empty-light">No finals added yet.</div></div>
-          </div>
+            <div class="task-block">
+              <div class="section-header"><span class="section-title"><i class="ti ti-presentation"></i> Presentations</span></div>
+              <div class="task-list" id="list-presentation"><div class="focus-empty-light">No presentations yet.</div></div>
+            </div>
 
-          <!-- NOTICES -->
-          <div id="section-notice" class="page-section" style="display:none;">
-            <div class="greeting"><h2>Notices</h2><p>Announcements and important updates.</p></div>
-            <div class="task-list" id="list-notice"><div class="focus-empty-light">No notices yet — add one from home screen.</div></div>
+            <div class="task-block">
+              <div class="section-header"><span class="section-title"><i class="ti ti-certificate"></i> Finals</span></div>
+              <div class="task-list" id="list-final"><div class="focus-empty-light">No finals added yet.</div></div>
+            </div>
+
+            <div class="task-block">
+              <div class="section-header"><span class="section-title"><i class="ti ti-speakerphone"></i> Notices</span></div>
+              <div class="task-list" id="list-notice"><div class="focus-empty-light">No notices yet — add one from home screen.</div></div>
+            </div>
           </div>
 
           <!-- UPLOADS -->
@@ -413,3 +412,6 @@
   </script>
 </body>
 </html>
+```
+
+That's `index.html` fully done — replace your whole file with this. Reply "next" and I'll paste `style.css`.

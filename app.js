@@ -1370,7 +1370,6 @@ function scheduleNotification(reminder) {
   Notification.requestPermission().then(permission => {
     if (permission !== 'granted') return;
     const [hours, minutes] = reminder.time.split(':').map(Number);
-        const [hours, minutes] = reminder.time.split(':').map(Number);
     const notifTime        = new Date(reminder.date + 'T00:00:00');
     notifTime.setHours(hours, minutes, 0, 0);
     const delay = notifTime.getTime() - Date.now();

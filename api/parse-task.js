@@ -1,11 +1,12 @@
 // /api/parse-task.js
 // Vercel serverless function — runs server-side only.
-// Takes free text like "Math quiz on Monday, high priority" and asks Claude
+// Takes free text like "Math quiz on Monday, high priority" and asks Gemini
 // to extract structured task fields. The API key lives only in the Vercel
-// environment variable ANTHROPIC_API_KEY — it is never sent to the browser.
+// environment variable GEMINI_API_KEY — it is never sent to the browser.
 //
 // Setup (one-time, on your Vercel project):
-//   Project Settings → Environment Variables → add ANTHROPIC_API_KEY = <your key>
+//   Project Settings → Environment Variables → add GEMINI_API_KEY = <your key>
+//   (Get a key from https://aistudio.google.com/apikey if you don't have one)
 //   Redeploy after adding it.
 
 module.exports = async function handler(req, res) {
@@ -20,11 +21,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     // No key configured yet — tell the client so it can fall back to the
     // manual step-by-step flow instead of hanging or throwing a raw 500.
-    res.status(500).json({ error: 'ANTHROPIC_API_KEY is not configured on the server' });
+    res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server' });
     return;
   }
 
@@ -53,31 +54,42 @@ Rules:
 - Never explain your answer. Output raw JSON only.`;
 
   try {
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 300,
-        temperature: 0,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: text.trim() }]
-      })
-    });
+    const aiRes = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: text.trim() }] }],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 300,
+            responseMimeType: 'application/json'
+          }
+        })
+      }
+    );
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();
-      console.error('Anthropic API error:', aiRes.status, errText);
-      res.status(502).json({ error: 'AI service error' });
+      console.error('Gemini API error:', aiRes.status, errText);
+      // Truncate in case it's an unexpectedly large HTML error page rather than JSON
+      res.status(502).json({ error: `Gemini API ${aiRes.status}: ${errText.slice(0, 300)}` });
       return;
     }
 
     const data = await aiRes.json();
-    const raw = (data.content && data.content[0] && data.content[0].text) || '';
+    const raw =
+      (data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0] &&
+        data.candidates[0].content.parts[0].text) || '';
 
     // Strip accidental code fences just in case, then parse.
     const cleaned = raw.replace(/```json|```/g, '').trim();
@@ -91,6 +103,8 @@ Rules:
     }
 
     // Validate/sanitize before handing back to the client.
+    // Anything the model itself couldn't confidently classify (missing/invalid
+    // type) falls into Notices rather than silently defaulting to Assignment.
     const validTypes = ['assignment', 'quiz', 'mids', 'final', 'presentation', 'notice'];
     const validPriorities = ['High', 'Medium', 'Low'];
     const result = {

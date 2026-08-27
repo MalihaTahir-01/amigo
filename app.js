@@ -390,7 +390,11 @@ async function organizePrompt() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text })
     });
-    if (!res.ok) throw new Error('AI service unavailable');
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json()).error || ''; } catch (e) {}
+      throw new Error(`AI service unavailable (${res.status}) ${detail}`);
+    }
     const parsed = await res.json();
     if (!parsed || !parsed.type) throw new Error('AI response missing fields');
     flowData.type     = parsed.type;

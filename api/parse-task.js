@@ -47,7 +47,8 @@ Return ONLY a single JSON object, no prose, no markdown fences, matching exactly
 }
 
 Rules:
-- "quiz", "test" -> quiz. "mid", "midterm" -> mids. "final", "final exam" -> final. "presentation", "viva" -> presentation. "notice", "announcement" -> notice. Anything else (homework, assignment, project, report, submission) -> assignment.
+- "quiz", "test" -> quiz. "mid", "midterm" -> mids. "final", "final exam" -> final. "presentation", "viva" -> presentation. "notice", "announcement" -> notice. Homework, assignment, project, report, submission -> assignment.
+- If the sentence is unclear, ambiguous, or doesn't clearly match any of the above categories, use "notice" — do NOT default to "assignment" as a guess.
 - Resolve weekday names, "tomorrow", "next week" etc. relative to today's date given above. Always pick the NEXT occurrence of a weekday, not today, unless the sentence explicitly says "today".
 - Never explain your answer. Output raw JSON only.`;
 
@@ -93,7 +94,7 @@ Rules:
     const validTypes = ['assignment', 'quiz', 'mids', 'final', 'presentation', 'notice'];
     const validPriorities = ['High', 'Medium', 'Low'];
     const result = {
-      type: validTypes.includes(parsed.type) ? parsed.type : 'assignment',
+      type: validTypes.includes(parsed.type) ? parsed.type : 'notice',
       subject: (typeof parsed.subject === 'string' && parsed.subject.trim()) ? parsed.subject.trim() : 'General',
       priority: validPriorities.includes(parsed.priority) ? parsed.priority : 'Medium',
       due: /^\d{4}-\d{2}-\d{2}$/.test(parsed.due) ? parsed.due : todayIso,

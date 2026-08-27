@@ -435,7 +435,6 @@ function showAIReview() {
     <div class="ai-flow-row">
       <input id="reviewDue" type="date" class="ai-input-boxed" value="${escapeAttr(flowData.due || '')}" />
     </div>
-        </div>
     <div class="ai-flow-row">
       <input id="reviewNote" class="ai-input-boxed" placeholder="${t('notePlaceholder')}" value="${escapeAttr(flowData.note || '')}" />
       <button class="ai-send" onclick="confirmAIReview()">${t('saveBtn')}</button>
@@ -810,7 +809,8 @@ function showTaskDetail(item) {
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
-  // Remove the "empty" placeholder if it exists
+  // Remove the "empty" placeholder if it exists (list empty-states use
+  // focus-empty-light, the home focus card uses focus-empty — match both)
   const empty = list.querySelector('.focus-empty, .focus-empty-light');
   if (empty) empty.remove();
   const div = document.createElement('div');
@@ -906,7 +906,6 @@ async function saveFileToDB(key, dataUrl) {
     const tx = db.transaction('files', 'readwrite');
     tx.objectStore('files').put({ key, dataUrl });
     tx.oncomplete = resolve;
-        tx.oncomplete = resolve;
     tx.onerror    = () => reject(tx.error);
   });
 }
@@ -1137,6 +1136,16 @@ function updateFolderCount(folderId) {
   const el     = document.getElementById('fcount-' + folderId);
   if (folder && el) el.textContent = folder.files.length + ' file' + (folder.files.length !== 1 ? 's' : '');
 }
+function toggleFolder(folderId) {
+  const files  = document.getElementById('files-' + folderId);
+  const chev   = document.getElementById('fchev-' + folderId);
+  const icon   = document.getElementById('ficon-' + folderId);
+  const isOpen = files.style.display === 'block';
+  files.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  if (icon) icon.className = `ti ${isOpen ? 'ti-folder' : 'ti-folder-open'} ` + icon.className.split(' ').slice(2).join(' ');
+}
+
 // Accordion for the merged Tasks page — click a header (Assignments/Quizzes/
 // Mids/Presentations/Finals/Notices) to expand or collapse that block's list.
 function toggleTaskBlock(type) {

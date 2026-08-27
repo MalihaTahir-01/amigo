@@ -117,7 +117,11 @@ body {
   position: relative;
   z-index: 1;
 }
-
+.logo-group { display: flex; align-items: center; gap: 10px; }
+.mobile-settings-btn {
+  display: none;
+  background: none; border: none; cursor: pointer;
+}
 .logo-mark {
   width: 32px;
   height: 32px;

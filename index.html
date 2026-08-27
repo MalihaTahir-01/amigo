@@ -95,8 +95,13 @@
       <!-- SIDEBAR -->
       <div class="sidebar">
         <div class="sidebar-logo">
-          <div class="logo-mark">A</div>
-          <span class="logo-text">amigo</span>
+          <div class="logo-group">
+            <div class="logo-mark">A</div>
+            <span class="logo-text">amigo</span>
+          </div>
+          <button class="mobile-settings-btn" onclick="goToSettingsFromHeader()" title="Settings">
+            <i class="ti ti-settings"></i>
+          </button>
         </div>
         <div class="sidebar-nav">
           <div class="nav-label">Main</div>
@@ -182,12 +187,6 @@
               </div>
               <div class="ai-status" id="aiStatus"></div>
               <div id="aiFlow" class="ai-flow"></div>
-              <div class="ai-chips">
-                <span class="chip" onclick="setInput('Assignment due today')">Assignment due today</span>
-                <span class="chip" onclick="setInput('Quiz on Monday')">Quiz on Monday</span>
-                <span class="chip" onclick="setInput('Mids next week')">Mids next week</span>
-                <span class="chip" onclick="setInput('Final exam on 10 June')">Final exam</span>
-              </div>
             </div>
             <div class="stats-grid">
               <div class="stat-card"><div class="stat-icon stat-icon-assign"><i class="ti ti-file-text"></i></div><div class="stat-num" id="sc-assign">0</div><div class="stat-label">Assignments</div></div>

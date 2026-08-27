@@ -361,6 +361,12 @@ function setNav(el, section) {
   const target = document.getElementById('section-' + section);
   if (target) target.style.display = 'block';
 }
+// Used by the mobile header's settings shortcut icon — finds the actual
+// Settings nav-item so it gets highlighted the same way a normal tap would.
+function goToSettingsFromHeader() {
+  const settingsNav = document.querySelector('.nav-item[onclick*="settings"]');
+  if (settingsNav) setNav(settingsNav, 'settings');
+}
 // ────────────────────────────────────────────────────────────
 // AI FLOW — real AI parsing (calls /api/parse-task), with the old
 // scripted button flow kept as an automatic fallback if the AI call fails
@@ -392,7 +398,8 @@ async function organizePrompt() {
     flowData.priority = parsed.priority;
     flowData.due      = parsed.due; // already an absolute YYYY-MM-DD from the server
     flowData.note     = parsed.note || '';
-    showAIReview();
+    flow.innerHTML = '';
+    saveItem(); // one-shot: no review step, saves straight away
   } catch (err) {
     console.warn('AI parsing failed, falling back to manual flow:', err);
     startManualFlow(text);

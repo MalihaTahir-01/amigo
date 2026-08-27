@@ -1,7 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-
 /* ============================================================
    AMIGO DESIGN SYSTEM — navy identity (reverted from lilac), tokens
    ============================================================ */
@@ -117,11 +115,13 @@ body {
   position: relative;
   z-index: 1;
 }
+
 .logo-group { display: flex; align-items: center; gap: 10px; }
 .mobile-settings-btn {
   display: none;
   background: none; border: none; cursor: pointer;
 }
+
 .logo-mark {
   width: 32px;
   height: 32px;
@@ -543,6 +543,7 @@ body {
 .task-block .section-title i { font-size: 14px; color: var(--color-primary); }
 .task-block-header { cursor: pointer; }
 .task-block-chevron { font-size: 14px; color: var(--color-text-secondary); transition: transform var(--transition-fast); }
+
 .task-list { display: flex; flex-direction: column; gap: 6px; }
 
 .task-item {
@@ -1068,53 +1069,6 @@ body {
   }
 
   .sidebar {
-    width: 100% !important;
-    height: auto !important;
-    flex-direction: row !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-    flex-shrink: 0;
-    padding: 0;
-  }
-
-  .sidebar-logo {
-    padding: 10px 14px;
-    border-bottom: none;
-    border-right: 0.5px solid rgba(255,255,255,0.15);
-    flex-shrink: 0;
-  }
-
-  .sidebar::before, .sidebar::after { display: none; }
-
-  .sidebar-nav {
-    display: flex !important;
-    flex-direction: row !important;
-    padding: 4px 6px;
-    gap: 2px;
-    flex: 1;
-    overflow-x: auto;
-    overflow-y: hidden;
-    align-items: center;
-  }
-
-  .nav-label { display: none !important; }
-
-  .nav-item {
-    flex-direction: column !important;
-    gap: 2px;
-    padding: 5px 8px;
-    font-size: 9px;
-    white-space: nowrap;
-    margin-bottom: 0;
-    flex-shrink: 0;
-    min-width: fit-content;
-    text-transform: capitalize;
-  }
-
-  .nav-item i { font-size: 16px; }
-  .nav-badge { display: none !important; }
-
-  .sidebar {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -1131,7 +1085,7 @@ body {
     box-shadow: 0 -2px 12px rgba(15,34,64,0.18);
   }
 
-    .sidebar-logo {
+  .sidebar-logo {
     display: flex !important;
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -1141,8 +1095,21 @@ body {
     border-bottom: none;
     border-right: none;
     z-index: 501;
-    justify-content: center;
+    justify-content: space-between;
   }
+
+  .mobile-settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 16px;
+  }
+  .mobile-settings-btn:active { background: rgba(255,255,255,0.28); }
 
   .sidebar::before, .sidebar::after { display: none; }
 

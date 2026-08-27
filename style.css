@@ -537,7 +537,8 @@ body {
 .task-block:last-child { margin-bottom: 0; }
 .task-block .section-title { display: flex; align-items: center; gap: 6px; }
 .task-block .section-title i { font-size: 14px; color: var(--color-primary); }
-
+.task-block-header { cursor: pointer; }
+.task-block-chevron { font-size: 14px; color: var(--color-text-secondary); transition: transform var(--transition-fast); }
 .task-list { display: flex; flex-direction: column; gap: 6px; }
 
 .task-item {
@@ -1109,6 +1110,57 @@ body {
   .nav-item i { font-size: 16px; }
   .nav-badge { display: none !important; }
 
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100% !important;
+    height: 60px !important;
+    flex-direction: row !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    padding: 0;
+    z-index: 500;
+    box-shadow: 0 -2px 12px rgba(15,34,64,0.18);
+  }
+
+  .sidebar-logo { display: none !important; }
+
+  .sidebar::before, .sidebar::after { display: none; }
+
+  .sidebar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    padding: 4px 4px;
+    gap: 2px;
+    flex: 1;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .nav-label { display: none !important; }
+
+  .nav-item {
+    flex-direction: column !important;
+    gap: 2px;
+    padding: 6px 8px;
+    font-size: 9px;
+    white-space: nowrap;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    min-width: fit-content;
+    text-transform: capitalize;
+  }
+
+  .nav-item i { font-size: 18px; }
+  .nav-badge { display: none !important; }
+
   .sidebar-profile {
     display: flex !important;
     flex-shrink: 0;
@@ -1117,9 +1169,11 @@ body {
     border-left: 0.5px solid rgba(255,255,255,0.15);
     align-items: center;
     gap: 4px;
+    height: 100%;
   }
 
   .profile-info { display: none !important; }
+  .avatar { display: none !important; }
 
   .main {
     flex: 1 !important;
@@ -1131,7 +1185,7 @@ body {
   }
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .content { padding: 12px 14px 16px; }
+  .content { padding: 12px 14px 76px; }
   .topbar { padding: 12px 14px 0; }
 
   .notif-panel {

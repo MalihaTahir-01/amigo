@@ -804,7 +804,7 @@ function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
   // Remove the "empty" placeholder if it exists
-  const empty = list.querySelector('.focus-empty');
+  const empty = list.querySelector('.focus-empty, .focus-empty-light');
   if (empty) empty.remove();
   const div = document.createElement('div');
   div.className = 'task-item';
@@ -1130,14 +1130,15 @@ function updateFolderCount(folderId) {
   const el     = document.getElementById('fcount-' + folderId);
   if (folder && el) el.textContent = folder.files.length + ' file' + (folder.files.length !== 1 ? 's' : '');
 }
-function toggleFolder(folderId) {
-  const files  = document.getElementById('files-' + folderId);
-  const chev   = document.getElementById('fchev-' + folderId);
-  const icon   = document.getElementById('ficon-' + folderId);
-  const isOpen = files.style.display === 'block';
-  files.style.display = isOpen ? 'none' : 'block';
+// Accordion for the merged Tasks page — click a header (Assignments/Quizzes/
+// Mids/Presentations/Finals/Notices) to expand or collapse that block's list.
+function toggleTaskBlock(type) {
+  const list = document.getElementById('list-' + type);
+  const chev = document.getElementById('tchev-' + type);
+  if (!list) return;
+  const isOpen = list.style.display === 'block';
+  list.style.display = isOpen ? 'none' : 'block';
   if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-  if (icon) icon.className = `ti ${isOpen ? 'ti-folder' : 'ti-folder-open'} ` + icon.className.split(' ').slice(2).join(' ');
 }
 // Load saved folders on page boot
 folders.forEach(f => renderFolder(f));

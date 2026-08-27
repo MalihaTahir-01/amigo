@@ -1142,6 +1142,8 @@ body {
 
   .nav-item i { font-size: 18px; }
   .nav-badge { display: none !important; }
+  /* Settings now lives in the top header shortcut, so hide the duplicate bottom-bar tab on mobile */
+  .nav-item[onclick*="settings"] { display: none !important; }
 
   .sidebar-profile {
     display: flex !important;

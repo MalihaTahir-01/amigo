@@ -106,6 +106,7 @@
           <div class="nav-label">Main</div>
           <div class="nav-item active" onclick="setNav(this,'home')"><i class="ti ti-home"></i> Home</div>
           <div class="nav-item" onclick="setNav(this,'tasks')"><i class="ti ti-file-text"></i> Tasks <span class="nav-badge" id="nb-tasks">0</span></div>
+          <div class="nav-item" onclick="setNav(this,'timetable')"><i class="ti ti-calendar-time"></i> Timetable</div>
           <div class="nav-label">Tools</div>
           <div class="nav-item" onclick="setNav(this,'uploads')"><i class="ti ti-upload"></i> Uploads</div>
           <div class="nav-item" onclick="setNav(this,'todo')"><i class="ti ti-checkbox"></i> To-Do</div>
@@ -253,6 +254,18 @@
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('notice')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-notice"></i>
               </div>
               <div class="task-list" id="list-notice" style="display:none;"><div class="focus-empty-light">No notices yet — add one from home screen.</div></div>
+            </div>
+          </div>
+
+          <!-- TIMETABLE (multiple named schedules: University, Job, Internship, etc.) -->
+          <div id="section-timetable" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Timetable</h2><p>Keep separate schedules for uni, work, or anything else.</p></div>
+            <div class="uploads-toolbar">
+              <input id="scheduleFolderNameInput" class="ai-input-boxed" placeholder="Schedule name e.g. University Timetable, Job Shift..." onkeydown="if(event.key==='Enter') createScheduleFolder()" />
+              <button class="ai-send" onclick="createScheduleFolder()">Create Schedule</button>
+            </div>
+            <div id="scheduleFolderList" class="folders-list">
+              <div class="focus-empty-light">No schedules yet — create one above!</div>
             </div>
           </div>
           <!-- UPLOADS -->

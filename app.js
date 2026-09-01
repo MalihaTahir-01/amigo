@@ -1294,6 +1294,231 @@ function toggleTaskBlock(type) {
   list.style.display = isOpen ? 'none' : 'block';
   if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
+// ============================================================
+// TIMETABLE
+// Multiple named schedule folders (University, Job, Internship, etc.),
+// each holding its own list of classes/shifts. Same folder-card visual
+// pattern as Uploads, just holding structured class data instead of files.
+// ============================================================
+const WEEKDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+let scheduleFolders = JSON.parse(localStorage.getItem('amigo_schedule_folders') || '[]');
+function saveScheduleFolders() {
+  localStorage.setItem('amigo_schedule_folders', JSON.stringify(scheduleFolders));
+}
+// ── Schedule folder CRUD ─────────────────────────────────────
+function createScheduleFolder() {
+  const input = document.getElementById('scheduleFolderNameInput');
+  const name  = input.value.trim();
+  if (!name) return;
+  const folder = { id: Date.now(), name, classes: [] };
+  scheduleFolders.push(folder);
+  saveScheduleFolders();
+  saveUserData();
+  input.value = '';
+  const container = document.getElementById('scheduleFolderList');
+  const empty = container.querySelector('.focus-empty-light');
+  if (empty) empty.remove();
+  renderScheduleFolder(folder);
+}
+function renderScheduleFolder(folder) {
+  const container = document.getElementById('scheduleFolderList');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'folder-card';
+  div.setAttribute('data-schedule-folder-id', folder.id);
+  div.innerHTML = `
+    <div class="folder-header" onclick="toggleScheduleFolder(${folder.id})">
+      <div class="folder-header-left">
+        <i class="ti ti-calendar-time folder-icon" id="sficon-${folder.id}"></i>
+        <span class="folder-name">${escapeAttr(folder.name)}</span>
+        <span class="folder-count" id="sfcount-${folder.id}">${folder.classes.length} class${folder.classes.length !== 1 ? 'es' : ''}</span>
+      </div>
+      <div class="folder-header-right">
+        <button class="ai-send folder-upload-btn" onclick="event.stopPropagation(); openAddClassModal(${folder.id})">
+          <i class="ti ti-plus"></i> Add Class
+        </button>
+        <button class="del-reminder" onclick="event.stopPropagation(); deleteScheduleFolder(${folder.id})" title="Delete schedule">
+          <i class="ti ti-trash"></i>
+        </button>
+        <i class="ti ti-chevron-down folder-chevron" id="sfchev-${folder.id}"></i>
+      </div>
+    </div>
+    <div class="folder-files" id="sfclasses-${folder.id}" style="display:none;"></div>`;
+  container.appendChild(div);
+  renderScheduleClasses(folder.id);
+}
+function toggleScheduleFolder(folderId) {
+  const list = document.getElementById('sfclasses-' + folderId);
+  const chev = document.getElementById('sfchev-' + folderId);
+  const icon = document.getElementById('sficon-' + folderId);
+  if (!list) return;
+  const isOpen = list.style.display === 'block';
+  list.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  if (icon) icon.className = `ti ${isOpen ? 'ti-calendar-time' : 'ti-calendar-time'} folder-icon`;
+}
+function deleteScheduleFolder(folderId) {
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  if (!folder) return;
+  if (!confirm(`Delete schedule "${folder.name}" and all its classes?`)) return;
+  scheduleFolders = scheduleFolders.filter(f => f.id !== folderId);
+  saveScheduleFolders();
+  saveUserData();
+  const card = document.querySelector(`[data-schedule-folder-id="${folderId}"]`);
+  if (card) card.remove();
+  const container = document.getElementById('scheduleFolderList');
+  if (container && container.querySelectorAll('.folder-card').length === 0) {
+    container.innerHTML = '<div class="focus-empty-light">No schedules yet — create one above!</div>';
+  }
+}
+// ── Classes within a schedule folder, grouped by weekday ────
+function renderScheduleClasses(folderId) {
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  const list   = document.getElementById('sfclasses-' + folderId);
+  if (!folder || !list) return;
+  list.innerHTML = '';
+  if (folder.classes.length === 0) {
+    list.innerHTML = '<div class="focus-empty-light">No classes yet — tap "Add Class" above.</div>';
+    return;
+  }
+  WEEKDAYS.forEach(day => {
+    const dayClasses = folder.classes
+      .filter(c => c.day === day)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    if (dayClasses.length === 0) return;
+    const header = document.createElement('div');
+    header.className = 'schedule-day-header';
+    header.textContent = day;
+    list.appendChild(header);
+    dayClasses.forEach(cls => list.appendChild(renderClassRow(folderId, cls)));
+  });
+}
+function renderClassRow(folderId, cls) {
+  const div = document.createElement('div');
+  div.className = 'task-item';
+  div.setAttribute('data-class-id', cls.id);
+  const sub = [formatTimeRange(cls.startTime, cls.endTime), cls.room, cls.teacher].filter(Boolean).join(' — ');
+  div.innerHTML = `
+    <div class="task-icon"><i class="ti ti-clock"></i></div>
+    <div class="task-info">
+      <div class="task-title">${escapeAttr(cls.subject)}</div>
+      <div class="task-sub">${sub}</div>
+    </div>
+    <button class="edit-reminder" onclick="openEditClassModal(${folderId}, ${cls.id})" title="Edit"><i class="ti ti-edit"></i></button>
+    <button class="del-reminder" onclick="deleteClass(${folderId}, ${cls.id})" title="Delete"><i class="ti ti-trash"></i></button>`;
+  return div;
+}
+function formatTime12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return h12 + ':' + String(m).padStart(2, '0') + ' ' + period;
+}
+function formatTimeRange(start, end) {
+  return formatTime12(start) + ' – ' + formatTime12(end);
+}
+// ── Add / Edit class modal ───────────────────────────────────
+function openAddClassModal(folderId) {
+  openClassModal(folderId, null);
+}
+function openEditClassModal(folderId, classId) {
+  openClassModal(folderId, classId);
+}
+function openClassModal(folderId, classId) {
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  if (!folder) return;
+  const existing = classId ? folder.classes.find(c => c.id === classId) : null;
+  const vals = existing || { subject: '', day: WEEKDAYS[0], startTime: '09:00', endTime: '10:00', teacher: '', room: '' };
+
+  const modal = document.createElement('div');
+  modal.id = 'classModal';
+  modal.className = 'task-detail-overlay';
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">${existing ? 'Edit class' : 'Add a class'}</div>
+
+      <div class="settings-field">
+        <label class="settings-label">Subject</label>
+        <input id="clsSubject" class="ai-input-boxed" type="text" placeholder="e.g. Physics" value="${escapeAttr(vals.subject)}" />
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Day</label>
+        <select id="clsDay" class="reminder-select">
+          ${WEEKDAYS.map(d => `<option value="${d}" ${d === vals.day ? 'selected' : ''}>${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="ai-flow-row">
+        <div class="settings-field" style="flex:1;">
+          <label class="settings-label">Start time</label>
+          <input id="clsStart" class="ai-input-boxed" type="time" value="${vals.startTime}" />
+        </div>
+        <div class="settings-field" style="flex:1;">
+          <label class="settings-label">End time</label>
+          <input id="clsEnd" class="ai-input-boxed" type="time" value="${vals.endTime}" />
+        </div>
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Teacher (optional)</label>
+        <input id="clsTeacher" class="ai-input-boxed" type="text" placeholder="e.g. Dr. Ahmed" value="${escapeAttr(vals.teacher || '')}" />
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Room (optional)</label>
+        <input id="clsRoom" class="ai-input-boxed" type="text" placeholder="e.g. Room 204" value="${escapeAttr(vals.room || '')}" />
+      </div>
+
+      <div class="ai-flow-row" style="margin-top:4px;">
+        <button class="task-detail-btn task-detail-btn-close" onclick="document.getElementById('classModal').remove()">Cancel</button>
+        <button class="ai-send" onclick="saveClass(${folderId}, ${classId || 'null'})">${existing ? 'Save changes' : 'Add'}</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+function saveClass(folderId, classId) {
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  if (!folder) return;
+  const subject = document.getElementById('clsSubject').value.trim();
+  if (!subject) return;
+  const data = {
+    subject,
+    day:       document.getElementById('clsDay').value,
+    startTime: document.getElementById('clsStart').value || '09:00',
+    endTime:   document.getElementById('clsEnd').value || '10:00',
+    teacher:   document.getElementById('clsTeacher').value.trim(),
+    room:      document.getElementById('clsRoom').value.trim(),
+  };
+  if (classId) {
+    const idx = folder.classes.findIndex(c => c.id === classId);
+    if (idx !== -1) folder.classes[idx] = { ...folder.classes[idx], ...data };
+  } else {
+    folder.classes.push({ id: Date.now(), ...data });
+  }
+  saveScheduleFolders();
+  saveUserData();
+  renderScheduleClasses(folderId);
+  updateScheduleFolderCount(folderId);
+  const modal = document.getElementById('classModal');
+  if (modal) modal.remove();
+}
+function deleteClass(folderId, classId) {
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  if (!folder) return;
+  if (!confirm('Delete this class from the schedule?')) return;
+  folder.classes = folder.classes.filter(c => c.id !== classId);
+  saveScheduleFolders();
+  saveUserData();
+  renderScheduleClasses(folderId);
+  updateScheduleFolderCount(folderId);
+}
+function updateScheduleFolderCount(folderId) {
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  const el = document.getElementById('sfcount-' + folderId);
+  if (folder && el) el.textContent = folder.classes.length + ' class' + (folder.classes.length !== 1 ? 'es' : '');
+}
+// Load saved schedules on page boot
+scheduleFolders.forEach(f => renderScheduleFolder(f));
 // Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
 // ============================================================

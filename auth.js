@@ -186,6 +186,7 @@ async function loadUserData() {
   if (data.todos)     localStorage.setItem('amigo_todos',     JSON.stringify(data.todos));
   if (data.reminders) localStorage.setItem('amigo_reminders', JSON.stringify(data.reminders));
   if (data.folders)   localStorage.setItem('amigo_folders',   JSON.stringify(data.folders));
+  if (data.schedule_folders) localStorage.setItem('amigo_schedule_folders', JSON.stringify(data.schedule_folders));
 
   if (data.settings) {
     const s = data.settings;
@@ -206,6 +207,7 @@ async function saveUserData() {
     todos:     JSON.parse(localStorage.getItem('amigo_todos')     || '[]'),
     reminders: JSON.parse(localStorage.getItem('amigo_reminders') || '[]'),
     folders:   JSON.parse(localStorage.getItem('amigo_folders')   || '[]'),
+    schedule_folders: JSON.parse(localStorage.getItem('amigo_schedule_folders') || '[]'),
     settings: {
       name:    localStorage.getItem('amigo_name')    || '',
       uni:     localStorage.getItem('amigo_uni')     || '',
@@ -255,7 +257,7 @@ async function handleForgotPassword() {
 }
 
 function clearLocalData() {
-  const keys = ['amigo_items','amigo_todos','amigo_reminders','amigo_folders',
+  const keys = ['amigo_items','amigo_todos','amigo_reminders','amigo_folders','amigo_schedule_folders',
                  'amigo_name','amigo_uni','amigo_program','amigo_lang','amigo_pic'];
   keys.forEach(k => localStorage.removeItem(k));
 }

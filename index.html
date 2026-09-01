@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -211,7 +210,7 @@
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('assignment')">
                 <span class="section-title"><i class="ti ti-file-text"></i> Assignments</span>
-                <i class="ti ti-chevron-down task-block-chevron" id="tchev-assignment"></i>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('assignment')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-assignment"></i>
               </div>
               <div class="task-list" id="list-assignment" style="display:none;"><div class="focus-empty-light">No assignments yet.</div></div>
             </div>
@@ -219,7 +218,7 @@
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('quiz')">
                 <span class="section-title"><i class="ti ti-pencil"></i> Quizzes</span>
-                <i class="ti ti-chevron-down task-block-chevron" id="tchev-quiz"></i>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('quiz')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-quiz"></i>
               </div>
               <div class="task-list" id="list-quiz" style="display:none;"><div class="focus-empty-light">No quizzes yet.</div></div>
             </div>
@@ -227,7 +226,7 @@
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('mids')">
                 <span class="section-title"><i class="ti ti-writing"></i> Mids</span>
-                <i class="ti ti-chevron-down task-block-chevron" id="tchev-mids"></i>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('mids')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-mids"></i>
               </div>
               <div class="task-list" id="list-mids" style="display:none;"><div class="focus-empty-light">No mids added yet.</div></div>
             </div>
@@ -235,7 +234,7 @@
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('presentation')">
                 <span class="section-title"><i class="ti ti-presentation"></i> Presentations</span>
-                <i class="ti ti-chevron-down task-block-chevron" id="tchev-presentation"></i>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('presentation')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-presentation"></i>
               </div>
               <div class="task-list" id="list-presentation" style="display:none;"><div class="focus-empty-light">No presentations yet.</div></div>
             </div>
@@ -243,7 +242,7 @@
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('final')">
                 <span class="section-title"><i class="ti ti-certificate"></i> Finals</span>
-                <i class="ti ti-chevron-down task-block-chevron" id="tchev-final"></i>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('final')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-final"></i>
               </div>
               <div class="task-list" id="list-final" style="display:none;"><div class="focus-empty-light">No finals added yet.</div></div>
             </div>
@@ -251,7 +250,7 @@
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('notice')">
                 <span class="section-title"><i class="ti ti-speakerphone"></i> Notices</span>
-                <i class="ti ti-chevron-down task-block-chevron" id="tchev-notice"></i>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('notice')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-notice"></i>
               </div>
               <div class="task-list" id="list-notice" style="display:none;"><div class="focus-empty-light">No notices yet — add one from home screen.</div></div>
             </div>

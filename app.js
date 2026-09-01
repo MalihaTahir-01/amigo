@@ -402,8 +402,7 @@ async function organizePrompt() {
     flowData.priority = parsed.priority;
     flowData.due      = parsed.due; // already an absolute YYYY-MM-DD from the server
     flowData.note     = parsed.note || '';
-    flow.innerHTML = '';
-    saveItem(); // one-shot: no review step, saves straight away
+    showAIReview('aiFlow');
   } catch (err) {
     console.warn('AI parsing failed, falling back to manual flow:', err);
     startManualFlow(text);
@@ -414,12 +413,15 @@ async function organizePrompt() {
 function escapeAttr(s) {
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
-function showAIReview() {
-  const flow = document.getElementById('aiFlow');
+function showAIReview(targetId) {
+  targetId = targetId || 'aiFlow';
+  const flow = document.getElementById(targetId);
+  const isEdit = !!flowData.editId;
+  const lockedType = flowData.lockedType;
   flow.innerHTML = `
-    <div class="ai-question">Got it — check the details and save:</div>
+    <div class="ai-question">${isEdit ? 'Edit the details and save:' : 'Got it — check the details and save:'}</div>
     <div class="ai-flow-row">
-      <select id="reviewType" class="reminder-select">
+      <select id="reviewType-${targetId}" class="reminder-select" ${lockedType ? 'disabled' : ''}>
         <option value="assignment">${t('assignment')}</option>
         <option value="quiz">${t('quiz')}</option>
         <option value="mids">${t('mids')}</option>
@@ -429,39 +431,125 @@ function showAIReview() {
       </select>
     </div>
     <div class="ai-flow-row">
-      <input id="reviewSubject" class="ai-input-boxed" placeholder="${t('subjectPlaceholder')}" value="${escapeAttr(flowData.subject || '')}" />
+      <input id="reviewSubject-${targetId}" class="ai-input-boxed" placeholder="${t('subjectPlaceholder')}" value="${escapeAttr(flowData.subject || '')}" />
     </div>
-    <div class="ai-options" id="reviewPriorityOpts">
-      <button type="button" class="ai-opt" onclick="setReviewPriority('High')" data-p="High">${t('high')}</button>
-      <button type="button" class="ai-opt" onclick="setReviewPriority('Medium')" data-p="Medium">${t('medium')}</button>
-      <button type="button" class="ai-opt" onclick="setReviewPriority('Low')" data-p="Low">${t('low')}</button>
-    </div>
-    <div class="ai-flow-row">
-      <input id="reviewDue" type="date" class="ai-input-boxed" value="${escapeAttr(flowData.due || '')}" />
+    <div class="ai-options" id="reviewPriorityOpts-${targetId}">
+      <button type="button" class="ai-opt" onclick="setReviewPriority('High','${targetId}')" data-p="High">${t('high')}</button>
+      <button type="button" class="ai-opt" onclick="setReviewPriority('Medium','${targetId}')" data-p="Medium">${t('medium')}</button>
+      <button type="button" class="ai-opt" onclick="setReviewPriority('Low','${targetId}')" data-p="Low">${t('low')}</button>
     </div>
     <div class="ai-flow-row">
-      <input id="reviewNote" class="ai-input-boxed" placeholder="${t('notePlaceholder')}" value="${escapeAttr(flowData.note || '')}" />
-      <button class="ai-send" onclick="confirmAIReview()">${t('saveBtn')}</button>
+      <input id="reviewDue-${targetId}" type="date" class="ai-input-boxed" value="${escapeAttr(flowData.due || '')}" />
     </div>
-    <div class="ai-flow-skip">
-      <button class="ai-opt" onclick="startManualFlow(flowData.raw)">Not right? Fill in manually</button>
+    <div class="ai-flow-row">
+      <input id="reviewNote-${targetId}" class="ai-input-boxed" placeholder="${t('notePlaceholder')}" value="${escapeAttr(flowData.note || '')}" />
+      <button class="ai-send" onclick="confirmAIReview('${targetId}')">${isEdit ? 'Save changes' : t('saveBtn')}</button>
     </div>`;
-  document.getElementById('reviewType').value = flowData.type || 'assignment';
-  setReviewPriority(flowData.priority || 'Medium');
+  document.getElementById('reviewType-' + targetId).value = lockedType || flowData.type || 'assignment';
+  setReviewPriority(flowData.priority || 'Medium', targetId);
 }
-function setReviewPriority(p) {
+function setReviewPriority(p, targetId) {
+  targetId = targetId || 'aiFlow';
   flowData.priority = p;
-  document.querySelectorAll('#reviewPriorityOpts .ai-opt').forEach(btn => {
+  document.querySelectorAll('#reviewPriorityOpts-' + targetId + ' .ai-opt').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.p === p);
   });
 }
-function confirmAIReview() {
-  flowData.type    = document.getElementById('reviewType').value;
-  flowData.subject = document.getElementById('reviewSubject').value.trim() || 'General';
-  flowData.due     = document.getElementById('reviewDue').value || flowData.due;
-  flowData.note    = document.getElementById('reviewNote').value.trim();
+function confirmAIReview(targetId) {
+  targetId = targetId || 'aiFlow';
+  flowData.type    = flowData.lockedType || document.getElementById('reviewType-' + targetId).value;
+  flowData.subject = document.getElementById('reviewSubject-' + targetId).value.trim() || 'General';
+  flowData.due     = document.getElementById('reviewDue-' + targetId).value || flowData.due;
+  flowData.note    = document.getElementById('reviewNote-' + targetId).value.trim();
   if (!flowData.priority) flowData.priority = 'Medium';
-  saveItem();
+  saveItem(targetId);
+}
+// ────────────────────────────────────────────────────────────
+// QUICK ADD (folder "+" buttons) & EDIT — reuse the same AI parse +
+// editable review flow as the home input bar, just inside a small modal.
+// ────────────────────────────────────────────────────────────
+function openQuickAddModal(lockedType) {
+  const existing = document.getElementById('quickAddModal');
+  if (existing) existing.remove();
+  const isEdit = !!flowData.editId;
+  const modal = document.createElement('div');
+  modal.id = 'quickAddModal';
+  modal.className = 'task-detail-overlay';
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">${isEdit ? 'Edit task' : 'Add a task'}</div>
+      ${isEdit ? '' : `
+      <div class="ai-input-row quick-add-input-row">
+        <i class="ti ti-sparkles ai-sparkle-icon"></i>
+        <input class="ai-input" id="quickAddInput" placeholder="e.g. ${lockedType ? t(lockedType) + ' — chapter 4, due Tuesday' : 'Math quiz on Monday'}" />
+        <button class="ai-send" onclick="quickAddOrganize('${lockedType || ''}')">Add ↗</button>
+      </div>`}
+      <div id="quickAddFlow" class="ai-flow"></div>
+      <button class="task-detail-btn task-detail-btn-close quick-add-close" onclick="document.getElementById('quickAddModal').remove()">Close</button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+
+  if (isEdit) {
+    showAIReview('quickAddFlow');
+  } else {
+    flowData = { lockedType: lockedType || null };
+    setTimeout(() => {
+      const el = document.getElementById('quickAddInput');
+      if (!el) return;
+      el.focus();
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') quickAddOrganize(lockedType || ''); });
+    }, 50);
+  }
+}
+async function quickAddOrganize(lockedType) {
+  const input = document.getElementById('quickAddInput');
+  const text = input ? input.value.trim() : '';
+  if (!text) return;
+  flowData = { raw: text, lockedType: lockedType || null };
+  const flow = document.getElementById('quickAddFlow');
+  flow.innerHTML = `<div class="ai-question">"${text}" — reading this...</div>`;
+  try {
+    const res = await fetch('/api/parse-task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error('AI service unavailable (' + res.status + ')');
+    const parsed = await res.json();
+    if (!parsed || !parsed.type) throw new Error('AI response missing fields');
+    flowData.type     = lockedType || parsed.type;
+    flowData.subject  = parsed.subject;
+    flowData.priority = parsed.priority;
+    flowData.due      = parsed.due;
+    flowData.note     = parsed.note || '';
+  } catch (err) {
+    console.warn('Quick-add AI parse failed, opening blank editable form:', err);
+    // Don't lose what they typed — land on the same editable review with
+    // sensible defaults so they can just fill in the blanks and save.
+    flowData.type     = lockedType || 'assignment';
+    flowData.subject  = '';
+    flowData.priority = 'Medium';
+    flowData.due      = localDateStr(new Date());
+    flowData.note     = '';
+  }
+  showAIReview('quickAddFlow');
+}
+// Opens the quick-add modal pre-filled with an existing item's data, in edit mode
+function openEditItem(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  flowData = {
+    editId:   item.id,
+    raw:      item.title,
+    type:     item.type,
+    subject:  item.subject,
+    priority: item.priority,
+    due:      item.due,
+    note:     item.note || ''
+  };
+  openQuickAddModal();
 }
 // ────────────────────────────────────────────────────────────
 // MANUAL FLOW — fallback only, used when the AI call fails
@@ -674,35 +762,77 @@ function parseDate(due) {
 // ────────────────────────────────────────────────────────────
 // SAVE & RENDER ITEMS
 // ────────────────────────────────────────────────────────────
-function saveItem() {
+function saveItem(targetId) {
+  targetId = targetId || 'aiFlow';
   // Resolve whatever the person typed ("today", "tomorrow", "24 may", "monday"...)
   // into an absolute calendar date ONCE, at save time. Without this, a task saved
   // as "today" would keep re-evaluating as "today" forever, since parseDate()/isToday()
   // re-read the raw word fresh every render — it never actually expires.
   const resolvedDue = localDateStr(parseDate(flowData.due));
-  const item = {
-    id:       Date.now(),
-    title:    flowData.raw,
-    type:     flowData.type,
-    subject:  flowData.subject,
-    priority: flowData.priority,
-    due:      resolvedDue,
-    note:     flowData.note || ''
-  };
-  items.push(item);
-  localStorage.setItem('amigo_items', JSON.stringify(items));
-  saveUserData();
-  // Clear the input flow
-  document.getElementById('aiFlow').innerHTML = '';
-  document.getElementById('aiInput').value   = '';
-  // Show success message
-  document.getElementById('aiStatus').textContent = t('saved');
-  setTimeout(() => document.getElementById('aiStatus').textContent = '', 2500);
-  // Add to the correct lists and refresh
+
+  if (flowData.editId) {
+    // ── EDIT MODE: update the existing item in place ──
+    const idx = items.findIndex(i => i.id === flowData.editId);
+    if (idx !== -1) {
+      items[idx] = {
+        ...items[idx],
+        type:     flowData.type,
+        subject:  flowData.subject,
+        priority: flowData.priority,
+        due:      resolvedDue,
+        note:     flowData.note || ''
+      };
+      localStorage.setItem('amigo_items', JSON.stringify(items));
+      saveUserData();
+      refreshItemDOM(items[idx]);
+    }
+  } else {
+    // ── CREATE MODE: brand new item ──
+    const item = {
+      id:       Date.now(),
+      title:    flowData.raw,
+      type:     flowData.type,
+      subject:  flowData.subject,
+      priority: flowData.priority,
+      due:      resolvedDue,
+      note:     flowData.note || ''
+    };
+    items.push(item);
+    localStorage.setItem('amigo_items', JSON.stringify(items));
+    saveUserData();
+    renderItem(item);
+    sortList('taskList');
+    sortList('list-' + item.type);
+  }
+
+  updateCounts();
+
+  // Clear whichever input surface this came from
+  const flow = document.getElementById(targetId);
+  if (flow) flow.innerHTML = '';
+  if (targetId === 'aiFlow') {
+    const input = document.getElementById('aiInput');
+    if (input) input.value = '';
+  }
+  const quickModal = document.getElementById('quickAddModal');
+  if (quickModal) quickModal.remove();
+
+  // Show success message (home bar has its own status line; quick-add modal doesn't need one)
+  const status = document.getElementById('aiStatus');
+  if (status) {
+    status.textContent = t('saved');
+    setTimeout(() => { status.textContent = ''; }, 2500);
+  }
+  flowData = {};
+}
+// Removes an item's existing DOM cards everywhere and re-renders it fresh —
+// used after an edit, since due date/type/priority all affect which
+// list(s) the card belongs in and how it's sorted.
+function refreshItemDOM(item) {
+  document.querySelectorAll('[data-id="' + item.id + '"]').forEach(el => el.remove());
   renderItem(item);
   sortList('taskList');
   sortList('list-' + item.type);
-  updateCounts();
 }
 function renderItem(item) {
   if (isToday(item.due)) {
@@ -804,6 +934,7 @@ function showTaskDetail(item) {
       </div>
       <div class="task-detail-actions">
         <button onclick="document.getElementById('taskDetailModal').remove()" class="task-detail-btn task-detail-btn-close">Close</button>
+        <button onclick="document.getElementById('taskDetailModal').remove();openEditItem(${item.id});" class="task-detail-btn task-detail-btn-edit">Edit</button>
         <button onclick="deleteItem(${item.id});document.getElementById('taskDetailModal').remove();" class="task-detail-btn task-detail-btn-delete">Delete</button>
       </div>
     </div>`;
@@ -822,7 +953,7 @@ function addToList(listId, item) {
   div.setAttribute('data-id', item.id);
   div.style.cursor = 'pointer';
   div.addEventListener('click', e => {
-    if (e.target.closest('.del-reminder')) return;
+    if (e.target.closest('.del-reminder') || e.target.closest('.edit-reminder')) return;
     showTaskDetail(item);
   });
   div.innerHTML = `
@@ -833,6 +964,9 @@ function addToList(listId, item) {
     </div>
     <span class="task-due">${item.due}</span>
     <span class="urgency ${urgencyClass(item.priority)}">${item.priority}</span>
+    <button class="edit-reminder" onclick="openEditItem(${item.id})" title="Edit">
+      <i class="ti ti-edit"></i>
+    </button>
     <button class="del-reminder" onclick="deleteItem(${item.id})" title="Delete">
       <i class="ti ti-trash"></i>
     </button>`;

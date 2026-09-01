@@ -808,6 +808,37 @@ body {
 .del-reminder:hover { color: var(--color-danger); background: var(--color-danger-bg); }
 .del-reminder-lg { font-size: 20px; flex-shrink: 0; }
 
+.edit-reminder {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+.edit-reminder:hover { color: var(--color-primary); background: var(--color-primary-bg, rgba(124,58,237,0.1)); }
+
+.task-block-add {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  padding: 4px 6px;
+  margin-left: auto;
+  margin-right: 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+.task-block-add:hover { color: #fff; background: var(--color-primary); }
+
+.quick-add-title { margin-top: 4px; }
+.quick-add-input-row { margin-top: 10px; }
+.quick-add-close { margin-top: 14px; width: 100%; }
+.task-detail-btn-edit { border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-primary); }
+
 /* Small layout-context utility classes (replace one-off inline positioning) */
 .main-relative { position: relative; }
 .icon-btn-anchor { position: relative; }

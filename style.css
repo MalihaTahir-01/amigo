@@ -1,1257 +1,439 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-
-/* ============================================================
-   AMIGO DESIGN SYSTEM — navy identity (reverted from lilac), tokens
-   ============================================================ */
-:root {
-  /* Brand — navy family (original Amigo colors) */
-  --color-primary:        #1a3a6b;
-  --color-primary-dark:   #0f2240;
-  --color-primary-darker: #0a1830;
-  --color-primary-light:  #e8eef7;
-  --color-primary-soft:   #4a6fa5;
-  --gradient-primary: linear-gradient(160deg, #0f2240 0%, #1a3a6b 100%);
-
-  /* Neutrals */
-  --color-bg:           #f4f7fb;
-  --color-surface:      #FFFFFF;
-  --color-surface-alt:  #e8eef7;
-  --color-border:       #E5E7EB;
-  --color-border-soft:  #EDF1F6;
-  --color-text:         #0F172A;
-  --color-text-secondary: #64748B;
-  --color-text-muted:   #9CA3AF;
-  --color-on-primary:   #FFFFFF;
-
-  /* Semantic (unchanged meanings, kept recognizable) */
-  --color-danger:      #EF4444;
-  --color-danger-bg:   #FEE2E2;
-  --color-danger-text: #DC2626;
-  --color-warning:     #D97706;
-  --color-warning-bg:  #FEF3C7;
-  --color-success:     #16A34A;
-  --color-success-bg:  #DCFCE7;
-  --color-info:        #1d4ed8;
-  --color-info-bg:     #DBEAFE;
-  --color-plum:        #1a3a6b;
-  --color-plum-bg:     #e8eef7;
-
-  /* Spacing */
-  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
-  --space-5: 20px; --space-6: 24px; --space-8: 32px;
-
-  /* Radius */
-  --radius-sm: 8px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 20px; --radius-full: 999px;
-
-  /* Shadow — tinted navy instead of lilac */
-  --shadow-sm: 0 1px 4px rgba(15,34,64,0.07);
-  --shadow-md: 0 2px 10px rgba(15,34,64,0.09);
-  --shadow-lg: 0 8px 28px rgba(15,34,64,0.16);
-  --shadow-xl: 0 24px 64px rgba(10,24,48,0.28);
-
-  /* Type */
-  --font-display: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  --font-body: 'Inter', sans-serif;
-
-  --transition-fast: 0.15s ease;
-  --transition-base: 0.2s ease;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: var(--font-body);
-  background: var(--color-bg);
-  color: var(--color-text);
-}
-
-.amigo {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* ============================================================
-   SIDEBAR
-   ============================================================ */
-.sidebar {
-  width: 220px;
-  background: var(--gradient-primary);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.sidebar::before {
-  content: '';
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.07);
-  top: -60px;
-  right: -60px;
-}
-
-.sidebar::after {
-  content: '';
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.05);
-  bottom: 80px;
-  left: -40px;
-}
-
-.sidebar-logo {
-  padding: 22px 20px 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-bottom: 0.5px solid rgba(255,255,255,0.15);
-  position: relative;
-  z-index: 1;
-}
-
-.logo-group { display: flex; align-items: center; gap: 10px; }
-.mobile-settings-btn {
-  display: none;
-  background: none; border: none; cursor: pointer;
-}
-
-.logo-mark {
-  width: 32px;
-  height: 32px;
-  background: rgba(255,255,255,0.2);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.logo-text {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.5px;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 12px 10px;
-  overflow-y: auto;
-  position: relative;
-  z-index: 1;
-}
-
-.nav-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  padding: 0 8px;
-  margin: 12px 0 4px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  color: rgba(255,255,255,0.72);
-  font-size: 13px;
-  margin-bottom: 1px;
-  transition: all var(--transition-fast);
-  text-transform: capitalize;
-}
-
-.nav-item:hover {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-}
-
-.nav-item.active {
-  background: rgba(255,255,255,0.18);
-  color: #fff;
-  font-weight: 500;
-}
-
-.nav-item i { font-size: 16px; }
-
-.nav-badge {
-  margin-left: auto;
-  background: rgba(255,255,255,0.15);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 500;
-  padding: 2px 6px;
-  border-radius: var(--radius-full);
-}
-
-.nav-item.active .nav-badge {
-  background: rgba(255,255,255,0.26);
-}
-
-.sidebar-profile {
-  padding: 14px 16px;
-  border-top: 0.5px solid rgba(255,255,255,0.15);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.profile-info p { font-size: 12px; font-weight: 500; color: #fff; }
-.profile-info span { font-size: 11px; color: rgba(255,255,255,0.55); }
-
-/* ============================================================
-   MAIN
-   ============================================================ */
-.main {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-}
-
-.topbar {
-  padding: 16px 24px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.topbar-date { font-size: 13px; color: var(--color-text-secondary); }
-.topbar-icons { display: flex; gap: 8px; }
-
-.icon-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  font-size: 16px;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
-}
-
-.icon-btn:hover { background: var(--color-primary-light); color: var(--color-primary-dark); }
-
-/* Icon button variant used on dark surfaces (calendar header) */
-.icon-btn-on-dark {
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.25);
-  color: #fff;
-}
-.icon-btn-on-dark:hover { background: rgba(255,255,255,0.28); color: #fff; }
-
-.content { padding: 16px 24px 24px; flex: 1; }
-
-.greeting { margin-bottom: 16px; }
-.greeting h2 { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--color-text); letter-spacing: -0.3px; }
-.greeting p { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
-
-/* ============================================================
-   FOCUS CARD
-   ============================================================ */
-.focus-card {
-  background: var(--gradient-primary);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
-}
-
-.focus-card::before {
-  content: '';
-  position: absolute;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  top: -50px;
-  right: -50px;
-}
-
-.focus-card::after {
-  content: '';
-  position: absolute;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-  bottom: -20px;
-  left: 40px;
-}
-
-.focus-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  position: relative;
-  z-index: 1;
-}
-
-.focus-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.7);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.focus-date { font-size: 12px; color: rgba(255,255,255,0.6); }
-
-.focus-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
-}
-
-.focus-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  background: rgba(255,255,255,0.12);
-  border-radius: var(--radius-md);
-}
-
-.focus-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-red { background: #FCA5A5; }
-.dot-amber { background: #FCD34D; }
-.dot-blue { background: #BAE6FD; }
-
-.focus-item-text { font-size: 13px; color: #fff; flex: 1; }
-
-.focus-item-tag {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-weight: 500;
-}
-
-.tag-high { background: rgba(239,68,68,0.28); color: #FCA5A5; }
-.tag-med { background: rgba(245,158,11,0.28); color: #FCD34D; }
-.tag-low { background: rgba(96,165,250,0.28); color: #BAE6FD; }
-.focus-empty { font-size: 13px; color: rgba(255,255,255,0.6); text-align: center; padding: 12px; }
-/* Light-surface variant of focus-empty, used on white cards (search/folder/todo empty states) */
-.focus-empty-light { font-size: 13px; color: var(--color-text-muted); text-align: center; padding: 12px; }
-
-/* ============================================================
-   AI BAR
-   ============================================================ */
-.ai-bar {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: var(--shadow-md);
-}
-
-.ai-input-row { display: flex; gap: 8px; align-items: center; }
-/* Row variant for the multi-step flow prompts (subject/date/note inputs) */
-.ai-flow-row { display: flex; gap: 8px; margin-top: 6px; }
-.ai-flow-row-tight { display: flex; gap: 8px; margin-top: 6px; }
-.ai-flow-row .ai-input-boxed, .ai-flow-row-tight .ai-input-boxed { flex: 1; }
-.ai-flow-skip { margin-top: 6px; }
-
-.ai-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 13px;
-  color: var(--color-text);
-  background: transparent;
-  font-family: var(--font-body);
-}
-/* Boxed variant, used for the flow's step inputs and various form fields across the app */
-.ai-input-boxed {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 13px;
-  font-family: var(--font-body);
-  color: var(--color-text);
-  outline: none;
-  background: var(--color-surface);
-  transition: border-color var(--transition-fast);
-}
-.ai-input-boxed:focus { border-color: var(--color-primary); }
-
-.ai-input::placeholder, .ai-input-boxed::placeholder { color: var(--color-text-muted); }
-
-.ai-send {
-  background: var(--gradient-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 7px 16px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: var(--font-body);
-  box-shadow: 0 2px 8px rgba(91,63,191,0.3);
-  transition: opacity var(--transition-fast);
-}
-
-.ai-send:hover { opacity: 0.9; }
-
-.ai-status { font-size: 12px; color: var(--color-primary-dark); min-height: 16px; }
-.ai-flow { display: flex; flex-direction: column; gap: 8px; }
-.ai-question { font-size: 13px; color: var(--color-text); font-weight: 500; }
-.ai-options { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.ai-opt {
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  cursor: pointer;
-  font-family: var(--font-body);
-  transition: all var(--transition-fast);
-}
-
-.ai-opt:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-.ai-opt.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-
-.ai-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.chip {
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.chip:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-
-/* ============================================================
-   STATS
-   ============================================================ */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::after {
-  content: '';
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--color-surface-alt);
-  bottom: -20px;
-  right: -20px;
-}
-
-.stat-icon { font-size: 18px; margin-bottom: 8px; position: relative; z-index: 1; }
-.stat-num { font-size: 22px; font-weight: 700; color: var(--color-text); letter-spacing: -0.5px; font-family: var(--font-display); position: relative; z-index: 1; }
-.stat-label { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; position: relative; z-index: 1; }
-
-/* ============================================================
-   UPCOMING / LISTS
-   ============================================================ */
-.upcoming-section {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.section-title { font-size: 13px; font-weight: 600; color: var(--color-text); }
-.section-meta { font-size: 12px; color: var(--color-text-muted); }
-
-/* Stacked blocks on the merged Tasks page (Assignments/Quizzes/Mids/Presentations/Finals/Notices) */
-.task-block {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 14px;
-}
-.task-block:last-child { margin-bottom: 0; }
-.task-block .section-title { display: flex; align-items: center; gap: 6px; }
-.task-block .section-title i { font-size: 14px; color: var(--color-primary); }
-.task-block-header { cursor: pointer; }
-.task-block-chevron { font-size: 14px; color: var(--color-text-secondary); transition: transform var(--transition-fast); }
-
-.task-list { display: flex; flex-direction: column; gap: 6px; }
-
-.task-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-soft);
-  background: var(--color-surface-alt);
-  transition: all var(--transition-fast);
-}
-
-.task-item:hover { border-color: var(--color-border); background: var(--color-primary-light); }
-/* Variant used for search-result rows (sits on white surface, not the tinted list surface) */
-.task-item-on-surface { background: var(--color-surface); }
-
-.task-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-/* Larger variant used in the task detail sheet */
-.task-icon-lg { width: 40px; height: 40px; border-radius: var(--radius-md); font-size: 18px; }
-
-.ti-assign { background: var(--color-primary-light); color: var(--color-primary-dark); }
-.ti-quiz { background: var(--color-warning-bg); color: var(--color-warning); }
-.ti-pres { background: var(--color-plum-bg); color: var(--color-plum); }
-.ti-final { background: var(--color-danger-bg); color: var(--color-danger-text); }
-.ti-notice { background: var(--color-success-bg); color: var(--color-success); }
-
-.task-info { flex: 1; min-width: 0; }
-.task-title { font-size: 13px; font-weight: 500; color: var(--color-text); }
-.task-sub { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; }
-.task-due { font-size: 11px; color: var(--color-text-secondary); margin-right: 6px; white-space: nowrap; }
-
-.urgency {
-  font-size: 10px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-}
-
-.urgency-sm { font-size: 11px; }
-.u-high { background: var(--color-danger-bg); color: var(--color-danger-text); }
-.u-med { background: var(--color-warning-bg); color: var(--color-warning); }
-.u-low { background: var(--color-success-bg); color: var(--color-success); }
-
-/* ============================================================
-   UPLOADS / FOLDERS / FILES
-   ============================================================ */
-.upload-box {
-  border: 1.5px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  text-align: center;
-  background: var(--color-surface-alt);
-}
-
-.uploads-toolbar { display: flex; gap: 8px; margin-bottom: 20px; }
-.uploads-toolbar .ai-input-boxed { flex: 1; }
-.folders-list { display: flex; flex-direction: column; gap: 12px; }
-
-.folder-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.folder-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  cursor: pointer;
-}
-
-.folder-header:hover { background: var(--color-surface-alt); }
-.folder-header-left { display: flex; align-items: center; gap: 8px; }
-.folder-header-right { display: flex; gap: 6px; align-items: center; }
-.folder-icon { font-size: 18px; color: var(--color-primary); }
-.folder-name { font-size: 14px; font-weight: 500; color: var(--color-text); }
-
-.folder-count {
-  font-size: 11px;
-  color: var(--color-primary-dark);
-  background: var(--color-primary-light);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-}
-
-.folder-upload-btn {
-  cursor: pointer;
-  padding: 6px 12px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.folder-chevron { font-size: 14px; color: var(--color-text-secondary); transition: transform var(--transition-fast); }
-
-.folder-files {
-  border-top: 1px solid var(--color-border-soft);
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--color-surface-alt);
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-soft);
-}
-
-.file-icon { font-size: 16px; color: var(--color-primary); flex-shrink: 0; }
-.file-info { flex: 1; min-width: 0; }
-.file-name { font-size: 13px; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-size { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; }
-
-/* ============================================================
-   TODO
-   ============================================================ */
-.todo-toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
-.todo-toolbar .ai-input-boxed { flex: 1; }
-
-.todo-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-soft);
-  background: var(--color-surface-alt);
-}
-
-.todo-check {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-}
-
-.todo-text { flex: 1; font-size: 13px; color: var(--color-text); }
-.todo-text.done { text-decoration: line-through; color: var(--color-text-muted); }
-
-/* ============================================================
-   CALENDAR
-   ============================================================ */
-.cal-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; position: relative; z-index: 1; }
-.cal-month-label { font-size: 14px; font-weight: 500; color: #fff; }
-.cal-weekday-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 8px; position: relative; z-index: 1; }
-.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; position: relative; z-index: 1; }
-
-.cal-day-label {
-  font-size: 15px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.55);
-  text-align: center;
-  padding: 6px 0;
-}
-
-.cal-cell {
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 17px;
-  font-weight: 500;
-  color: #FFFFFF;
-  position: relative;
-  transition: all var(--transition-fast);
-}
-
-.cal-cell:hover {
-  background: rgba(255,255,255,0.1);
-  color: #FFFFFF;
-}
-
-.cal-cell.today {
-  background: rgba(255,255,255,0.95);
-  color: var(--color-primary-dark);
-  font-weight: 700;
-}
-
-.cal-cell.today:hover { opacity: 0.9; }
-
-.cal-cell.other-month { color: rgba(255,255,255,0.35); }
-
-.cal-cell.has-event::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  position: absolute;
-  bottom: 3px;
-}
-
-.cal-cell.today.has-event::after { background: var(--color-primary); }
-
-.reminder-modal {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 16px;
-}
-.reminder-modal-label { font-size: 13px; font-weight: 500; color: var(--color-text); margin-bottom: 12px; }
-.reminder-modal-label span { color: var(--color-primary); }
-.reminder-modal-body { display: flex; flex-direction: column; gap: 8px; }
-.reminder-modal-row { display: flex; gap: 8px; }
-.reminder-modal-actions { display: flex; gap: 8px; }
-.reminder-select {
-  flex: 1;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--color-text);
-  font-family: var(--font-body);
-  background: var(--color-surface);
-}
-.reminder-time-input {
-  flex: 1;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--color-text);
-  font-family: var(--font-body);
-}
-
-.del-reminder {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-}
-
-.del-reminder:hover { color: var(--color-danger); background: var(--color-danger-bg); }
-.del-reminder-lg { font-size: 20px; flex-shrink: 0; }
-
-.edit-reminder {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-}
-.edit-reminder:hover { color: var(--color-primary); background: var(--color-primary-bg, rgba(124,58,237,0.1)); }
-
-.task-block-add {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-size: 15px;
-  padding: 4px 6px;
-  margin-left: auto;
-  margin-right: 4px;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-}
-.task-block-add:hover { color: #fff; background: var(--color-primary); }
-
-.schedule-day-header {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
-  padding: 10px 4px 4px;
-}
-.schedule-day-header:first-child { padding-top: 4px; }
-
-.quick-add-title { margin-top: 4px; }
-.quick-add-input-row { margin-top: 10px; }
-.quick-add-close { margin-top: 14px; width: 100%; }
-.task-detail-btn-edit { border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-primary); }
-
-/* Small layout-context utility classes (replace one-off inline positioning) */
-.main-relative { position: relative; }
-.icon-btn-anchor { position: relative; }
-.upcoming-section-mt { margin-top: 12px; }
-.focus-card-mb { margin-bottom: 16px; }
-.ai-sparkle-icon { color: var(--color-primary); font-size: 16px; }
-.ai-send-full { width: 100%; padding: 12px; font-size: 13px; }
-.stat-icon-assign { color: var(--color-primary); }
-.stat-icon-quiz   { color: var(--color-warning); }
-.stat-icon-pres   { color: var(--color-plum); }
-.stat-icon-final  { color: var(--color-danger-text); }
-.feedback-form .ai-input-boxed,
-.settings-field .ai-input-boxed { width: 100%; margin-top: 6px; }
-.notif-badge-dot {
-  display: none; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px;
-  background: var(--color-danger); border-radius: 50%; border: 2px solid #fff;
-  animation: pulseDot 2s infinite;
-}
-.notif-badge-count {
-  display: none; position: absolute; top: -4px; right: -4px; background: var(--color-danger);
-  color: #fff; font-size: 9px; font-weight: 600; padding: 2px 5px; border-radius: var(--radius-full);
-}
-/* Note: "pulseDot" animation is referenced (below) exactly as in the original CSS/HTML,
-   but was never defined there either — this is a pre-existing no-op, not something
-   introduced in this pass. Left as-is; flagged in the Phase 1 report instead of "fixed". */
-
-/* ============================================================
-   AUTH SCREEN
-   ============================================================ */
-.auth-screen {
-  position: fixed; inset: 0;
-  background: var(--gradient-primary);
-  z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.auth-decor { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.06); }
-.auth-decor-1 { width: 300px; height: 300px; top: -80px; right: -80px; }
-.auth-decor-2 { width: 200px; height: 200px; bottom: -60px; left: -60px; background: rgba(255,255,255,0.05); }
-.auth-decor-3 { width: 150px; height: 150px; top: 40%; left: -40px; background: rgba(255,255,255,0.05); }
-
-.auth-card {
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  padding: 36px;
-  width: 100%; max-width: 400px; margin: 20px;
-  box-shadow: var(--shadow-xl);
-  position: relative; z-index: 1;
-}
-.auth-card-head { text-align: center; margin-bottom: 28px; }
-.auth-logo {
-  width: 72px; height: 72px;
-  background: var(--gradient-primary);
-  border-radius: var(--radius-lg);
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 14px;
-  font-family: var(--font-display);
-  font-size: 32px; font-weight: 700; color: #fff;
-  box-shadow: 0 8px 24px rgba(91,63,191,0.35);
-}
-.auth-card-head h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--color-text); letter-spacing: -0.5px; margin-bottom: 4px; }
-.auth-card-head p { font-size: 13px; color: var(--color-text-secondary); }
-
-.auth-tabs { display: flex; gap: 4px; background: var(--color-surface-alt); border-radius: var(--radius-md); padding: 4px; margin-bottom: 24px; }
-.auth-tab {
-  flex: 1; padding: 9px; border: none; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  background: transparent; color: var(--color-text-secondary);
-  font-family: var(--font-body); transition: all var(--transition-base);
-}
-.auth-tab.active { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-sm); }
-
-.auth-form-body { display: flex; flex-direction: column; gap: 10px; }
-.auth-field { position: relative; }
-.auth-field-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); font-size: 16px; }
-.auth-input {
-  width: 100%; padding: 11px 14px 11px 38px;
-  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
-  font-size: 13px; font-family: var(--font-body); outline: none; box-sizing: border-box;
-  transition: border-color var(--transition-fast);
-}
-.auth-input:focus { border-color: var(--color-primary); }
-
-.auth-msg { font-size: 12px; display: none; padding: 8px 12px; border-radius: var(--radius-sm); }
-.auth-msg.show { display: block; }
-.auth-msg-error   { color: var(--color-danger-text); background: var(--color-danger-bg); }
-.auth-msg-success { color: var(--color-success); background: var(--color-success-bg); }
-.auth-msg-info    { color: var(--color-primary-dark); background: var(--color-primary-light); }
-
-/* Generic status-color utilities — reused by feedback-status and anywhere else that
-   needs the same error/success/info palette without pulling in auth-msg's sizing */
-.msg-error   { color: var(--color-danger-text); background: var(--color-danger-bg); }
-.msg-success { color: var(--color-success); background: var(--color-success-bg); }
-.msg-info    { color: var(--color-primary-dark); background: var(--color-primary-light); }
-
-.auth-submit {
-  padding: 12px; background: var(--gradient-primary); color: #fff; border: none;
-  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer;
-  font-family: var(--font-body); box-shadow: 0 4px 14px rgba(91,63,191,0.35); letter-spacing: 0.2px;
-  transition: opacity var(--transition-fast);
-}
-.auth-submit:hover { opacity: 0.92; }
-
-.auth-forgot { text-align: center; font-size: 12px; color: var(--color-text-secondary); margin-top: 8px; cursor: pointer; }
-.auth-forgot span { color: var(--color-primary-dark); font-weight: 500; }
-.auth-terms { text-align: center; font-size: 11px; color: var(--color-text-muted); margin-top: 14px; }
-.auth-reset-head { text-align: center; margin-bottom: 16px; }
-.auth-reset-head p:first-child { font-size: 14px; font-weight: 500; color: var(--color-text); }
-.auth-reset-head p:last-child { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
-
-/* ============================================================
-   SEARCH PANEL
-   ============================================================ */
-.search-panel { padding: 0 24px 12px; }
-.search-row {
-  display: flex; gap: 8px; align-items: center;
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm); padding: 8px 14px;
-}
-.search-icon { color: var(--color-text-muted); font-size: 16px; }
-.search-results { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-
-/* ============================================================
-   NOTIFICATION PANEL
-   ============================================================ */
-.notif-panel {
-  position: fixed; top: 60px; right: 12px;
-  width: min(320px, calc(100vw - 24px));
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
-  z-index: 9999; overflow: hidden;
-}
-.notif-panel-header {
-  padding: 12px 16px; border-bottom: 1px solid var(--color-border-soft);
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--color-surface-alt);
-}
-.notif-panel-title { display: flex; align-items: center; gap: 8px; }
-.notif-panel-title i { font-size: 15px; color: var(--color-primary); }
-.notif-panel-title span { font-size: 13px; font-weight: 600; color: var(--color-text); }
-.notif-list { max-height: 70vh; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; }
-
-.notif-card {
-  display: flex; align-items: center; gap: 10px;
-  border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 6px;
-  transition: opacity var(--transition-fast);
-}
-.notif-card.today    { background: var(--color-warning-bg); border: 1px solid #FED7AA; }
-.notif-card.upcoming { background: var(--color-info-bg);    border: 1px solid #BFDBFE; }
-.notif-icon { width: 34px; height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.notif-card.today    .notif-icon { background: #FEF3C7; }
-.notif-card.upcoming .notif-icon { background: #DBEAFE; }
-.notif-card.today    .notif-icon i { color: var(--color-warning); font-size: 16px; }
-.notif-card.upcoming .notif-icon i { color: var(--color-info); font-size: 16px; }
-.notif-body { flex: 1; min-width: 0; }
-.notif-title { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.notif-card.today    .notif-title { color: #92400E; }
-.notif-card.upcoming .notif-title { color: #1e3a5f; }
-.notif-sub { font-size: 11px; margin-top: 2px; }
-.notif-card.today    .notif-sub { color: #B45309; }
-.notif-card.upcoming .notif-sub { color: #3B5FA0; }
-.notif-date-badge { font-size: 9px; font-weight: 700; border-radius: var(--radius-full); padding: 2px 8px; flex-shrink: 0; letter-spacing: 0.3px; }
-.notif-date-badge.today-badge { color: #92400E; background: #FDE68A; }
-.notif-date-badge.upcoming-badge { color: var(--color-info); background: var(--color-info-bg); font-weight: 600; }
-.notif-empty { padding: 20px; text-align: center; color: var(--color-text-muted); font-size: 13px; }
-.notif-empty small { font-size: 11px; }
-.notif-section-hdr { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 4px 6px; }
-.notif-section-hdr.today-hdr { color: var(--color-warning); padding-top: 4px; }
-.notif-section-hdr.upcoming-hdr { color: var(--color-primary-dark); padding-top: 10px; }
-
-/* ============================================================
-   TASK DETAIL SHEET
-   ============================================================ */
-.task-detail-overlay {
-  position: fixed; inset: 0; background: rgba(34,28,53,0.5);
-  z-index: 999; display: flex; align-items: flex-end; justify-content: center;
-}
-.task-detail-sheet {
-  background: var(--color-surface); border-radius: 20px 20px 0 0;
-  padding: 24px; width: 100%; max-width: 500px; box-shadow: 0 -8px 32px rgba(0,0,0,0.18);
-}
-.task-detail-handle { width: 36px; height: 4px; background: var(--color-border); border-radius: 2px; margin: 0 auto 20px; }
-.task-detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.task-detail-title { font-size: 16px; font-weight: 600; color: var(--color-text); }
-.task-detail-subject { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
-.task-detail-info {
-  display: flex; flex-direction: column; gap: 10px;
-  background: var(--color-surface-alt); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;
-}
-.task-detail-info-row { display: flex; justify-content: space-between; align-items: center; }
-.task-detail-info-label { font-size: 12px; color: var(--color-text-secondary); }
-.task-detail-info-value { font-size: 12px; font-weight: 500; color: var(--color-text); text-transform: capitalize; }
-.task-detail-actions { display: flex; gap: 8px; }
-.task-detail-btn {
-  flex: 1; padding: 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
-  cursor: pointer; font-family: var(--font-body);
-}
-.task-detail-btn-close { border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); }
-.task-detail-btn-delete { border: none; background: var(--color-danger-bg); color: var(--color-danger-text); }
-
-/* ============================================================
-   SETTINGS / FEEDBACK
-   ============================================================ */
-.settings-avatar-row { display: flex; align-items: center; gap: 16px; position: relative; z-index: 1; }
-.settings-avatar-wrap { position: relative; }
-.settings-avatar {
-  width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.25);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px; font-weight: 600; color: #fff; overflow: hidden;
-}
-.settings-avatar-edit {
-  position: absolute; bottom: 0; right: 0; width: 22px; height: 22px;
-  background: var(--color-surface); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; cursor: pointer;
-  box-shadow: var(--shadow-md);
-}
-.settings-avatar-edit i { font-size: 11px; color: var(--color-primary); }
-.settings-avatar-name { font-size: 15px; font-weight: 600; color: #fff; }
-.settings-avatar-hint { font-size: 12px; color: rgba(255,255,255,0.7); }
-.settings-field { margin-bottom: 14px; }
-.settings-field:last-of-type { margin-bottom: 16px; }
-.settings-label { font-size: 13px; font-weight: 500; color: var(--color-primary-dark); }
-.settings-select {
-  border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 12px;
-  width: 100%; margin-top: 6px; font-size: 13px; color: var(--color-text);
-  font-family: var(--font-body); background: var(--color-surface); outline: none;
-}
-
-.feedback-banner {
-  background: var(--gradient-primary); border-radius: var(--radius-md); padding: 14px 18px;
-  margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
-}
-.feedback-banner-emoji { font-size: 28px; }
-.feedback-banner-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 2px; }
-.feedback-banner-sub { font-size: 12px; color: rgba(255,255,255,0.75); }
-.feedback-form { display: flex; flex-direction: column; gap: 12px; }
-.feedback-field-label { font-size: 13px; font-weight: 500; color: var(--color-primary-dark); }
-.feedback-textarea {
-  border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 12px;
-  width: 100%; margin-top: 6px; font-size: 13px; font-family: var(--font-body);
-  resize: none; height: 120px; outline: none; color: var(--color-text);
-  transition: border-color var(--transition-fast);
-}
-.feedback-textarea:focus { border-color: var(--color-primary); }
-.feedback-status { font-size: 13px; display: none; padding: 10px 14px; border-radius: var(--radius-sm); }
-.feedback-status.show { display: block; }
-
-/* ============================================================
-   MOBILE
-   ============================================================ */
-@media (max-width: 768px) {
-  .amigo { flex-direction: column; height: 100vh; overflow: hidden; }
-
-  #appScreen {
-    flex-direction: column !important;
-    width: 100% !important;
-    height: 100vh !important;
-    overflow: hidden;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Amigo — Academic Organizer</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a3a6b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Amigo" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW failed:', err));
+    });
   }
+</script>
+<body>
+  <div class="amigo">
 
-  .sidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
-    width: 100% !important;
-    height: 60px !important;
-    flex-direction: row !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-    flex-shrink: 0;
-    padding: 0;
-    z-index: 500;
-    box-shadow: 0 -2px 12px rgba(15,34,64,0.18);
-  }
+    <!-- AUTH SCREEN -->
+    <div id="authScreen" class="auth-screen" style="display:flex;">
+      <div class="auth-decor auth-decor-1"></div>
+      <div class="auth-decor auth-decor-2"></div>
+      <div class="auth-decor auth-decor-3"></div>
 
-  .sidebar-logo {
-    display: flex !important;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 48px;
-    padding: 0 16px;
-    background: var(--gradient-primary);
-    border-bottom: none;
-    border-right: none;
-    z-index: 501;
-    justify-content: space-between;
-  }
+      <div class="auth-card">
+        <div class="auth-card-head">
+          <div class="auth-logo">A</div>
+          <h2>Hey, welcome 👋</h2>
+          <p>Your academic life, finally organized</p>
+        </div>
 
-  .mobile-settings-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    font-size: 16px;
-  }
-  .mobile-settings-btn:active { background: rgba(255,255,255,0.28); }
+        <div class="auth-tabs">
+          <button onclick="switchTab('login')" id="tab-login" class="auth-tab active">Sign in</button>
+          <button onclick="switchTab('signup')" id="tab-signup" class="auth-tab">New here?</button>
+        </div>
 
-  .sidebar::before, .sidebar::after { display: none; }
+        <!-- LOGIN FORM -->
+        <div id="form-login">
+          <div class="auth-form-body">
+            <div class="auth-field">
+              <i class="ti ti-mail auth-field-icon"></i>
+              <input id="loginEmail" type="email" placeholder="Your email" class="auth-input" />
+            </div>
+            <div class="auth-field">
+              <i class="ti ti-lock auth-field-icon"></i>
+              <input id="loginPassword" type="password" placeholder="Password" class="auth-input" onkeydown="if(event.key==='Enter') handleLogin()" />
+            </div>
+            <div id="loginError" class="auth-msg auth-msg-error"></div>
+            <button onclick="handleLogin()" class="auth-submit">Let me in →</button>
+            <p onclick="handleForgotPassword()" class="auth-forgot">Forgot password? <span>Reset it →</span></p>
+          </div>
+        </div>
 
-  .sidebar-nav {
-    display: flex !important;
-    flex-direction: row !important;
-    padding: 4px 4px;
-    gap: 2px;
-    flex: 1;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    align-items: center;
-    justify-content: space-around;
-  }
+        <!-- SIGNUP FORM -->
+        <div id="form-signup" style="display:none;">
+          <div class="auth-form-body">
+            <div class="auth-field">
+              <i class="ti ti-user auth-field-icon"></i>
+              <input id="signupName" type="text" placeholder="What do we call you?" class="auth-input" />
+            </div>
+            <div class="auth-field">
+              <i class="ti ti-mail auth-field-icon"></i>
+              <input id="signupEmail" type="email" placeholder="Your email" class="auth-input" />
+            </div>
+            <div class="auth-field">
+              <i class="ti ti-lock auth-field-icon"></i>
+              <input id="signupPassword" type="password" placeholder="Create a password" class="auth-input" onkeydown="if(event.key==='Enter') handleSignup()" />
+            </div>
+            <div id="signupError" class="auth-msg auth-msg-error"></div>
+            <div id="signupSuccess" class="auth-msg auth-msg-success"></div>
+            <button onclick="handleSignup()" class="auth-submit">Create my account ✨</button>
+          </div>
+          <p class="auth-terms">By signing up you agree to use Amigo responsibly 🤝</p>
+        </div>
+      </div>
+    </div>
 
-  .nav-label { display: none !important; }
+    <!-- APP SCREEN -->
+    <div id="appScreen" style="display:none;width:100%;height:100%;">
 
-  .nav-item {
-    flex-direction: column !important;
-    gap: 2px;
-    padding: 6px 8px;
-    font-size: 9px;
-    white-space: nowrap;
-    margin-bottom: 0;
-    flex-shrink: 0;
-    min-width: fit-content;
-    text-transform: capitalize;
-  }
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-group">
+            <div class="logo-mark">A</div>
+            <span class="logo-text">amigo</span>
+          </div>
+          <button class="mobile-settings-btn" onclick="goToSettingsFromHeader()" title="Settings">
+            <i class="ti ti-settings"></i>
+          </button>
+        </div>
+        <div class="sidebar-nav">
+          <div class="nav-label">Main</div>
+          <div class="nav-item active" onclick="setNav(this,'home')"><i class="ti ti-home"></i> Home</div>
+          <div class="nav-item" onclick="setNav(this,'tasks')"><i class="ti ti-file-text"></i> Tasks <span class="nav-badge" id="nb-tasks">0</span></div>
+          <div class="nav-item" onclick="setNav(this,'timetable')"><i class="ti ti-calendar-time"></i> Timetable</div>
+          <div class="nav-label">Tools</div>
+          <div class="nav-item" onclick="setNav(this,'uploads')"><i class="ti ti-upload"></i> Uploads</div>
+          <div class="nav-item" onclick="setNav(this,'todo')"><i class="ti ti-checkbox"></i> To-Do</div>
+          <div class="nav-item" onclick="setNav(this,'calendar')"><i class="ti ti-calendar"></i> Calendar</div>
+          <div class="nav-item" onclick="setNav(this,'feedback')"><i class="ti ti-message-circle"></i> Feedback</div>
+          <div class="nav-item" onclick="setNav(this,'settings')"><i class="ti ti-settings"></i> Settings</div>
+        </div>
+        <div class="sidebar-profile">
+          <div class="avatar">S</div>
+          <div class="profile-info">
+            <p>Student</p>
+            <span>Academic Organizer</span>
+          </div>
+          <button onclick="signOut()" title="Sign out" class="del-reminder del-reminder-lg">
+            <i class="ti ti-logout"></i>
+          </button>
+        </div>
+      </div>
 
-  .nav-item i { font-size: 18px; }
-  .nav-badge { display: none !important; }
-  /* Settings now lives in the top header shortcut, so hide the duplicate bottom-bar tab on mobile */
-  .nav-item[onclick*="settings"] { display: none !important; }
+      <!-- MAIN -->
+      <div class="main main-relative">
+        <div class="topbar">
+          <div class="topbar-date" id="topDate"></div>
+          <div class="topbar-icons">
+            <div class="icon-btn" onclick="toggleSearch()"><i class="ti ti-search"></i></div>
+            <div class="icon-btn icon-btn-anchor" onclick="toggleNotifications()">
+            <i class="ti ti-bell"></i>
+            <span id="notifDot" class="notif-badge-dot"></span>
+            <span id="notifBadge" class="notif-badge-count"></span>
+          </div>
+          </div>
+        </div>
 
-  .sidebar-profile {
-    display: flex !important;
-    flex-shrink: 0;
-    padding: 6px 8px;
-    border-top: none;
-    border-left: 0.5px solid rgba(255,255,255,0.15);
-    align-items: center;
-    gap: 4px;
-    height: 100%;
-  }
+        <!-- SEARCH PANEL -->
+        <div id="searchPanel" class="search-panel" style="display:none;">
+          <div class="search-row">
+            <i class="ti ti-search search-icon"></i>
+            <input id="searchInput" class="ai-input" placeholder="Search assignments, quizzes, subjects..." oninput="doSearch()" />
+            <button class="del-reminder" onclick="toggleSearch()"><i class="ti ti-x"></i></button>
+          </div>
+          <div id="searchResults" class="search-results"></div>
+        </div>
 
-  .profile-info { display: none !important; }
-  .avatar { display: none !important; }
+        <!-- NOTIFICATION PANEL -->
+        <div id="notifPanel" class="notif-panel" style="display:none;">
+  <div class="notif-panel-header">
+    <div class="notif-panel-title">
+      <i class="ti ti-bell"></i>
+      <span>Notifications</span>
+    </div>
+    <button class="del-reminder" onclick="toggleNotifications()"><i class="ti ti-x"></i></button>
+  </div>
+  <div id="notifList" class="notif-list"></div>
+</div>
 
-  .main {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    min-height: 0;
-    display: flex !important;
-    flex-direction: column;
-    padding-top: 48px;
-  }
+        <div class="content">
 
-  .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .stat-card { padding: 8px 6px; }
-  .stat-icon { font-size: 14px; margin-bottom: 4px; }
-  .stat-num { font-size: 16px; }
-  .stat-label { font-size: 9px; }
-  .content { padding: 12px 14px 76px; }
-  .topbar { padding: 12px 14px 0; }
+          <!-- HOME -->
+          <div id="section-home" class="page-section">
+            <div class="greeting">
+              <h2>Hello, Student 👋</h2>
+              <p>Here's what's on your plate today.</p>
+            </div>
+            <div class="focus-card">
+              <div class="focus-header">
+                <span class="focus-title">Today's focus</span>
+                <span class="focus-date" id="focusDate"></span>
+              </div>
+              <div class="focus-items" id="focusItems">
+                <div class="focus-empty">No tasks due today — enjoy your day!</div>
+              </div>
+            </div>
+            <div class="ai-bar">
+              <div class="ai-input-row">
+                <i class="ti ti-sparkles ai-sparkle-icon"></i>
+                <input class="ai-input" id="aiInput" placeholder="Tell Amigo something… e.g. Math quiz on Monday" />
+                <button class="ai-send" onclick="organizePrompt()">Add ↗</button>
+              </div>
+              <div class="ai-status" id="aiStatus"></div>
+              <div id="aiFlow" class="ai-flow"></div>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-icon stat-icon-assign"><i class="ti ti-file-text"></i></div><div class="stat-num" id="sc-assign">0</div><div class="stat-label">Assignments</div></div>
+              <div class="stat-card"><div class="stat-icon stat-icon-quiz"><i class="ti ti-pencil"></i></div><div class="stat-num" id="sc-quiz">0</div><div class="stat-label">Quizzes</div></div>
+              <div class="stat-card"><div class="stat-icon stat-icon-pres"><i class="ti ti-presentation"></i></div><div class="stat-num" id="sc-pres">0</div><div class="stat-label">Presentations</div></div>
+              <div class="stat-card"><div class="stat-icon stat-icon-final"><i class="ti ti-certificate"></i></div><div class="stat-num" id="sc-final">0</div><div class="stat-label">Finals</div></div>
+            </div>
+            <div class="upcoming-section">
+              <div class="section-header"><span class="section-title">Today</span></div>
+              <div class="task-list" id="todayList"><div class="focus-empty-light">Nothing due today.</div></div>
+            </div>
+            <div class="upcoming-section upcoming-section-mt">
+              <div class="section-header"><span class="section-title">Upcoming</span></div>
+              <div class="task-list" id="taskList"><div class="focus-empty-light">No upcoming tasks yet.</div></div>
+            </div>
+          </div>
 
-  .notif-panel {
-    right: 8px;
-    width: calc(100vw - 16px);
-    top: 50px;
-  }
+          <!-- TASKS (merged: assignments, quizzes, mids, presentations, finals, notices) -->
+          <div id="section-tasks" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Tasks</h2><p>Everything you're tracking, grouped by type.</p></div>
 
-  .focus-card { padding: 14px; }
-  .ai-bar { padding: 12px; }
-  .upcoming-section { padding: 12px; }
+            <div class="task-block">
+              <div class="section-header task-block-header" onclick="toggleTaskBlock('assignment')">
+                <span class="section-title"><i class="ti ti-file-text"></i> Assignments</span>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('assignment')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-assignment"></i>
+              </div>
+              <div class="task-list" id="list-assignment" style="display:none;"><div class="focus-empty-light">No assignments yet.</div></div>
+            </div>
 
-  .greeting h2 { font-size: 18px; }
-  .task-item {
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 8px 10px;
-  }
-  .task-info { flex: 1; min-width: 0; }
-  .task-title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .task-sub { font-size: 10px; }
-  .task-due { display: inline !important; font-size: 10px; color: var(--color-text-secondary); background: var(--color-surface-alt); padding: 2px 6px; border-radius: var(--radius-full); white-space: nowrap; }
-  .urgency { font-size: 9px; padding: 2px 6px; }
+            <div class="task-block">
+              <div class="section-header task-block-header" onclick="toggleTaskBlock('quiz')">
+                <span class="section-title"><i class="ti ti-pencil"></i> Quizzes</span>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('quiz')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-quiz"></i>
+              </div>
+              <div class="task-list" id="list-quiz" style="display:none;"><div class="focus-empty-light">No quizzes yet.</div></div>
+            </div>
 
-  /* Auth card + settings/feedback tighten up on small screens */
-  .auth-card { padding: 26px 22px; margin: 16px; }
-  .settings-avatar { width: 56px; height: 56px; font-size: 20px; }
-  .feedback-banner { padding: 12px 14px; }
-  .uploads-toolbar, .todo-toolbar { flex-direction: column; }
-  .reminder-modal-row { flex-direction: column; }
-}
+            <div class="task-block">
+              <div class="section-header task-block-header" onclick="toggleTaskBlock('mids')">
+                <span class="section-title"><i class="ti ti-writing"></i> Mids</span>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('mids')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-mids"></i>
+              </div>
+              <div class="task-list" id="list-mids" style="display:none;"><div class="focus-empty-light">No mids added yet.</div></div>
+            </div>
 
-@media (max-width: 420px) {
-  .auth-card { padding: 22px 18px; }
-  .stats-grid { gap: 4px; }
-  .stat-card { padding: 6px 4px; }
-  .stat-num { font-size: 14px; }
-  .stat-label { font-size: 8px; }
-}
+            <div class="task-block">
+              <div class="section-header task-block-header" onclick="toggleTaskBlock('presentation')">
+                <span class="section-title"><i class="ti ti-presentation"></i> Presentations</span>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('presentation')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-presentation"></i>
+              </div>
+              <div class="task-list" id="list-presentation" style="display:none;"><div class="focus-empty-light">No presentations yet.</div></div>
+            </div>
+
+            <div class="task-block">
+              <div class="section-header task-block-header" onclick="toggleTaskBlock('final')">
+                <span class="section-title"><i class="ti ti-certificate"></i> Finals</span>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('final')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-final"></i>
+              </div>
+              <div class="task-list" id="list-final" style="display:none;"><div class="focus-empty-light">No finals added yet.</div></div>
+            </div>
+
+            <div class="task-block">
+              <div class="section-header task-block-header" onclick="toggleTaskBlock('notice')">
+                <span class="section-title"><i class="ti ti-speakerphone"></i> Notices</span>
+                <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('notice')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-notice"></i>
+              </div>
+              <div class="task-list" id="list-notice" style="display:none;"><div class="focus-empty-light">No notices yet — add one from home screen.</div></div>
+            </div>
+          </div>
+
+          <!-- TIMETABLE (multiple named schedules: University, Job, Internship, etc.) -->
+          <div id="section-timetable" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Timetable</h2><p>Keep separate schedules for uni, work, or anything else.</p></div>
+            <div class="uploads-toolbar">
+              <input id="scheduleFolderNameInput" class="ai-input-boxed" placeholder="Schedule name e.g. University Timetable, Job Shift..." onkeydown="if(event.key==='Enter') createScheduleFolder()" />
+              <button class="ai-send" onclick="createScheduleFolder()">Create Schedule</button>
+            </div>
+            <div id="scheduleFolderList" class="folders-list">
+              <div class="focus-empty-light">No schedules yet — create one above!</div>
+            </div>
+          </div>
+          <!-- UPLOADS -->
+          <div id="section-uploads" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Uploads</h2><p>Organize your files by subject folders.</p></div>
+            <div class="uploads-toolbar">
+              <input id="folderNameInput" class="ai-input-boxed" placeholder="Folder name e.g. Physics, OOP..." onkeydown="if(event.key==='Enter') createFolder()" />
+              <button class="ai-send" onclick="createFolder()">Create Folder</button>
+            </div>
+            <div id="folderList" class="folders-list">
+              <div class="focus-empty-light">No folders yet — create one above!</div>
+            </div>
+          </div>
+
+          <!-- TODO -->
+          <div id="section-todo" class="page-section" style="display:none;">
+            <div class="greeting"><h2>To-Do</h2><p>Your personal task checklist.</p></div>
+            <div class="todo-toolbar">
+              <input id="todoInput" class="ai-input-boxed" placeholder="Add a task and press Enter..." onkeydown="if(event.key==='Enter') addTodo()" />
+              <button class="ai-send" onclick="addTodo()">Add</button>
+            </div>
+            <div id="todoList" class="task-list"><div class="focus-empty-light">No tasks yet.</div></div>
+          </div>
+
+          <!-- CALENDAR -->
+          <div id="section-calendar" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Calendar</h2><p>Click any date to add a reminder.</p></div>
+            <div class="focus-card focus-card-mb">
+              <div class="cal-header-row">
+                <button class="icon-btn icon-btn-on-dark" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+                <span class="cal-month-label" id="calMonthLabel"></span>
+                <button class="icon-btn icon-btn-on-dark" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+              </div>
+              <div class="cal-weekday-row">
+                <div class="cal-day-label" id="calDay0">Sun</div>
+                <div class="cal-day-label" id="calDay1">Mon</div>
+                <div class="cal-day-label" id="calDay2">Tue</div>
+                <div class="cal-day-label" id="calDay3">Wed</div>
+                <div class="cal-day-label" id="calDay4">Thu</div>
+                <div class="cal-day-label" id="calDay5">Fri</div>
+                <div class="cal-day-label" id="calDay6">Sat</div>
+              </div>
+              <div id="calGrid" class="cal-grid"></div>
+            </div>
+            <div id="reminderModal" class="reminder-modal" style="display:none;">
+              <div class="reminder-modal-label">Add reminder for <span id="selectedDateLabel"></span></div>
+              <div class="reminder-modal-body">
+                <input id="reminderTitle" class="ai-input-boxed" placeholder="Reminder title e.g. Submit OOP Assignment..." onkeydown="if(event.key==='Enter') saveReminder()" />
+                <div class="reminder-modal-row">
+                  <select id="reminderType" class="reminder-select">
+                    <option value="assignment">Assignment</option>
+                    <option value="quiz">Quiz</option>
+                    <option value="mids">Mids</option>
+                    <option value="final">Final</option>
+                    <option value="presentation">Presentation</option>
+                    <option value="notice">Notice</option>
+                    <option value="reminder">General Reminder</option>
+                  </select>
+                  <input id="reminderTime" type="time" class="reminder-time-input" />
+                </div>
+                <div class="reminder-modal-actions">
+                  <button class="ai-send" onclick="saveReminder()">Save Reminder ↗</button>
+                  <button class="ai-opt" onclick="closeReminderModal()">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div class="upcoming-section">
+              <div class="section-header">
+                <span class="section-title">All Reminders</span>
+                <span class="section-meta" id="reminderCount">0 reminders</span>
+              </div>
+              <div class="task-list" id="reminderList">
+                <div class="focus-empty-light">No reminders yet — click a date to add one!</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEEDBACK -->
+          <div id="section-feedback" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Feedback</h2><p>Help us make Amigo better for you 🙏</p></div>
+            <div class="feedback-banner">
+              <div class="feedback-banner-emoji">👀</div>
+              <div>
+                <p class="feedback-banner-title">Got something to say?</p>
+                <p class="feedback-banner-sub">We read every single message. No cap.</p>
+              </div>
+            </div>
+            <div class="upcoming-section">
+              <div class="feedback-form">
+                <div>
+                  <label id="fbNameLabel" class="feedback-field-label">Your Name</label>
+                  <input id="feedbackName" class="ai-input-boxed" placeholder="What do we call you?" />
+                </div>
+                <div>
+                  <label id="fbEmailLabel" class="feedback-field-label">Your Email</label>
+                  <input id="feedbackEmail" type="email" class="ai-input-boxed" placeholder="Your email" />
+                </div>
+                <div>
+                  <label id="fbMsgLabel" class="feedback-field-label">Message</label>
+                  <textarea id="feedbackMessage" class="feedback-textarea" placeholder="Tell us what you think, what's missing, what broke, or just say hi 👋"></textarea>
+                </div>
+                <div id="feedbackStatus" class="feedback-status"></div>
+                <button id="fbBtn" onclick="sendFeedback()" class="ai-send ai-send-full">Send feedback ↗</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SETTINGS -->
+          <div id="section-settings" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Settings</h2><p>Customize your Amigo experience.</p></div>
+            <div class="focus-card focus-card-mb">
+              <div class="settings-avatar-row">
+                <div class="settings-avatar-wrap">
+                  <div id="profilePicDisplay" class="settings-avatar">S</div>
+                  <label class="settings-avatar-edit">
+                    <i class="ti ti-camera"></i>
+                    <input type="file" accept="image/*" style="display:none;" onchange="uploadProfilePic(this)"/>
+                  </label>
+                </div>
+                <div>
+                  <p class="settings-avatar-name" id="settingsNameDisplay">Student</p>
+                  <span class="settings-avatar-hint">Tap camera to change photo</span>
+                </div>
+              </div>
+            </div>
+            <div class="upcoming-section">
+              <div class="settings-field">
+                <label class="settings-label">Your Name</label>
+                <input id="nameInput" class="ai-input-boxed" placeholder="Enter your name..." />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label">University</label>
+                <input id="uniInput" class="ai-input-boxed" placeholder="Enter university name" />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label">Program</label>
+                <input id="programInput" class="ai-input-boxed" placeholder="e.g. BSAI" />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label">Language</label>
+                <select id="languageInput" class="settings-select">
+                  <option value="en">🇬🇧 English</option>
+                  <option value="ur">🇵🇰 اردو (Urdu)</option>
+                  <option value="ar">🇸🇦 العربية (Arabic)</option>
+                  <option value="fr">🇫🇷 Français (French)</option>
+                  <option value="zh">🇨🇳 中文 (Chinese)</option>
+                  <option value="es">🇪🇸 Español (Spanish)</option>
+                </select>
+              </div>
+              <button class="ai-send" onclick="saveSettings()">Save Settings</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- END APP SCREEN -->
+
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    initAuth().then(() => {
+      const script = document.createElement('script');
+      script.src = 'app.js';
+      document.body.appendChild(script);
+    });
+  </script>
+</body>
+</html>

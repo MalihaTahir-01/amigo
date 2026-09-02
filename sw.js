@@ -1,4 +1,4 @@
-const CACHE = 'amigo-v8';
+const CACHE = 'amigo-v9';
 const ASSETS = ['/', '/index.html', '/app.js', '/auth.js', '/style.css', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -47,19 +47,20 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Local files: cache first, then network
+  // Local files: NETWORK FIRST, cache only as an offline fallback.
+  // (Previously this was cache-first, which meant a redeploy could sit
+  // invisible in the browser forever — every file kept being served from
+  // whatever was cached under the current CACHE name until that name
+  // changed. Network-first means you always see what's actually live.)
   e.respondWith(
-    caches.match(e.request)
-      .then(cached => {
-        if (cached) return cached;
-        return fetch(e.request).then(res => {
-          if (res.ok && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE).then(c => c.put(e.request, clone));
-          }
-          return res;
-        });
+    fetch(e.request)
+      .then(res => {
+        if (res.ok && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
       })
-      .catch(() => caches.match('/index.html'))
+      .catch(() => caches.match(e.request).then(cached => cached || caches.match('/index.html')))
   );
 });

@@ -44,6 +44,7 @@ module.exports = async function handler(req, res) {
     return d.toISOString().slice(0, 10);
   };
   const nextMonIso = nextWeekdayIso(1);
+  const nextTueIso = nextWeekdayIso(2);
   const nextFriIso = nextWeekdayIso(5);
 
   const systemPrompt = `You extract structured student-task data from one short sentence.
@@ -59,15 +60,22 @@ Return ONLY a single JSON object, no prose, no markdown fences, matching exactly
 }
 
 Rules:
-- "quiz", "test" -> quiz. "mid", "midterm" -> mids. "final", "final exam" -> final. "presentation", "viva" -> presentation. "notice", "announcement" -> notice. Homework, assignment, project, report, submission -> assignment.
+- Word order in the input means NOTHING — treat the sentence as a bag of clues, not a fixed template. Scan the whole sentence independently for each field (type keyword, subject, day/date, priority word, extra detail) regardless of which one comes first, second, or last. "tue assignment" and "assignment tue" are identical. "mon ch6 math assignment" and "math assignment ch6 mon" are identical.
+- "quiz", "test" -> quiz. "mid", "midterm" -> mids. "final", "final exam" -> final. "presentation", "viva" -> presentation. "notice", "announcement" -> notice. Homework, assignment, project, report, submission, "hw", "asg", "assign" -> assignment.
+- The subject is whatever's left after you remove the type keyword, the day/date, and any priority word — it can sit anywhere in the sentence (before the type, after the type, before or after the day). E.g. in "tue assignment math" the subject is "Math" even though it comes last. In "assignment mon ch6 math" the subject is still "Math", pulled out from among the other tokens.
 - If the sentence is unclear, ambiguous, or doesn't clearly match any of the above categories, use "notice" — do NOT default to "assignment" as a guess.
-- A weekday reference counts as a date whether or not it's introduced by a word like "due"/"on"/"by" — a day name or abbreviation appearing ANYWHERE in the sentence (start, middle, or bare at the end) is a date, not just decoration. Treat "math assignment mon" exactly the same as "math assignment due on monday" — both resolve to the next Monday.
-- Recognize 3-letter weekday abbreviations (mon, tue, wed, thu, fri, sat, sun) as equivalent to the full weekday name, case-insensitive, with or without a trailing period.
+- A weekday reference counts as a date whether or not it's introduced by a word like "due"/"on"/"by", and no matter where in the sentence it appears — a day name or abbreviation anywhere (start, middle, end, sandwiched between other words) is a date, not just decoration. Treat "math assignment mon" exactly the same as "math assignment due on monday" or "mon math assignment" — all three resolve to the next Monday.
+- Recognize 3-letter weekday abbreviations (mon, tue, wed, thu, fri, sat, sun) as equivalent to the full weekday name, case-insensitive, with or without a trailing period, in any position.
 - Resolve weekday names/abbreviations, "tomorrow", "next week" etc. relative to today's date given above. Always pick the NEXT occurrence of a weekday, not today, unless the sentence explicitly says "today".
-- Only use today's date for "due" when the sentence truly contains no date, day name/abbreviation, or relative-time word at all — a bare weekday abbreviation is still a date and must never be treated as "no date mentioned."
-- Examples, using the real today's date given above:
-  "eng assignment due on mon" -> due ${nextMonIso}
-  "math assignment mon" -> due ${nextMonIso}  (identical result — the missing "due on" changes nothing)
+- Only use today's date for "due" when the sentence truly contains no date, day name/abbreviation, or relative-time word anywhere in it — a bare or mid-sentence weekday abbreviation is still a date and must never be treated as "no date mentioned."
+- A chapter/unit reference in any form ("ch6", "ch 6", "chapter 6", "unit 3") is never the subject and never the type — pull it into "note" (normalize to e.g. "Chapter 6"), no matter where it falls in the sentence.
+- Filler words that aren't the subject, type, day, priority, or a chapter reference (e.g. a stray "something", "please", "asap" outside its priority meaning) are simply dropped — don't force them into any field.
+- Examples, using the real today's date given above — notice the field order is different in every one and the result is identical to the "natural" phrasing:
+  "eng assignment due on mon" -> {type: assignment, subject: "Eng", due: ${nextMonIso}}
+  "math assignment mon" -> {type: assignment, subject: "Math", due: ${nextMonIso}}
+  "mon math assignment" -> {type: assignment, subject: "Math", due: ${nextMonIso}} (same as above, day moved to the front)
+  "tue assignment math ch6" -> {type: assignment, subject: "Math", due: ${nextTueIso}, note: "Chapter 6"}
+  "assignment ch6 math tue" -> identical result to the line above — only the order changed
   "physics quiz fri" -> due ${nextFriIso}
   "submit report" (no day, abbreviation, or relative word anywhere) -> due ${todayIso} (today)
 - Never explain your answer. Output raw JSON only.`;

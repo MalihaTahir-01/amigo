@@ -35,6 +35,17 @@ module.exports = async function handler(req, res) {
   const todayIso = today.toISOString().slice(0, 10);
   const todayWeekday = today.toLocaleDateString('en-US', { weekday: 'long' });
 
+  // Compute a couple of real "next occurrence" example dates off the actual
+  // today, so the few-shot examples below are never stale or self-contradicting.
+  const nextWeekdayIso = (targetDow) => {
+    const d = new Date(today);
+    const diff = ((targetDow - d.getDay() + 7) % 7) || 7; // always strictly in the future
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+  };
+  const nextMonIso = nextWeekdayIso(1);
+  const nextFriIso = nextWeekdayIso(5);
+
   const systemPrompt = `You extract structured student-task data from one short sentence.
 Today's date is ${todayIso} (${todayWeekday}).
 
@@ -50,7 +61,15 @@ Return ONLY a single JSON object, no prose, no markdown fences, matching exactly
 Rules:
 - "quiz", "test" -> quiz. "mid", "midterm" -> mids. "final", "final exam" -> final. "presentation", "viva" -> presentation. "notice", "announcement" -> notice. Homework, assignment, project, report, submission -> assignment.
 - If the sentence is unclear, ambiguous, or doesn't clearly match any of the above categories, use "notice" — do NOT default to "assignment" as a guess.
-- Resolve weekday names, "tomorrow", "next week" etc. relative to today's date given above. Always pick the NEXT occurrence of a weekday, not today, unless the sentence explicitly says "today".
+- A weekday reference counts as a date whether or not it's introduced by a word like "due"/"on"/"by" — a day name or abbreviation appearing ANYWHERE in the sentence (start, middle, or bare at the end) is a date, not just decoration. Treat "math assignment mon" exactly the same as "math assignment due on monday" — both resolve to the next Monday.
+- Recognize 3-letter weekday abbreviations (mon, tue, wed, thu, fri, sat, sun) as equivalent to the full weekday name, case-insensitive, with or without a trailing period.
+- Resolve weekday names/abbreviations, "tomorrow", "next week" etc. relative to today's date given above. Always pick the NEXT occurrence of a weekday, not today, unless the sentence explicitly says "today".
+- Only use today's date for "due" when the sentence truly contains no date, day name/abbreviation, or relative-time word at all — a bare weekday abbreviation is still a date and must never be treated as "no date mentioned."
+- Examples, using the real today's date given above:
+  "eng assignment due on mon" -> due ${nextMonIso}
+  "math assignment mon" -> due ${nextMonIso}  (identical result — the missing "due on" changes nothing)
+  "physics quiz fri" -> due ${nextFriIso}
+  "submit report" (no day, abbreviation, or relative word anywhere) -> due ${todayIso} (today)
 - Never explain your answer. Output raw JSON only.`;
 
   try {

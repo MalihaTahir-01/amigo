@@ -1411,6 +1411,10 @@ function renderScheduleClasses(folderId) {
     list.innerHTML = '<div class="focus-empty-light">No classes yet — tap "Add Class" above.</div>';
     return;
   }
+  if (folder.mode === 'dated') {
+    renderDatedScheduleClasses(folder, list);
+    return;
+  }
   WEEKDAYS.forEach(day => {
     const dayClasses = folder.classes
       .filter(c => c.day === day)
@@ -1422,6 +1426,42 @@ function renderScheduleClasses(folderId) {
     list.appendChild(header);
     dayClasses.forEach(cls => list.appendChild(renderClassRow(folderId, cls)));
   });
+}
+// For date-based schedules (exam datesheets, one-time events): group by the
+// actual calendar date, walk every day from the earliest to the latest date
+// present — including days with nothing scheduled, which show explicitly
+// rather than just being skipped — so it reads like "Monday, this date:
+// these are the exams... Tuesday, this date: nothing on this day."
+function renderDatedScheduleClasses(folder, list) {
+  const dated = folder.classes.filter(c => c.date);
+  if (dated.length === 0) {
+    list.innerHTML = '<div class="focus-empty-light">No dated entries yet.</div>';
+    return;
+  }
+  const byDate = {};
+  dated.forEach(c => { (byDate[c.date] = byDate[c.date] || []).push(c); });
+  const sortedDates = Object.keys(byDate).sort();
+  const cursor = new Date(sortedDates[0] + 'T00:00:00');
+  const last = new Date(sortedDates[sortedDates.length - 1] + 'T00:00:00');
+  while (cursor <= last) {
+    const iso = localDateStr(cursor);
+    const weekday = WEEKDAYS[(cursor.getDay() + 6) % 7];
+    const displayDate = cursor.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    const header = document.createElement('div');
+    header.className = 'schedule-day-header';
+    header.textContent = `${weekday}, ${displayDate}`;
+    list.appendChild(header);
+    const entries = (byDate[iso] || []).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+    if (entries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'focus-empty-light';
+      empty.textContent = 'No classes or exams on this day.';
+      list.appendChild(empty);
+    } else {
+      entries.forEach(cls => list.appendChild(renderClassRow(folder.id, cls)));
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
 }
 function renderClassRow(folderId, cls) {
   const div = document.createElement('div');
@@ -1458,8 +1498,9 @@ function openEditClassModal(folderId, classId) {
 function openClassModal(folderId, classId) {
   const folder = scheduleFolders.find(f => f.id === folderId);
   if (!folder) return;
+  const isDated = folder.mode === 'dated';
   const existing = classId ? folder.classes.find(c => c.id === classId) : null;
-  const vals = existing || { subject: '', day: WEEKDAYS[0], startTime: '09:00', endTime: '10:00', teacher: '', room: '' };
+  const vals = existing || { subject: '', day: WEEKDAYS[0], date: localDateStr(new Date()), startTime: '09:00', endTime: '10:00', teacher: '', room: '' };
 
   const modal = document.createElement('div');
   modal.id = 'classModal';
@@ -1474,10 +1515,13 @@ function openClassModal(folderId, classId) {
         <input id="clsSubject" class="ai-input-boxed" type="text" placeholder="e.g. Physics" value="${escapeAttr(vals.subject)}" />
       </div>
       <div class="settings-field">
-        <label class="settings-label">Day</label>
-        <select id="clsDay" class="reminder-select">
-          ${WEEKDAYS.map(d => `<option value="${d}" ${d === vals.day ? 'selected' : ''}>${d}</option>`).join('')}
-        </select>
+        ${isDated
+          ? `<label class="settings-label">Date</label>
+             <input id="clsDate" class="ai-input-boxed" type="date" value="${vals.date || localDateStr(new Date())}" />`
+          : `<label class="settings-label">Day</label>
+             <select id="clsDay" class="reminder-select">
+               ${WEEKDAYS.map(d => `<option value="${d}" ${d === vals.day ? 'selected' : ''}>${d}</option>`).join('')}
+             </select>`}
       </div>
       <div class="ai-flow-row">
         <div class="settings-field" style="flex:1;">
@@ -1511,9 +1555,12 @@ function saveClass(folderId, classId) {
   if (!folder) return;
   const subject = document.getElementById('clsSubject').value.trim();
   if (!subject) return;
+  const isDated = folder.mode === 'dated';
+  const dateVal = isDated ? (document.getElementById('clsDate').value || localDateStr(new Date())) : null;
   const data = {
     subject,
-    day:       document.getElementById('clsDay').value,
+    day:       isDated ? WEEKDAYS[(new Date(dateVal + 'T00:00:00').getDay() + 6) % 7] : document.getElementById('clsDay').value,
+    date:      dateVal,
     startTime: document.getElementById('clsStart').value || '09:00',
     endTime:   document.getElementById('clsEnd').value || '10:00',
     teacher:   document.getElementById('clsTeacher').value.trim(),
@@ -1666,14 +1713,20 @@ async function runTimetableImport() {
 function renderTimetableImportReview(note) {
   const flow = document.getElementById('ttImportFlow');
   if (!flow) return;
+  const isDated = ttImportPending.some(c => c.date);
+  if (isDated) {
+    ttImportPending.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.startTime || '').localeCompare(b.startTime || ''));
+  }
   const rowsHtml = ttImportPending.map(c => `
     <div class="task-item" data-tt-temp-id="${c._tempId}">
       <div class="task-info" style="flex:1;">
         <div class="ai-flow-row">
           <input class="ai-input-boxed" style="flex:2;" value="${escapeAttr(c.subject)}" onchange="updateTtImportField('${c._tempId}','subject',this.value)" />
-          <select class="reminder-select" onchange="updateTtImportField('${c._tempId}','day',this.value)">
-            ${WEEKDAYS.map(d => `<option value="${d}" ${d === c.day ? 'selected' : ''}>${d}</option>`).join('')}
-          </select>
+          ${isDated
+            ? `<input class="ai-input-boxed" type="date" value="${c.date || localDateStr(new Date())}" onchange="updateTtImportField('${c._tempId}','date',this.value)" />`
+            : `<select class="reminder-select" onchange="updateTtImportField('${c._tempId}','day',this.value)">
+                 ${WEEKDAYS.map(d => `<option value="${d}" ${d === c.day ? 'selected' : ''}>${d}</option>`).join('')}
+               </select>`}
         </div>
         <div class="ai-flow-row">
           <input class="ai-input-boxed" type="time" value="${c.startTime}" onchange="updateTtImportField('${c._tempId}','startTime',this.value)" />
@@ -1687,7 +1740,7 @@ function renderTimetableImportReview(note) {
       <button class="del-reminder" onclick="removeTtImportRow('${c._tempId}')" title="Remove"><i class="ti ti-trash"></i></button>
     </div>`).join('');
   flow.innerHTML = `
-    <div class="ai-question">${note ? escapeAttr(note) + ' — ' : ''}Found ${ttImportPending.length} class${ttImportPending.length !== 1 ? 'es' : ''}. Review and edit before adding:</div>
+    <div class="ai-question">${note ? escapeAttr(note) + ' — ' : ''}Found ${ttImportPending.length} class${ttImportPending.length !== 1 ? 'es' : ''}${isDated ? ' (shown by exact date)' : ''}. Review and edit before adding:</div>
     <div id="ttImportRows">${rowsHtml}</div>
     <div class="ai-flow-row" style="margin-top:4px;">
       <button class="ai-send" onclick="confirmTimetableImport()">Add ${ttImportPending.length} Class${ttImportPending.length !== 1 ? 'es' : ''}</button>
@@ -1695,7 +1748,13 @@ function renderTimetableImportReview(note) {
 }
 function updateTtImportField(tempId, field, value) {
   const row = ttImportPending.find(c => c._tempId === tempId);
-  if (row) row[field] = value;
+  if (row) {
+    row[field] = value;
+    if (field === 'date' && value) {
+      // keep "day" in sync with whatever date the person just typed/edited
+      row.day = WEEKDAYS[(new Date(value + 'T00:00:00').getDay() + 6) % 7];
+    }
+  }
 }
 function removeTtImportRow(tempId) {
   ttImportPending = ttImportPending.filter(c => c._tempId !== tempId);
@@ -1725,11 +1784,20 @@ function confirmTimetableImport() {
   }
   const folder = scheduleFolders.find(f => f.id === folderId);
   if (!folder) return;
+  // If most of what we're importing has real calendar dates (an exam
+  // datesheet, a one-time event schedule, etc.) mark this folder as
+  // date-based so it displays grouped by actual day, not a recurring
+  // weekly grid — but never downgrade a folder that's already dated.
+  const datedCount = ttImportPending.filter(c => c.date).length;
+  if (folder.mode !== 'dated' && datedCount > 0 && datedCount >= ttImportPending.length / 2) {
+    folder.mode = 'dated';
+  }
   ttImportPending.forEach((c, i) => {
     folder.classes.push({
       id: Date.now() + i,
       subject: (c.subject || 'Untitled').trim(),
       day: WEEKDAYS.includes(c.day) ? c.day : WEEKDAYS[0],
+      date: /^\d{4}-\d{2}-\d{2}$/.test(c.date) ? c.date : null,
       startTime: c.startTime || '09:00',
       endTime: c.endTime || '10:00',
       teacher: (c.teacher || '').trim(),

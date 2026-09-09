@@ -62,9 +62,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+
   const systemPrompt = `You extract class/shift schedule entries from a timetable
 (which may be a photo, a PDF, or raw text pulled from a spreadsheet) and match
-them against the person's instruction below.
+them against the person's instruction below. Today's date is ${todayIso} — use
+it only to fill in a missing year on a date that gives day/month but not year.
 
 Instruction from the user: "${(command || '').trim() || 'Organize the whole schedule shown.'}"
 
@@ -111,6 +114,7 @@ exactly this shape:
     {
       "subject": string,      // course/subject/shift name, Title Case
       "day": "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday",
+      "date": string | null,  // absolute "YYYY-MM-DD" if the source gives a REAL calendar date for this entry (e.g. an exam datesheet showing "20th-July-2026"); null if this is an ordinary recurring weekly class with no specific date attached, just a weekday pattern
       "startTime": string,    // 24-hour "HH:MM", e.g. "09:00"
       "endTime": string,      // 24-hour "HH:MM", e.g. "10:30"
       "teacher": string,      // instructor/supervisor name if shown, else ""
@@ -124,6 +128,16 @@ Rules:
 - One JSON object per class/shift session per day it occurs (a class on Mon/Wed/Fri becomes 3 separate entries, one per day).
 - Convert any 12-hour times (e.g. "2:00 PM") to 24-hour "HH:MM".
 - If a field genuinely isn't shown, use "" — never invent a teacher, room, or time.
+- CRITICAL — real dates vs. recurring weekly classes: if the source shows an
+  actual calendar date (a specific day+month, with or without a year, like
+  "20th-July-2026", "20/7", "July 20") for an entry — which is typical of an
+  EXAM DATESHEET, a one-time event, or any schedule that happens on specific
+  dates rather than every week — set "date" to that as "YYYY-MM-DD" (fill in
+  the year from today's date above only if the source doesn't give one), and
+  set "day" to the weekday that date actually falls on. If the source is an
+  ordinary recurring weekly class timetable with no specific date attached
+  (just "Monday 9-10am" repeating every week) set "date" to null and only
+  fill "day".
 - Never explain your answer. Output raw JSON only.`;
 
   // Build the "contents" parts: text instruction + either an inline file or raw text
@@ -225,6 +239,7 @@ Rules:
       .map(c => ({
         subject:   (typeof c.subject === 'string' && c.subject.trim()) ? c.subject.trim() : 'Untitled',
         day:       c.day,
+        date:      /^\d{4}-\d{2}-\d{2}$/.test(c.date) ? c.date : null,
         startTime: /^\d{2}:\d{2}$/.test(c.startTime) ? c.startTime : '09:00',
         endTime:   /^\d{2}:\d{2}$/.test(c.endTime) ? c.endTime : '10:00',
         teacher:   typeof c.teacher === 'string' ? c.teacher.trim() : '',

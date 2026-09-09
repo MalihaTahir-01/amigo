@@ -7,6 +7,42 @@
 // Setup: same GEMINI_API_KEY env var already used by /api/parse-task.js —
 // nothing new to configure if that's already working.
 
+// If the model's response got cut off mid-JSON (usually because a big
+// timetable produced more class objects than fit in the token budget),
+// pull out every class object that DID finish before the cutoff instead of
+// discarding the whole response. Scans for the "classes" array and walks
+// brace depth to find each complete {...} entry.
+function salvageTruncatedClasses(text) {
+  const classesIdx = text.indexOf('"classes"');
+  if (classesIdx === -1) return null;
+  const arrStart = text.indexOf('[', classesIdx);
+  if (arrStart === -1) return null;
+
+  const results = [];
+  let depth = 0;
+  let objStart = -1;
+  for (let i = arrStart + 1; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '{') {
+      if (depth === 0) objStart = i;
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0 && objStart !== -1) {
+        const objText = text.slice(objStart, i + 1);
+        try {
+          results.push(JSON.parse(objText));
+        } catch (e) {
+          // this one didn't finish cleanly either — stop, don't guess further
+          break;
+        }
+        objStart = -1;
+      }
+    }
+  }
+  return results;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -82,8 +118,15 @@ Rules:
           contents: [{ role: 'user', parts }],
           generationConfig: {
             temperature: 0,
-            maxOutputTokens: 4000,
-            responseMimeType: 'application/json'
+            // A full weekly timetable can easily produce 30-40 class entries —
+            // raised well above the old 4000 so real timetables don't get cut
+            // off mid-response (which produces truncated, unparseable JSON).
+            maxOutputTokens: 8192,
+            responseMimeType: 'application/json',
+            // Reading a table is mostly a vision task, not a reasoning one —
+            // keep thinking minimal so its token spend doesn't eat into the
+            // budget the actual class list needs.
+            thinkingConfig: { thinkingLevel: 'minimal' }
           }
         })
       }
@@ -97,22 +140,44 @@ Rules:
     }
 
     const data = await aiRes.json();
+    const candidate = data.candidates && data.candidates[0];
     const raw =
-      (data.candidates &&
-        data.candidates[0] &&
-        data.candidates[0].content &&
-        data.candidates[0].content.parts &&
-        data.candidates[0].content.parts[0] &&
-        data.candidates[0].content.parts[0].text) || '';
+      (candidate &&
+        candidate.content &&
+        candidate.content.parts &&
+        candidate.content.parts[0] &&
+        candidate.content.parts[0].text) || '';
+    const wasTruncated = candidate && candidate.finishReason === 'MAX_TOKENS';
 
-    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const cleaned0 = raw.replace(/```json|```/g, '').trim();
+    // Pull out just the {...} in case the model added stray text around it.
+    const firstBrace = cleaned0.indexOf('{');
+    const lastBrace = cleaned0.lastIndexOf('}');
+    const cleaned = (firstBrace !== -1 && lastBrace > firstBrace) ? cleaned0.slice(firstBrace, lastBrace + 1) : cleaned0;
+
     let parsed;
+    let usedSalvage = false;
     try {
       parsed = JSON.parse(cleaned);
     } catch (parseErr) {
-      console.error('Failed to parse AI response as JSON:', raw);
-      res.status(502).json({ error: 'AI returned an unparseable response' });
-      return;
+      // Most likely cause: the response got cut off mid-object because the
+      // timetable had more classes than fit in the token budget. Rather than
+      // failing outright, salvage every class object that DID finish before
+      // the cutoff — a partial result beats none, and we tell the person why
+      // it's partial so they know to narrow it down or split the import.
+      const salvaged = salvageTruncatedClasses(cleaned0);
+      if (salvaged && salvaged.length > 0) {
+        parsed = { classes: salvaged, note: '' };
+        usedSalvage = true;
+      } else {
+        console.error('Failed to parse AI response as JSON:', raw);
+        res.status(502).json({
+          error: wasTruncated
+            ? 'The timetable had too many classes to read in one go. Try narrowing it down (e.g. "only Monday and Tuesday classes") or splitting it into a couple of smaller imports.'
+            : 'AI returned an unparseable response — try again, or use a clearer photo.'
+        });
+        return;
+      }
     }
 
     const validDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -128,7 +193,12 @@ Rules:
         room:      typeof c.room === 'string' ? c.room.trim() : ''
       }));
 
-    res.status(200).json({ classes, note: typeof parsed.note === 'string' ? parsed.note : '' });
+    let note = typeof parsed.note === 'string' ? parsed.note : '';
+    if (usedSalvage || wasTruncated) {
+      note = `Only got through part of the timetable (it had a lot of classes) — found ${classes.length} before running out of room. Review what's here, then run the import again with "only <the remaining days>" to get the rest.` + (note ? ' ' + note : '');
+    }
+
+    res.status(200).json({ classes, note });
   } catch (err) {
     console.error('parse-timetable function error:', err);
     res.status(500).json({ error: 'Server error while parsing timetable' });

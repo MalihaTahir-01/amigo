@@ -102,7 +102,14 @@ Rules:
     parts.push({ inlineData: { mimeType, data: fileBase64 } });
   }
   if (textContent) {
-    parts.push({ text: `\nSpreadsheet content:\n${textContent.slice(0, 20000)}` });
+    // Gemini 3.6 Flash has a ~1M token context window, so a large real
+    // spreadsheet (a whole-university exam datesheet can be 1000+ rows /
+    // 300K+ characters) is nowhere near its limit. The old 20,000-char cap
+    // was silently chopping off 90%+ of bigger files before the model ever
+    // saw them — including the person's own rows if they weren't near the
+    // top. 400,000 chars comfortably covers real-world spreadsheets while
+    // still protecting against a truly pathological file.
+    parts.push({ text: `\nSpreadsheet content:\n${textContent.slice(0, 400000)}` });
   }
 
   try {

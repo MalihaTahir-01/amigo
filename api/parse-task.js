@@ -109,8 +109,16 @@ Rules:
     if (!aiRes.ok) {
       const errText = await aiRes.text();
       console.error('Gemini API error:', aiRes.status, errText);
-      // Truncate in case it's an unexpectedly large HTML error page rather than JSON
-      res.status(502).json({ error: `Gemini API ${aiRes.status}: ${errText.slice(0, 300)}` });
+      let friendly;
+      if (aiRes.status === 429) {
+        friendly = "You've hit Gemini's usage limit for now (quota exceeded) — this isn't a bug, it's Google's rate/usage limit on the API key. Wait a bit and try again, or check your quota/billing at https://aistudio.google.com.";
+      } else if (aiRes.status === 401 || aiRes.status === 403) {
+        friendly = 'The Gemini API key is missing, invalid, or not authorized for this project — check the GEMINI_API_KEY set in Vercel.';
+      } else {
+        // Truncate in case it's an unexpectedly large HTML error page rather than JSON
+        friendly = `Gemini API ${aiRes.status}: ${errText.slice(0, 300)}`;
+      }
+      res.status(502).json({ error: friendly });
       return;
     }
 

@@ -400,13 +400,38 @@ async function organizePrompt() {
     flowData.type     = parsed.type;
     flowData.subject  = parsed.subject;
     flowData.priority = parsed.priority;
-    flowData.due      = parsed.due; // already an absolute YYYY-MM-DD from the server
+    flowData.due      = parsed.due; // already an absolute YYYY-MM-DD from the server, or null if it genuinely wasn't stated
     flowData.note     = parsed.note || '';
-    showAIReview('aiFlow');
+    if (!flowData.due) {
+      askForMissingDue('aiFlow');
+    } else {
+      showAIReview('aiFlow');
+    }
   } catch (err) {
     console.warn('AI parsing failed, falling back to manual flow:', err);
     startManualFlow(text);
   }
+}
+// Shown only when the AI understood everything except the date — asks for
+// just that one thing instead of re-running the whole manual flow. Once
+// answered, continues on to the normal editable review (which already has
+// everything else pre-filled) so nothing else needs to be re-entered.
+function askForMissingDue(targetId) {
+  targetId = targetId || 'aiFlow';
+  const flow = document.getElementById(targetId);
+  flow.innerHTML = `
+    <div class="ai-question">Got the rest — just need the date. When is this ${escapeAttr(t(flowData.type) || flowData.type)} due?</div>
+    <div class="ai-flow-row">
+      <input id="missingDue-${targetId}" type="date" class="ai-input-boxed" value="${localDateStr(new Date())}" />
+      <button class="ai-send" onclick="confirmMissingDue('${targetId}')">Continue</button>
+    </div>`;
+  setTimeout(() => { const el = document.getElementById('missingDue-' + targetId); if (el) el.focus(); }, 0);
+}
+function confirmMissingDue(targetId) {
+  targetId = targetId || 'aiFlow';
+  const val = document.getElementById('missingDue-' + targetId).value;
+  flowData.due = val || localDateStr(new Date());
+  showAIReview(targetId);
 }
 // Editable review step shown after a successful AI parse — nothing is saved
 // until the person confirms, so a wrong AI guess never silently goes in.
@@ -522,7 +547,7 @@ async function quickAddOrganize(lockedType) {
     flowData.type     = lockedType || parsed.type;
     flowData.subject  = parsed.subject;
     flowData.priority = parsed.priority;
-    flowData.due      = parsed.due;
+    flowData.due      = parsed.due; // null if genuinely not stated — handled below
     flowData.note     = parsed.note || '';
   } catch (err) {
     console.warn('Quick-add AI parse failed, opening blank editable form:', err);
@@ -534,7 +559,11 @@ async function quickAddOrganize(lockedType) {
     flowData.due      = localDateStr(new Date());
     flowData.note     = '';
   }
-  showAIReview('quickAddFlow');
+  if (!flowData.due) {
+    askForMissingDue('quickAddFlow');
+  } else {
+    showAIReview('quickAddFlow');
+  }
 }
 // Opens the quick-add modal pre-filled with an existing item's data, in edit mode
 function openEditItem(id) {

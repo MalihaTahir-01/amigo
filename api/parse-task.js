@@ -55,7 +55,7 @@ Return ONLY a single JSON object, no prose, no markdown fences, matching exactly
   "type": "assignment" | "quiz" | "mids" | "final" | "presentation" | "notice",
   "subject": string,      // the course/subject name, Title Case, e.g. "Database Systems". If genuinely unclear, use "General".
   "priority": "High" | "Medium" | "Low",   // infer from urgency words (e.g. "urgent", "important" -> High); default "Medium" if not indicated
-  "due": string,           // an absolute date in YYYY-MM-DD format, resolved from today's date above. If no date is mentioned at all, use today's date.
+  "due": string | null,    // an absolute date in YYYY-MM-DD format, resolved from today's date above. If NO date, day name/abbreviation, or relative-time word appears ANYWHERE in the sentence, set this to null — do NOT guess today's date as a silent default.
   "note": string            // any extra detail from the sentence that isn't the subject/date/type (e.g. "bring calculator"). Empty string if none.
 }
 
@@ -67,7 +67,7 @@ Rules:
 - A weekday reference counts as a date whether or not it's introduced by a word like "due"/"on"/"by", and no matter where in the sentence it appears — a day name or abbreviation anywhere (start, middle, end, sandwiched between other words) is a date, not just decoration. Treat "math assignment mon" exactly the same as "math assignment due on monday" or "mon math assignment" — all three resolve to the next Monday.
 - Recognize 3-letter weekday abbreviations (mon, tue, wed, thu, fri, sat, sun) as equivalent to the full weekday name, case-insensitive, with or without a trailing period, in any position.
 - Resolve weekday names/abbreviations, "tomorrow", "next week" etc. relative to today's date given above. Always pick the NEXT occurrence of a weekday, not today, unless the sentence explicitly says "today".
-- Only use today's date for "due" when the sentence truly contains no date, day name/abbreviation, or relative-time word anywhere in it — a bare or mid-sentence weekday abbreviation is still a date and must never be treated as "no date mentioned."
+- "due" must be null unless the sentence actually contains a date, a day name/abbreviation, or a relative-time word ("today", "tomorrow", "next week", etc.) somewhere in it. Do not invent a date and do not fall back to today's date as a guess — null is the correct, honest answer when the person genuinely didn't say when something is due. Only put an actual date in "due" when the sentence gives you real evidence for one, including an explicit "today".
 - A chapter/unit reference in any form ("ch6", "ch 6", "chapter 6", "unit 3") is never the subject and never the type — pull it into "note" (normalize to e.g. "Chapter 6"), no matter where it falls in the sentence.
 - Filler words that aren't the subject, type, day, priority, or a chapter reference (e.g. a stray "something", "please", "asap" outside its priority meaning) are simply dropped — don't force them into any field.
 - Examples, using the real today's date given above — notice the field order is different in every one and the result is identical to the "natural" phrasing. These arrows show what to conclude, NOT literal output syntax — your actual output must always be strict JSON with quoted keys and quoted string values, exactly matching the schema above, never this shorthand:
@@ -77,7 +77,8 @@ Rules:
   "tue assignment math ch6" means type is assignment, subject is Math, due is ${nextTueIso}, note is "Chapter 6"
   "assignment ch6 math tue" means the exact same result as the line above — only the word order changed
   "physics quiz fri" means due is ${nextFriIso}
-  "submit report" (no day, abbreviation, or relative word anywhere) means due is ${todayIso} (today)
+  "submit report" (no day, abbreviation, or relative word anywhere) means due is null — do not guess today
+  "math assignment today" means due is ${todayIso} — explicit "today" is real evidence, so this is fine
 - Never explain your answer. Output raw JSON only.`;
 
   try {
@@ -95,7 +96,11 @@ Rules:
           generationConfig: {
             temperature: 0,
             maxOutputTokens: 300,
-            responseMimeType: 'application/json'
+            responseMimeType: 'application/json',
+            // This is a tiny, deterministic extraction task — Gemini 3.6 Flash's
+            // extended "thinking" is on by default and only adds latency here
+            // with zero quality benefit, so turn it down to the fastest tier.
+            thinkingConfig: { thinkingLevel: 'minimal' }
           }
         })
       }
@@ -144,7 +149,10 @@ Rules:
       type: validTypes.includes(parsed.type) ? parsed.type : 'notice',
       subject: (typeof parsed.subject === 'string' && parsed.subject.trim()) ? parsed.subject.trim() : 'General',
       priority: validPriorities.includes(parsed.priority) ? parsed.priority : 'Medium',
-      due: /^\d{4}-\d{2}-\d{2}$/.test(parsed.due) ? parsed.due : todayIso,
+      // null/missing/invalid means the sentence genuinely didn't say when it's
+      // due — pass that through as null (rather than guessing today) so the
+      // client can ask the person for just that one thing instead of assuming.
+      due: /^\d{4}-\d{2}-\d{2}$/.test(parsed.due) ? parsed.due : null,
       note: typeof parsed.note === 'string' ? parsed.note.trim() : ''
     };
 

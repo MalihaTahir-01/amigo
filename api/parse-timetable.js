@@ -74,6 +74,29 @@ return the rows that match the user's instruction. If the instruction doesn't
 clearly narrow it down, or nothing matches, return every row you can read
 instead of guessing wrong — do not invent rows that aren't actually present.
 
+Matching the instruction is a MEANING match, never a literal string match.
+The person types casually and abbreviates — the data uses full official
+names — and they will never match character-for-character. You must
+recognize these as the same thing:
+- Program abbreviations vs. their full name: "BSAI" / "BS AI" / "AI" means
+  "BS Artificial Intelligence"; "BSCS" / "CS" means "BS Computer Science";
+  "BSSE" / "SE" means "BS Software Engineering"; and the same pattern for
+  any other "BS<Letters>" abbreviation against a full "BS <Full Words>"
+  program name in the data — expand the abbreviation and compare meaning,
+  not spelling. Also match a plain department/subject word (e.g. "AI") to
+  any program whose name contains it, and match "Lateral", "ADP", or similar
+  qualifiers only when the person actually says them.
+- Semester phrasing: "semester 2" / "sem 2" / "2nd semester" / "2nd" / "2" —
+  all the same semester, regardless of which of these forms the data uses.
+- Section/group letters and numbers should match however they're written:
+  "section blue" = "Blue section" = "Blue".
+- If the instruction gives a program and/or semester, treat rows as a match
+  only when they satisfy ALL the criteria mentioned, matched by meaning as
+  above — but never reject a row just because the data's wording differs
+  from the person's wording when the meaning is clearly the same.
+- Only report "nothing matched" in the "note" field after you've actually
+  checked the full data for a meaning-based match, not a literal one.
+
 Return ONLY a single JSON object, no prose, no markdown fences, matching
 exactly this shape:
 {

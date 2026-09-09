@@ -94,6 +94,13 @@ recognize these as the same thing:
   only when they satisfy ALL the criteria mentioned, matched by meaning as
   above — but never reject a row just because the data's wording differs
   from the person's wording when the meaning is clearly the same.
+- Before including ANY row in your output, check its own Program field and
+  its own Semester field individually against the instruction — a row from
+  a different semester or a different program NEVER belongs in the result,
+  even if it's sitting right next to rows that DO match, even if the course
+  name or time looks similar, and even if the table has hundreds of other
+  rows to scan through. Go row by row; do not skim or extrapolate a pattern
+  from nearby rows.
 - Only report "nothing matched" in the "note" field after you've actually
   checked the full data for a meaning-based match, not a literal one.
 
@@ -148,15 +155,16 @@ Rules:
           contents: [{ role: 'user', parts }],
           generationConfig: {
             temperature: 0,
-            // A full weekly timetable can easily produce 30-40 class entries —
-            // raised well above the old 4000 so real timetables don't get cut
-            // off mid-response (which produces truncated, unparseable JSON).
-            maxOutputTokens: 8192,
+            // Gemini 3.6 Flash's real ceiling is 65,536 output tokens (not the
+            // much smaller number assumed earlier) — plenty of headroom to
+            // give thinking real budget without risking truncation again.
+            maxOutputTokens: 32768,
             responseMimeType: 'application/json',
-            // Reading a table is mostly a vision task, not a reasoning one —
-            // keep thinking minimal so its token spend doesn't eat into the
-            // budget the actual class list needs.
-            thinkingConfig: { thinkingLevel: 'minimal' }
+            // Filtering a ~2000-row table by multiple criteria (program AND
+            // semester) needs actual checking, not just fast pattern-matching
+            // — 'minimal' was sacrificing accuracy for a truncation risk that
+            // no longer exists now that maxOutputTokens is this much higher.
+            thinkingConfig: { thinkingLevel: 'high' }
           }
         })
       }

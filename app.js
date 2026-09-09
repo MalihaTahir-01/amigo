@@ -1331,6 +1331,7 @@ function toggleTaskBlock(type) {
 // ============================================================
 const WEEKDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 let scheduleFolders = JSON.parse(localStorage.getItem('amigo_schedule_folders') || '[]');
+let ttImportPending = []; // classes extracted by AI import, pending review before saving
 function saveScheduleFolders() {
   localStorage.setItem('amigo_schedule_folders', JSON.stringify(scheduleFolders));
 }
@@ -1545,6 +1546,203 @@ function updateScheduleFolderCount(folderId) {
   const folder = scheduleFolders.find(f => f.id === folderId);
   const el = document.getElementById('sfcount-' + folderId);
   if (folder && el) el.textContent = folder.classes.length + ' class' + (folder.classes.length !== 1 ? 'es' : '');
+}
+// ── AI Timetable Import — upload a photo/PDF/Excel of a real timetable and
+// let Gemini pull out the classes, reviewed and editable before anything saves ──
+function openTimetableImportModal() {
+  const existing = document.getElementById('timetableImportModal');
+  if (existing) existing.remove();
+  ttImportPending = [];
+  const folderOptions = scheduleFolders.map(f => `<option value="${f.id}">${escapeAttr(f.name)}</option>`).join('');
+  const modal = document.createElement('div');
+  modal.id = 'timetableImportModal';
+  modal.className = 'task-detail-overlay';
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">Import timetable with AI</div>
+
+      <div class="settings-field">
+        <label class="settings-label">Import into</label>
+        <select id="ttImportTarget" class="reminder-select" onchange="document.getElementById('ttImportNewNameRow').style.display = this.value==='__new__' ? 'flex' : 'none';">
+          ${folderOptions}
+          <option value="__new__" ${scheduleFolders.length === 0 ? 'selected' : ''}>+ New schedule…</option>
+        </select>
+      </div>
+      <div class="settings-field" id="ttImportNewNameRow" style="${scheduleFolders.length === 0 ? '' : 'display:none;'}">
+        <label class="settings-label">New schedule name</label>
+        <input id="ttImportNewName" class="ai-input-boxed" type="text" placeholder="e.g. University Timetable" />
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Photo, PDF, or Excel file of the timetable</label>
+        <input id="ttImportFile" class="ai-input-boxed" type="file" accept="image/*,.pdf,.xlsx,.xls,.csv" />
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Optional — narrow it down</label>
+        <input id="ttImportCommand" class="ai-input-boxed" type="text" placeholder="e.g. only my Monday classes, or BSAI section 3" />
+      </div>
+
+      <div class="ai-flow-row" style="margin-top:4px;">
+        <button class="task-detail-btn task-detail-btn-close" onclick="document.getElementById('timetableImportModal').remove()">Cancel</button>
+        <button class="ai-send" onclick="runTimetableImport()">Import</button>
+      </div>
+      <div id="ttImportFlow" class="ai-flow"></div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result || '';
+      const comma = result.indexOf(',');
+      resolve(comma !== -1 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(new Error('Could not read the file'));
+    reader.readAsDataURL(file);
+  });
+}
+function readSpreadsheetAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = new Uint8Array(reader.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        let text = '';
+        wb.SheetNames.forEach(name => {
+          text += `Sheet: ${name}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[name]) + '\n\n';
+        });
+        resolve(text);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Could not read the file'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+async function runTimetableImport() {
+  const fileInput = document.getElementById('ttImportFile');
+  const file = fileInput.files[0];
+  const command = document.getElementById('ttImportCommand').value.trim();
+  const flow = document.getElementById('ttImportFlow');
+  if (!file) { flow.innerHTML = '<div class="ai-question">Pick a photo, PDF, or Excel file first.</div>'; return; }
+
+  flow.innerHTML = '<div class="ai-question">Reading the timetable…</div>';
+  try {
+    const isSpreadsheet = /\.(xlsx|xls|csv)$/i.test(file.name) ||
+      (file.type && (file.type.includes('sheet') || file.type === 'text/csv' || file.type === 'application/vnd.ms-excel'));
+    let body;
+    if (isSpreadsheet) {
+      body = { command, textContent: await readSpreadsheetAsText(file) };
+    } else {
+      body = { command, mimeType: file.type || 'application/octet-stream', fileBase64: await readFileAsBase64(file) };
+    }
+    const res = await fetch('/api/parse-timetable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json()).error || ''; } catch (e) {}
+      throw new Error(`AI service unavailable (${res.status}) ${detail}`);
+    }
+    const data = await res.json();
+    const classes = Array.isArray(data.classes) ? data.classes : [];
+    if (classes.length === 0) {
+      flow.innerHTML = `<div class="ai-question">Couldn't find any classes in that file${data.note ? ' — ' + escapeAttr(data.note) : ''}. Try a clearer photo, or add classes manually.</div>`;
+      return;
+    }
+    ttImportPending = classes.map((c, i) => ({ ...c, _tempId: 'tt' + i }));
+    renderTimetableImportReview(data.note || '');
+  } catch (err) {
+    console.error('Timetable import failed:', err);
+    flow.innerHTML = `<div class="ai-question">Couldn't read that file (${escapeAttr(err.message)}). Try again, or add classes manually.</div>`;
+  }
+}
+function renderTimetableImportReview(note) {
+  const flow = document.getElementById('ttImportFlow');
+  if (!flow) return;
+  const rowsHtml = ttImportPending.map(c => `
+    <div class="task-item" data-tt-temp-id="${c._tempId}">
+      <div class="task-info" style="flex:1;">
+        <div class="ai-flow-row">
+          <input class="ai-input-boxed" style="flex:2;" value="${escapeAttr(c.subject)}" onchange="updateTtImportField('${c._tempId}','subject',this.value)" />
+          <select class="reminder-select" onchange="updateTtImportField('${c._tempId}','day',this.value)">
+            ${WEEKDAYS.map(d => `<option value="${d}" ${d === c.day ? 'selected' : ''}>${d}</option>`).join('')}
+          </select>
+        </div>
+        <div class="ai-flow-row">
+          <input class="ai-input-boxed" type="time" value="${c.startTime}" onchange="updateTtImportField('${c._tempId}','startTime',this.value)" />
+          <input class="ai-input-boxed" type="time" value="${c.endTime}" onchange="updateTtImportField('${c._tempId}','endTime',this.value)" />
+        </div>
+        <div class="ai-flow-row">
+          <input class="ai-input-boxed" placeholder="Teacher" value="${escapeAttr(c.teacher || '')}" onchange="updateTtImportField('${c._tempId}','teacher',this.value)" />
+          <input class="ai-input-boxed" placeholder="Room" value="${escapeAttr(c.room || '')}" onchange="updateTtImportField('${c._tempId}','room',this.value)" />
+        </div>
+      </div>
+      <button class="del-reminder" onclick="removeTtImportRow('${c._tempId}')" title="Remove"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+  flow.innerHTML = `
+    <div class="ai-question">${note ? escapeAttr(note) + ' — ' : ''}Found ${ttImportPending.length} class${ttImportPending.length !== 1 ? 'es' : ''}. Review and edit before adding:</div>
+    <div id="ttImportRows">${rowsHtml}</div>
+    <div class="ai-flow-row" style="margin-top:4px;">
+      <button class="ai-send" onclick="confirmTimetableImport()">Add ${ttImportPending.length} Class${ttImportPending.length !== 1 ? 'es' : ''}</button>
+    </div>`;
+}
+function updateTtImportField(tempId, field, value) {
+  const row = ttImportPending.find(c => c._tempId === tempId);
+  if (row) row[field] = value;
+}
+function removeTtImportRow(tempId) {
+  ttImportPending = ttImportPending.filter(c => c._tempId !== tempId);
+  if (ttImportPending.length === 0) {
+    const flow = document.getElementById('ttImportFlow');
+    if (flow) flow.innerHTML = '<div class="ai-question">No classes left — pick a file again to re-import, or close this and add classes manually.</div>';
+    return;
+  }
+  renderTimetableImportReview('');
+}
+function confirmTimetableImport() {
+  if (ttImportPending.length === 0) return;
+  const targetSelect = document.getElementById('ttImportTarget');
+  let folderId;
+  if (targetSelect.value === '__new__') {
+    const name = document.getElementById('ttImportNewName').value.trim();
+    if (!name) { alert('Enter a name for the new schedule.'); return; }
+    const folder = { id: Date.now(), name, classes: [] };
+    scheduleFolders.push(folder);
+    folderId = folder.id;
+    const container = document.getElementById('scheduleFolderList');
+    const empty = container && container.querySelector('.focus-empty-light');
+    if (empty) empty.remove();
+    renderScheduleFolder(folder);
+  } else {
+    folderId = Number(targetSelect.value);
+  }
+  const folder = scheduleFolders.find(f => f.id === folderId);
+  if (!folder) return;
+  ttImportPending.forEach((c, i) => {
+    folder.classes.push({
+      id: Date.now() + i,
+      subject: (c.subject || 'Untitled').trim(),
+      day: WEEKDAYS.includes(c.day) ? c.day : WEEKDAYS[0],
+      startTime: c.startTime || '09:00',
+      endTime: c.endTime || '10:00',
+      teacher: (c.teacher || '').trim(),
+      room: (c.room || '').trim()
+    });
+  });
+  saveScheduleFolders();
+  saveUserData();
+  renderScheduleClasses(folderId);
+  updateScheduleFolderCount(folderId);
+  ttImportPending = [];
+  const modal = document.getElementById('timetableImportModal');
+  if (modal) modal.remove();
 }
 // Load saved schedules on page boot
 scheduleFolders.forEach(f => renderScheduleFolder(f));

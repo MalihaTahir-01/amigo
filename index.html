@@ -265,6 +265,9 @@
               <input id="scheduleFolderNameInput" class="ai-input-boxed" placeholder="Schedule name e.g. University Timetable, Job Shift..." onkeydown="if(event.key==='Enter') createScheduleFolder()" />
               <button class="ai-send" onclick="createScheduleFolder()">Create Schedule</button>
             </div>
+            <div class="uploads-toolbar" style="margin-top:8px;">
+              <button class="ai-send" onclick="openTimetableImportModal()"><i class="ti ti-sparkles"></i> Import with AI (photo, PDF, or Excel)</button>
+            </div>
             <div id="scheduleFolderList" class="folders-list">
               <div class="focus-empty-light">No schedules yet — create one above!</div>
             </div>

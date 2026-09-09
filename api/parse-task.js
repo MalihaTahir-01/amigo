@@ -70,14 +70,14 @@ Rules:
 - Only use today's date for "due" when the sentence truly contains no date, day name/abbreviation, or relative-time word anywhere in it — a bare or mid-sentence weekday abbreviation is still a date and must never be treated as "no date mentioned."
 - A chapter/unit reference in any form ("ch6", "ch 6", "chapter 6", "unit 3") is never the subject and never the type — pull it into "note" (normalize to e.g. "Chapter 6"), no matter where it falls in the sentence.
 - Filler words that aren't the subject, type, day, priority, or a chapter reference (e.g. a stray "something", "please", "asap" outside its priority meaning) are simply dropped — don't force them into any field.
-- Examples, using the real today's date given above — notice the field order is different in every one and the result is identical to the "natural" phrasing:
-  "eng assignment due on mon" -> {type: assignment, subject: "Eng", due: ${nextMonIso}}
-  "math assignment mon" -> {type: assignment, subject: "Math", due: ${nextMonIso}}
-  "mon math assignment" -> {type: assignment, subject: "Math", due: ${nextMonIso}} (same as above, day moved to the front)
-  "tue assignment math ch6" -> {type: assignment, subject: "Math", due: ${nextTueIso}, note: "Chapter 6"}
-  "assignment ch6 math tue" -> identical result to the line above — only the order changed
-  "physics quiz fri" -> due ${nextFriIso}
-  "submit report" (no day, abbreviation, or relative word anywhere) -> due ${todayIso} (today)
+- Examples, using the real today's date given above — notice the field order is different in every one and the result is identical to the "natural" phrasing. These arrows show what to conclude, NOT literal output syntax — your actual output must always be strict JSON with quoted keys and quoted string values, exactly matching the schema above, never this shorthand:
+  "eng assignment due on mon" means type is assignment, subject is Eng, due is ${nextMonIso}
+  "math assignment mon" means type is assignment, subject is Math, due is ${nextMonIso}
+  "mon math assignment" means the same as above — day moved to the front, result unchanged
+  "tue assignment math ch6" means type is assignment, subject is Math, due is ${nextTueIso}, note is "Chapter 6"
+  "assignment ch6 math tue" means the exact same result as the line above — only the word order changed
+  "physics quiz fri" means due is ${nextFriIso}
+  "submit report" (no day, abbreviation, or relative word anywhere) means due is ${todayIso} (today)
 - Never explain your answer. Output raw JSON only.`;
 
   try {
@@ -118,13 +118,19 @@ Rules:
         data.candidates[0].content.parts[0] &&
         data.candidates[0].content.parts[0].text) || '';
 
-    // Strip accidental code fences just in case, then parse.
-    const cleaned = raw.replace(/```json|```/g, '').trim();
+    // Strip accidental code fences, then pull out just the {...} in case the
+    // model added any stray text before/after it despite instructions not to.
+    let cleaned = raw.replace(/```json|```/g, '').trim();
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+    }
     let parsed;
     try {
       parsed = JSON.parse(cleaned);
     } catch (parseErr) {
-      console.error('Failed to parse AI response as JSON:', raw);
+      console.error('Failed to parse AI response as JSON. Raw text was:', raw);
       res.status(502).json({ error: 'AI returned an unparseable response' });
       return;
     }

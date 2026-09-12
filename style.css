@@ -376,6 +376,147 @@ body {
 .focus-empty-light { font-size: 13px; color: var(--color-text-muted); text-align: center; padding: 12px; }
 
 /* ============================================================
+   LIVE CLASS WIDGET (homepage — current/next class from Timetable)
+   ============================================================ */
+#liveClassZone { margin-bottom: 16px; }
+
+.live-class-card {
+  background: var(--gradient-primary);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.live-class-card::before {
+  content: '';
+  position: absolute;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  top: -40px; right: -40px;
+}
+.live-class-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 10px;
+}
+.live-class-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #FCA5A5;
+  background: rgba(239,68,68,0.2);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #FCA5A5;
+  animation: liveDotPulse 1.4s ease-in-out infinite;
+}
+@keyframes liveDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+.live-class-time { font-size: 12px; color: rgba(255,255,255,0.65); }
+.live-class-subject {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  position: relative; z-index: 1;
+  margin-bottom: 8px;
+}
+.live-class-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.75);
+  position: relative; z-index: 1;
+  margin-bottom: 14px;
+}
+.live-class-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.live-class-progress-track {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.15);
+  position: relative; z-index: 1;
+  overflow: hidden;
+}
+.live-class-progress-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.next-class-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+}
+.next-class-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+.next-class-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+}
+.next-class-subject { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--color-text); }
+.next-class-time { font-size: 12px; color: var(--color-text-secondary); flex-shrink: 0; }
+.next-class-room {
+  margin-top: 6px; font-size: 12px; color: var(--color-text-secondary);
+  display: flex; align-items: center; gap: 5px;
+}
+.next-class-done {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--color-success);
+  justify-content: center;
+}
+
+.today-classes-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.class-chip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  min-width: 100px;
+}
+.class-chip-now { border-color: var(--color-primary); background: var(--color-primary-light); }
+.class-chip-time { font-size: 10.5px; color: var(--color-text-muted); }
+.class-chip-subject { font-size: 12.5px; font-weight: 600; color: var(--color-text); }
+
+@media (max-width: 600px) {
+  .live-class-card { padding: 14px; }
+  .live-class-subject { font-size: 17px; }
+  .next-class-card { padding: 12px 14px; }
+}
+
+/* ============================================================
    AI BAR
    ============================================================ */
 .ai-bar {
@@ -852,7 +993,7 @@ body {
 /* Small layout-context utility classes (replace one-off inline positioning) */
 .main-relative { position: relative; }
 .icon-btn-anchor { position: relative; }
-.upcoming-section-mt { margin-top: 12px; }
+.upcoming-section-mt { margin-top: 16px; }
 .focus-card-mb { margin-bottom: 16px; }
 .ai-sparkle-icon { color: var(--color-primary); font-size: 16px; }
 .ai-send-full { width: 100%; padding: 12px; font-size: 13px; }

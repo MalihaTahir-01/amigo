@@ -1334,6 +1334,7 @@ let scheduleFolders = JSON.parse(localStorage.getItem('amigo_schedule_folders') 
 let ttImportPending = []; // classes extracted by AI import, pending review before saving
 function saveScheduleFolders() {
   localStorage.setItem('amigo_schedule_folders', JSON.stringify(scheduleFolders));
+  if (typeof renderLiveClassWidget === 'function') renderLiveClassWidget();
 }
 // ── Schedule folder CRUD ─────────────────────────────────────
 function createScheduleFolder() {
@@ -1816,6 +1817,99 @@ function confirmTimetableImport() {
 scheduleFolders.forEach(f => renderScheduleFolder(f));
 // Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
+
+// ============================================================
+// LIVE CLASS WIDGET (homepage) — shows the class happening right now,
+// or the next one coming up today, pulled straight from the Timetable.
+// ============================================================
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return (h * 60) + m;
+}
+function formatTimeRange(start, end) {
+  const fmt = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = (h % 12) === 0 ? 12 : (h % 12);
+    return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+  };
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+// Every class scheduled for today, across all Timetable folders, sorted by start time.
+function getTodayClassEntries() {
+  const today = new Date();
+  const todayStr = localDateStr(today);
+  const todayWeekday = WEEKDAYS[(today.getDay() + 6) % 7];
+  const entries = [];
+  scheduleFolders.forEach(folder => {
+    (folder.classes || []).forEach(c => {
+      if (!c.startTime || !c.endTime) return;
+      const matchesToday = folder.mode === 'dated' ? c.date === todayStr : c.day === todayWeekday;
+      if (matchesToday) entries.push(c);
+    });
+  });
+  entries.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+  return entries;
+}
+function renderLiveClassWidget() {
+  const zone = document.getElementById('liveClassZone');
+  if (!zone) return;
+  const entries = getTodayClassEntries();
+  if (entries.length === 0) { zone.innerHTML = ''; return; }
+
+  const now = new Date();
+  const nowMin = (now.getHours() * 60) + now.getMinutes();
+  const current = entries.find(c => timeToMinutes(c.startTime) <= nowMin && nowMin < timeToMinutes(c.endTime));
+  const next = entries.find(c => timeToMinutes(c.startTime) > nowMin);
+
+  let mainHtml = '';
+  if (current) {
+    const total   = timeToMinutes(current.endTime) - timeToMinutes(current.startTime);
+    const elapsed = nowMin - timeToMinutes(current.startTime);
+    const pct     = Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+    mainHtml = `
+      <div class="live-class-card">
+        <div class="live-class-top">
+          <span class="live-class-badge"><span class="live-dot"></span> LIVE NOW</span>
+          <span class="live-class-time">${formatTimeRange(current.startTime, current.endTime)}</span>
+        </div>
+        <div class="live-class-subject">${escapeAttr(current.subject)}</div>
+        <div class="live-class-meta">
+          ${current.room ? `<span><i class="ti ti-map-pin"></i> ${escapeAttr(current.room)}</span>` : ''}
+          ${current.teacher ? `<span><i class="ti ti-user"></i> ${escapeAttr(current.teacher)}</span>` : ''}
+        </div>
+        <div class="live-class-progress-track"><div class="live-class-progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  } else if (next) {
+    const mins    = timeToMinutes(next.startTime) - nowMin;
+    const hrs     = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    const countdown = hrs > 0 ? `in ${hrs}h ${remMins}m` : `in ${remMins}m`;
+    mainHtml = `
+      <div class="next-class-card">
+        <div class="next-class-label"><i class="ti ti-clock"></i> Next class ${countdown}</div>
+        <div class="next-class-row">
+          <span class="next-class-subject">${escapeAttr(next.subject)}</span>
+          <span class="next-class-time">${formatTimeRange(next.startTime, next.endTime)}</span>
+        </div>
+        ${next.room ? `<div class="next-class-room"><i class="ti ti-map-pin"></i> ${escapeAttr(next.room)}</div>` : ''}
+      </div>`;
+  } else {
+    mainHtml = `<div class="next-class-card next-class-done"><i class="ti ti-circle-check"></i> No more classes today — you're free 🎉</div>`;
+  }
+
+  const stripHtml = entries.length > 1 ? entries.map(c => {
+    const isNow = current && c === current;
+    return `<div class="class-chip ${isNow ? 'class-chip-now' : ''}">
+      <span class="class-chip-time">${formatTimeRange(c.startTime, c.endTime)}</span>
+      <span class="class-chip-subject">${escapeAttr(c.subject)}</span>
+    </div>`;
+  }).join('') : '';
+
+  zone.innerHTML = mainHtml + (stripHtml ? `<div class="today-classes-strip">${stripHtml}</div>` : '');
+}
+renderLiveClassWidget();
+setInterval(renderLiveClassWidget, 30000);
 // ============================================================
 // TO-DO
 // ============================================================

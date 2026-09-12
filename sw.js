@@ -1,4 +1,4 @@
-const CACHE = 'amigo-v9';
+const CACHE = 'amigo-v10';
 const ASSETS = ['/', '/index.html', '/app.js', '/auth.js', '/style.css', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {

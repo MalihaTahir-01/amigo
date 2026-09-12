@@ -488,6 +488,13 @@ body {
   font-size: 13px; color: var(--color-success);
   justify-content: center;
 }
+.next-class-cta {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--color-primary);
+  justify-content: center;
+  cursor: pointer;
+}
+.next-class-cta:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
 
 .today-classes-strip {
   display: flex;

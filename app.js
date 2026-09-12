@@ -1854,8 +1854,22 @@ function getTodayClassEntries() {
 function renderLiveClassWidget() {
   const zone = document.getElementById('liveClassZone');
   if (!zone) return;
+
+  // No timetable set up at all yet — prompt instead of showing nothing.
+  if (scheduleFolders.length === 0) {
+    zone.innerHTML = `
+      <div class="next-class-card next-class-cta" onclick="setNav(document.querySelector('.nav-item[onclick*=timetable]'),'timetable')">
+        <i class="ti ti-calendar-plus"></i>
+        <span>Add your Timetable to see your live class here</span>
+      </div>`;
+    return;
+  }
+
   const entries = getTodayClassEntries();
-  if (entries.length === 0) { zone.innerHTML = ''; return; }
+  if (entries.length === 0) {
+    zone.innerHTML = `<div class="next-class-card next-class-done"><i class="ti ti-calendar-off"></i> No classes scheduled today</div>`;
+    return;
+  }
 
   const now = new Date();
   const nowMin = (now.getHours() * 60) + now.getMinutes();

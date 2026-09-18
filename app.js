@@ -302,12 +302,13 @@ items.forEach(item => {
   }
 });
 if (itemsMigrated) localStorage.setItem('amigo_items', JSON.stringify(items));
-// Show today's date in the topbar and focus card
+// Show today's date in the topbar
 const now = new Date();
 document.getElementById('topDate').textContent = now.toLocaleDateString('en-US', {
   weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
 });
-document.getElementById('focusDate').textContent = now.toLocaleDateString('en-US', {
+const focusDateEl = document.getElementById('focusDate');
+if (focusDateEl) focusDateEl.textContent = now.toLocaleDateString('en-US', {
   day: 'numeric', month: 'short', year: 'numeric'
 });
 // Remove any tasks whose (now-absolute) due date has already passed, then render the rest
@@ -372,10 +373,13 @@ function goToSettingsFromHeader() {
 // scripted button flow kept as an automatic fallback if the AI call fails
 // ────────────────────────────────────────────────────────────
 function setInput(val) {
-  document.getElementById('aiInput').value = val;
-  document.getElementById('aiInput').focus();
+  const el = document.getElementById('aiInput');
+  if (!el) return;
+  el.value = val;
+  el.focus();
 }
-document.getElementById('aiInput').addEventListener('keydown', e => {
+const homeAiInput = document.getElementById('aiInput');
+if (homeAiInput) homeAiInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') organizePrompt();
 });
 async function organizePrompt() {
@@ -884,14 +888,14 @@ function sortList(listId) {
   });
   cards.forEach(c => list.appendChild(c));
 }
-// Update the count badges in the sidebar and stat cards
+// Update the count badges in the sidebar and each Tasks block header
 function updateCounts() {
   const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0, notice:0 };
   items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
-  document.getElementById('sc-assign').textContent = c.assignment;
-  document.getElementById('sc-quiz').textContent   = c.quiz;
-  document.getElementById('sc-pres').textContent   = c.presentation;
-  document.getElementById('sc-final').textContent  = c.final;
+  Object.keys(c).forEach(type => {
+    const badge = document.getElementById('tbc-' + type);
+    if (badge) badge.textContent = c[type] + ' loaded';
+  });
   const total = c.assignment + c.quiz + c.presentation + c.final + c.mids + c.notice;
   const nbTasks = document.getElementById('nb-tasks');
   if (nbTasks) nbTasks.textContent = total;
@@ -1032,6 +1036,7 @@ function deleteItem(id) {
 }
 function addToFocus(item) {
   const focus = document.getElementById('focusItems');
+  if (!focus) return;
   const empty = focus.querySelector('.focus-empty');
   if (empty) empty.remove();
   const div = document.createElement('div');
@@ -2004,8 +2009,11 @@ function saveSettings() {
   applyLanguage(lang);
   saveUserData();
   // Show success message then go home
-  document.getElementById('aiStatus').textContent = t('settingsSaved');
-  setTimeout(() => document.getElementById('aiStatus').textContent = '', 2000);
+  const statusEl = document.getElementById('aiStatus');
+  if (statusEl) {
+    statusEl.textContent = t('settingsSaved');
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  }
   setNav(document.querySelector('.nav-item'), 'home');
 }
 function uploadProfilePic(input) {

@@ -171,30 +171,7 @@
               <h2>Hello, Student 👋</h2>
               <p>Here's what's on your plate today.</p>
             </div>
-            <div class="focus-card">
-              <div class="focus-header">
-                <span class="focus-title">Today's focus</span>
-                <span class="focus-date" id="focusDate"></span>
-              </div>
-              <div class="focus-items" id="focusItems">
-                <div class="focus-empty">No tasks due today — enjoy your day!</div>
-              </div>
-            </div>
-            <div class="ai-bar">
-              <div class="ai-input-row">
-                <i class="ti ti-sparkles ai-sparkle-icon"></i>
-                <input class="ai-input" id="aiInput" placeholder="Tell Amigo something… e.g. Math quiz on Monday" />
-                <button class="ai-send" onclick="organizePrompt()">Add ↗</button>
-              </div>
-              <div class="ai-status" id="aiStatus"></div>
-              <div id="aiFlow" class="ai-flow"></div>
-            </div>
-            <div class="stats-grid">
-              <div class="stat-card"><div class="stat-icon stat-icon-assign"><i class="ti ti-file-text"></i></div><div class="stat-num" id="sc-assign">0</div><div class="stat-label">Assignments</div></div>
-              <div class="stat-card"><div class="stat-icon stat-icon-quiz"><i class="ti ti-pencil"></i></div><div class="stat-num" id="sc-quiz">0</div><div class="stat-label">Quizzes</div></div>
-              <div class="stat-card"><div class="stat-icon stat-icon-pres"><i class="ti ti-presentation"></i></div><div class="stat-num" id="sc-pres">0</div><div class="stat-label">Presentations</div></div>
-              <div class="stat-card"><div class="stat-icon stat-icon-final"><i class="ti ti-certificate"></i></div><div class="stat-num" id="sc-final">0</div><div class="stat-label">Finals</div></div>
-            </div>
+            <div id="liveClassZone"></div>
             <div class="upcoming-section">
               <div class="section-header"><span class="section-title">Today</span></div>
               <div class="task-list" id="todayList"><div class="focus-empty-light">Nothing due today.</div></div>
@@ -211,7 +188,7 @@
 
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('assignment')">
-                <span class="section-title"><i class="ti ti-file-text"></i> Assignments</span>
+                <span class="section-title"><i class="ti ti-file-text"></i> Assignments <span class="task-block-count" id="tbc-assignment">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('assignment')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-assignment"></i>
               </div>
               <div class="task-list" id="list-assignment" style="display:none;"><div class="focus-empty-light">No assignments yet.</div></div>
@@ -219,7 +196,7 @@
 
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('quiz')">
-                <span class="section-title"><i class="ti ti-pencil"></i> Quizzes</span>
+                <span class="section-title"><i class="ti ti-pencil"></i> Quizzes <span class="task-block-count" id="tbc-quiz">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('quiz')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-quiz"></i>
               </div>
               <div class="task-list" id="list-quiz" style="display:none;"><div class="focus-empty-light">No quizzes yet.</div></div>
@@ -227,7 +204,7 @@
 
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('mids')">
-                <span class="section-title"><i class="ti ti-writing"></i> Mids</span>
+                <span class="section-title"><i class="ti ti-writing"></i> Mids <span class="task-block-count" id="tbc-mids">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('mids')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-mids"></i>
               </div>
               <div class="task-list" id="list-mids" style="display:none;"><div class="focus-empty-light">No mids added yet.</div></div>
@@ -235,7 +212,7 @@
 
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('presentation')">
-                <span class="section-title"><i class="ti ti-presentation"></i> Presentations</span>
+                <span class="section-title"><i class="ti ti-presentation"></i> Presentations <span class="task-block-count" id="tbc-presentation">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('presentation')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-presentation"></i>
               </div>
               <div class="task-list" id="list-presentation" style="display:none;"><div class="focus-empty-light">No presentations yet.</div></div>
@@ -243,7 +220,7 @@
 
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('final')">
-                <span class="section-title"><i class="ti ti-certificate"></i> Finals</span>
+                <span class="section-title"><i class="ti ti-certificate"></i> Finals <span class="task-block-count" id="tbc-final">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('final')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-final"></i>
               </div>
               <div class="task-list" id="list-final" style="display:none;"><div class="focus-empty-light">No finals added yet.</div></div>
@@ -251,7 +228,7 @@
 
             <div class="task-block">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('notice')">
-                <span class="section-title"><i class="ti ti-speakerphone"></i> Notices</span>
+                <span class="section-title"><i class="ti ti-speakerphone"></i> Notices <span class="task-block-count" id="tbc-notice">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('notice')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-notice"></i>
               </div>
               <div class="task-list" id="list-notice" style="display:none;"><div class="focus-empty-light">No notices yet — add one from home screen.</div></div>

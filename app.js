@@ -1904,6 +1904,11 @@ function formatTimeRange(start, end) {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 // Every class scheduled for today, across all Timetable folders, sorted by start time.
+// NOTE: this used to decide "does this match today" per FOLDER (folder.mode ===
+// 'dated' vs weekly), which meant one dated entry in a folder (e.g. an
+// AI-imported datesheet that included a specific date on a few rows) could
+// make the whole folder "dated" — silently hiding every ordinary recurring
+// weekly class in it. Now it checks each class individually instead.
 function getTodayClassEntries() {
   const today = new Date();
   const todayStr = localDateStr(today);
@@ -1912,7 +1917,7 @@ function getTodayClassEntries() {
   scheduleFolders.forEach(folder => {
     (folder.classes || []).forEach(c => {
       if (!c.startTime || !c.endTime) return;
-      const matchesToday = folder.mode === 'dated' ? c.date === todayStr : c.day === todayWeekday;
+      const matchesToday = c.date ? (c.date === todayStr) : (c.day === todayWeekday);
       if (matchesToday) entries.push(c);
     });
   });
@@ -2664,7 +2669,12 @@ let timerTotal   = 25 * 60;
 let timerRunning = false;
 let timerInterval = null;
 function formatTimerTime(s) {
-  const m = Math.floor(s / 60), sec = s % 60;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) {
+    return h + ':' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
   return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
 }
 function renderTimerDisplay() {
@@ -2675,11 +2685,12 @@ function setTimerPreset(btn, mins) {
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (mins === 'custom') {
-    const val = prompt('Custom timer length in minutes:', '30');
-    const n = parseInt(val, 10);
-    if (!n || n <= 0) return;
-    mins = n;
+    openCustomTimerModal();
+    return;
   }
+  applyTimerLength(mins, btn);
+}
+function applyTimerLength(mins, btn) {
   clearInterval(timerInterval);
   timerRunning = false;
   const startBtn = document.getElementById('timerStartBtn');
@@ -2687,6 +2698,39 @@ function setTimerPreset(btn, mins) {
   timerSeconds = mins * 60;
   timerTotal   = mins * 60;
   renderTimerDisplay();
+}
+function openCustomTimerModal() {
+  const existing = document.getElementById('customTimerModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'customTimerModal';
+  modal.className = 'task-detail-overlay';
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">Custom timer length</div>
+      <div class="ai-flow-row custom-timer-row">
+        <input id="customTimerHours" type="number" min="0" max="23" value="0" class="ai-input-boxed" />
+        <span class="custom-timer-unit">hrs</span>
+        <input id="customTimerMinutes" type="number" min="0" max="59" value="30" class="ai-input-boxed" />
+        <span class="custom-timer-unit">min</span>
+      </div>
+      <div class="ai-flow-row">
+        <button class="ai-send" onclick="confirmCustomTimer()">Set timer</button>
+      </div>
+      <button class="task-detail-btn task-detail-btn-close quick-add-close" onclick="document.getElementById('customTimerModal').remove()">Cancel</button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  setTimeout(() => { const el = document.getElementById('customTimerHours'); if (el) el.focus(); }, 0);
+}
+function confirmCustomTimer() {
+  const h = parseInt(document.getElementById('customTimerHours').value, 10) || 0;
+  const m = parseInt(document.getElementById('customTimerMinutes').value, 10) || 0;
+  const totalMins = (h * 60) + m;
+  if (totalMins <= 0) { alert('Enter at least 1 minute.'); return; }
+  applyTimerLength(totalMins, document.querySelector('.preset-btn:last-child'));
+  document.getElementById('customTimerModal').remove();
 }
 function toggleTimer() {
   const btn = document.getElementById('timerStartBtn');

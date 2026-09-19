@@ -1540,3 +1540,6 @@ body {
   --color-primary-light:  #1F3A57;
 }
 :root[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text); }
+.custom-timer-row { display: flex; align-items: center; gap: 8px; }
+.custom-timer-row input { width: 70px; text-align: center; }
+.custom-timer-unit { font-size: 13px; color: var(--color-text-secondary); }

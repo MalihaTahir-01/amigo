@@ -1746,7 +1746,10 @@ async function runTimetableImport() {
   const flow = document.getElementById('ttImportFlow');
   if (!file) { flow.innerHTML = '<div class="ai-question">Pick a photo, PDF, or Excel file first.</div>'; return; }
 
-  flow.innerHTML = '<div class="ai-question">Reading the timetable…</div>';
+  flow.innerHTML = '<div class="ai-question">Reading the timetable — this can take up to a minute for a full page of classes…</div>';
+  await attemptTimetableImport(file, command, flow);
+}
+async function attemptTimetableImport(file, command, flow) {
   try {
     const isSpreadsheet = /\.(xlsx|xls|csv)$/i.test(file.name) ||
       (file.type && (file.type.includes('sheet') || file.type === 'text/csv' || file.type === 'application/vnd.ms-excel'));
@@ -1776,7 +1779,14 @@ async function runTimetableImport() {
     renderTimetableImportReview(data.note || '');
   } catch (err) {
     console.error('Timetable import failed:', err);
-    flow.innerHTML = `<div class="ai-question">Couldn't read that file (${escapeAttr(err.message)}). Try again, or add classes manually.</div>`;
+    // Store the file/command so "Try again" doesn't require re-picking the file —
+    // Google's API being briefly overloaded shouldn't cost the person a re-upload.
+    window._lastTtImportRetry = () => attemptTimetableImport(file, command, flow);
+    flow.innerHTML = `
+      <div class="ai-question">Couldn't read that file (${escapeAttr(err.message)}).</div>
+      <div class="ai-flow-row">
+        <button class="ai-send" onclick="window._lastTtImportRetry()">Try again</button>
+      </div>`;
   }
 }
 function renderTimetableImportReview(note) {

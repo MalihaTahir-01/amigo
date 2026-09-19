@@ -156,33 +156,52 @@ Rules:
     parts.push({ text: `\nSpreadsheet content:\n${textContent.slice(0, 400000)}` });
   }
 
+  // Gemini occasionally returns a transient 503 "model overloaded" error that
+  // clears up within a second or two. Retry a couple of times automatically
+  // before bothering the user with an error — this is what was missing
+  // before, which is why a plain retry-by-hand ("try again") used to work.
+  async function callGeminiWithRetry(body, maxAttempts) {
+    maxAttempts = maxAttempts || 3;
+    let lastRes, lastErrText;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const aiRes = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify(body)
+        }
+      );
+      if (aiRes.ok) return aiRes;
+      lastRes = aiRes;
+      lastErrText = await aiRes.text();
+      const isTransient = aiRes.status === 503 || aiRes.status === 500;
+      if (!isTransient || attempt === maxAttempts) break;
+      await new Promise(r => setTimeout(r, 700 * attempt));
+    }
+    return { ok: false, status: lastRes.status, text: async () => lastErrText };
+  }
+
   try {
-    const aiRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          generationConfig: {
-            temperature: 0,
-            // Gemini 3.6 Flash's real ceiling is 65,536 output tokens (not the
-            // much smaller number assumed earlier) — plenty of headroom to
-            // give thinking real budget without risking truncation again.
-            maxOutputTokens: 32768,
-            responseMimeType: 'application/json',
-            // Filtering a ~2000-row table by multiple criteria (program AND
-            // semester) needs actual checking, not just fast pattern-matching
-            // — 'minimal' was sacrificing accuracy for a truncation risk that
-            // no longer exists now that maxOutputTokens is this much higher.
-            thinkingConfig: { thinkingLevel: 'high' }
-          }
-        })
+    const aiRes = await callGeminiWithRetry({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        temperature: 0,
+        // Gemini 3.6 Flash's real ceiling is 65,536 output tokens (not the
+        // much smaller number assumed earlier) — plenty of headroom to
+        // give thinking real budget without risking truncation again.
+        maxOutputTokens: 32768,
+        responseMimeType: 'application/json',
+        // Filtering a ~2000-row table by multiple criteria (program AND
+        // semester) needs actual checking, not just fast pattern-matching
+        // — 'minimal' was sacrificing accuracy for a truncation risk that
+        // no longer exists now that maxOutputTokens is this much higher.
+        thinkingConfig: { thinkingLevel: 'high' }
       }
-    );
+    });
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();
@@ -192,6 +211,8 @@ Rules:
         friendly = "You've hit Gemini's usage limit for now (quota exceeded) — this isn't a bug in the app, it's Google's rate/usage limit on the API key. Wait a few minutes and try again, or check your quota/billing at https://aistudio.google.com.";
       } else if (aiRes.status === 401 || aiRes.status === 403) {
         friendly = 'The Gemini API key is missing, invalid, or not authorized for this project — check the GEMINI_API_KEY set in Vercel.';
+      } else if (aiRes.status === 503 || aiRes.status === 500) {
+        friendly = "Google's AI service is briefly overloaded and didn't recover after a few automatic retries — this is temporary on their end, not a bug. Please try again in a moment.";
       } else {
         friendly = `Gemini API ${aiRes.status}: ${errText.slice(0, 300)}`;
       }

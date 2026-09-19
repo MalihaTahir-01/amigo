@@ -717,6 +717,22 @@ function normalizeDate(due) {
   }
   return null;
 }
+// Is this ISO due date exactly tomorrow?
+function isTomorrow(due) {
+  if (!due) return false;
+  const t = new Date(); t.setDate(t.getDate() + 1);
+  return due === localDateStr(t);
+}
+// Is this item overdue (due date in the past, and not completed)?
+function isOverdueItem(item) {
+  if (!item.due || item.completed) return false;
+  return item.due < localDateStr(new Date());
+}
+function daysOverdue(due) {
+  const todayD = new Date(localDateStr(new Date()));
+  const dueD   = new Date(due);
+  return Math.max(1, Math.round((todayD - dueD) / 86400000));
+}
 // Checks if a due date string means today
 function isToday(due) {
   const d = due.toLowerCase().trim().replace(/\s+/g, '');
@@ -828,7 +844,8 @@ function saveItem(targetId) {
       subject:  flowData.subject,
       priority: flowData.priority,
       due:      resolvedDue,
-      note:     flowData.note || ''
+      note:     flowData.note || '',
+      completed: false
     };
     items.push(item);
     localStorage.setItem('amigo_items', JSON.stringify(items));
@@ -871,10 +888,12 @@ function renderItem(item) {
   if (isToday(item.due)) {
     addToFocus(item);
     addToList('todayList', item);
-  } else {
+  } else if (isTomorrow(item.due)) {
+    // Home's "Upcoming" is intentionally narrow — only tomorrow, not the whole week.
     addToList('taskList', item);
   }
   addToList('list-' + item.type, item);
+  renderHomeStats();
 }
 // Sort a task list by due date (earliest first)
 function sortList(listId) {
@@ -891,7 +910,7 @@ function sortList(listId) {
 // Update the count badges in the sidebar and each Tasks block header
 function updateCounts() {
   const c = { assignment:0, quiz:0, presentation:0, final:0, mids:0, notice:0 };
-  items.forEach(i => { if (c[i.type] !== undefined) c[i.type]++; });
+  items.forEach(i => { if (c[i.type] !== undefined && !i.completed) c[i.type]++; });
   Object.keys(c).forEach(type => {
     const badge = document.getElementById('tbc-' + type);
     if (badge) badge.textContent = c[type] + ' loaded';
@@ -899,6 +918,33 @@ function updateCounts() {
   const total = c.assignment + c.quiz + c.presentation + c.final + c.mids + c.notice;
   const nbTasks = document.getElementById('nb-tasks');
   if (nbTasks) nbTasks.textContent = total;
+  renderHomeStats();
+}
+// Home page stat row: Due today / This week / Overdue / Completed
+function renderHomeStats() {
+  const elToday = document.getElementById('stat-due-today');
+  const elWeek  = document.getElementById('stat-this-week');
+  const elOver  = document.getElementById('stat-overdue');
+  const elDone  = document.getElementById('stat-completed');
+  if (!elToday && !elWeek && !elOver && !elDone) return;
+
+  const todayStr = localDateStr(new Date());
+  const weekEnd  = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekEndStr = localDateStr(weekEnd);
+
+  let dueToday = 0, thisWeek = 0, overdue = 0, completed = 0;
+  items.forEach(i => {
+    if (i.completed) { completed++; return; }
+    if (!i.due) return;
+    if (i.due === todayStr) dueToday++;
+    if (i.due >= todayStr && i.due <= weekEndStr) thisWeek++;
+    if (i.due < todayStr) overdue++;
+  });
+
+  if (elToday) elToday.textContent = dueToday;
+  if (elWeek)  elWeek.textContent  = thisWeek;
+  if (elOver)  elOver.textContent  = overdue;
+  if (elDone)  elDone.textContent  = completed;
 }
 // ────────────────────────────────────────────────────────────
 // ICON HELPERS
@@ -989,13 +1035,19 @@ function addToList(listId, item) {
     if (e.target.closest('.del-reminder') || e.target.closest('.edit-reminder')) return;
     showTaskDetail(item);
   });
+  const overdue = isOverdueItem(item);
+  const dueLabel = item.completed
+    ? 'Done'
+    : (overdue ? 'Overdue ' + daysOverdue(item.due) + 'd' : item.due);
+  if (item.completed) div.classList.add('task-item-done');
   div.innerHTML = `
+    <div class="item-checkbox ${item.completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggleItemComplete(${item.id})"><i class="ti ti-check"></i></div>
     <div class="task-icon ${iconClass(item.type)}"><i class="ti ${iconName(item.type)}"></i></div>
     <div class="task-info">
       <div class="task-title">${item.title}</div>
       <div class="task-sub">${item.subject}${item.note ? ' — ' + item.note : ''}</div>
     </div>
-    <span class="task-due">${item.due}</span>
+    <span class="task-due ${overdue ? 'task-due-overdue' : ''}">${dueLabel}</span>
     <span class="urgency ${urgencyClass(item.priority)}">${item.priority}</span>
     <button class="edit-reminder" onclick="openEditItem(${item.id})" title="Edit">
       <i class="ti ti-edit"></i>
@@ -1004,6 +1056,17 @@ function addToList(listId, item) {
       <i class="ti ti-trash"></i>
     </button>`;
   list.appendChild(div);
+}
+// Toggle an item's completed state — this is now the ONLY way an overdue
+// item leaves the "needs attention" state. Nothing auto-deletes anymore.
+function toggleItemComplete(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item.completed = !item.completed;
+  localStorage.setItem('amigo_items', JSON.stringify(items));
+  saveUserData();
+  refreshItemDOM(item);
+  updateCounts();
 }
 function deleteItem(id) {
   items = items.filter(i => i.id !== id);
@@ -2357,30 +2420,19 @@ function removePastItems() {
   localStorage.setItem('amigo_reminders', JSON.stringify(reminders));
 }
 
-// Tasks now store an absolute YYYY-MM-DD due date (resolved once at save time in
-// saveItem()), so this is a plain string comparison — no re-parsing of "today"/
-// "tomorrow" needed here, and it's what makes expired tasks actually disappear.
+// NOTE: this used to permanently delete any task whose due date had passed —
+// both locally and in Supabase, with no undo. That was a real data-loss bug.
+// It no longer deletes anything. Overdue tasks stay visible everywhere with a
+// red "Overdue Nd" label (see addToList) until the person marks them complete
+// or deletes them manually. This function now just re-runs the render pass so
+// labels/lists reflect the current day (used at startup and at midnight).
 function expireOldTasks() {
-  const todayStr = localDateStr(new Date());
-  const expiredIds = items.filter(i => i.due && i.due < todayStr).map(i => i.id);
-  if (expiredIds.length === 0) return;
-  items = items.filter(i => !expiredIds.includes(i.id));
-  localStorage.setItem('amigo_items', JSON.stringify(items));
-  saveUserData();
-  expiredIds.forEach(id => {
-    document.querySelectorAll('[data-id="' + id + '"]').forEach(el => el.remove());
-  });
-  const allLists = ['todayList','taskList','list-assignment','list-quiz','list-mids','list-presentation','list-final','list-notice'];
-  allLists.forEach(listId => {
-    const list = document.getElementById(listId);
-    if (list && list.querySelectorAll('.task-item').length === 0) {
-      list.innerHTML = '<div class="focus-empty focus-empty-light">Nothing here yet.</div>';
-    }
-  });
+  document.querySelectorAll('.task-item').forEach(el => el.remove());
   const focus = document.getElementById('focusItems');
-  if (focus && focus.querySelectorAll('.focus-item').length === 0) {
-    focus.innerHTML = `<div class="focus-empty">${t('noTasksToday')}</div>`;
-  }
+  if (focus) focus.innerHTML = '';
+  items.forEach(item => renderItem(item));
+  sortList('taskList');
+  ['assignment','quiz','mids','presentation','final','notice'].forEach(type => sortList('list-' + type));
   updateCounts();
 }
 
@@ -2438,7 +2490,17 @@ async function handleLogin() {
     errEl.className = 'auth-msg auth-msg-error show';
     return;
   }
-  initAuth();
+  errEl.textContent = 'signed in — loading your data...';
+  errEl.className = 'auth-msg auth-msg-info show';
+  // NOTE: this used to call initAuth() again, which quietly refreshed
+  // localStorage in the background but never told the already-rendered page
+  // to redraw itself — app.js's task/todo/reminder arrays were only ever read
+  // ONCE, at initial script load (before login, when they were empty). That's
+  // why data only ever showed up after a manual browser refresh. Reloading
+  // here runs the whole index.html -> initAuth() -> load app.js sequence
+  // fresh, this time with the session already active, so it picks up the
+  // real data on the very first render.
+  window.location.reload();
 }
 async function handleSignup() {
   const name     = document.getElementById('signupName').value.trim();
@@ -2517,4 +2579,179 @@ async function sendFeedback() {
     status.textContent = 'something went wrong 😬 try again';
     status.className   = 'feedback-status show msg-error';
   }
+}
+// ============================================================
+// NOTES — simple sticky notes, saved per-user (synced inside
+// the existing "settings" jsonb field, no new DB column needed)
+// ============================================================
+let notes = JSON.parse(localStorage.getItem('amigo_notes') || '[]');
+const NOTE_COLORS = ['note-amber', 'note-teal', 'note-pink', 'note-blue'];
+
+function renderNotes() {
+  const board = document.getElementById('notesBoard');
+  if (!board) return;
+  const addTile = board.querySelector('.sticky-new');
+  board.querySelectorAll('.sticky').forEach(el => el.remove());
+  notes.forEach((note, idx) => {
+    const div = document.createElement('div');
+    div.className = 'sticky ' + NOTE_COLORS[idx % NOTE_COLORS.length];
+    div.innerHTML = `
+      <div class="sticky-head">
+        <div class="sticky-title">${escapeAttr(note.title)}</div>
+        <div class="sticky-del" onclick="event.stopPropagation(); deleteNote(${note.id})"><i class="ti ti-x"></i></div>
+      </div>
+      <div class="sticky-body">${escapeAttr(note.body)}</div>`;
+    div.addEventListener('click', () => openNoteModal(note.id));
+    if (addTile) board.insertBefore(div, addTile);
+    else board.appendChild(div);
+  });
+}
+function saveNotes() {
+  localStorage.setItem('amigo_notes', JSON.stringify(notes));
+  saveUserData();
+}
+function openNoteModal(editId) {
+  const existing = document.getElementById('noteModal');
+  if (existing) existing.remove();
+  const editing = editId ? notes.find(n => n.id === editId) : null;
+  const modal = document.createElement('div');
+  modal.id = 'noteModal';
+  modal.className = 'task-detail-overlay';
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">${editing ? 'Edit note' : 'New note'}</div>
+      <div class="ai-flow-row"><input id="noteTitleInput" class="ai-input-boxed" placeholder="Title" value="${editing ? escapeAttr(editing.title) : ''}" /></div>
+      <div class="ai-flow-row"><textarea id="noteBodyInput" class="ai-input-boxed" rows="4" placeholder="Write your note...">${editing ? editing.body : ''}</textarea></div>
+      <div class="ai-flow-row">
+        ${editing ? `<button class="ai-opt" onclick="deleteNote(${editing.id})">Delete</button>` : ''}
+        <button class="ai-send" onclick="saveNoteFromModal(${editing ? editing.id : 'null'})">${editing ? 'Save changes' : 'Save note'}</button>
+      </div>
+      <button class="task-detail-btn task-detail-btn-close quick-add-close" onclick="document.getElementById('noteModal').remove()">Close</button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  setTimeout(() => { const el = document.getElementById('noteTitleInput'); if (el) el.focus(); }, 0);
+}
+function saveNoteFromModal(editId) {
+  const title = document.getElementById('noteTitleInput').value.trim();
+  const body  = document.getElementById('noteBodyInput').value.trim();
+  if (!title && !body) { document.getElementById('noteModal').remove(); return; }
+  if (editId) {
+    const note = notes.find(n => n.id === editId);
+    if (note) { note.title = title || 'Untitled'; note.body = body; }
+  } else {
+    notes.push({ id: Date.now(), title: title || 'Untitled', body });
+  }
+  saveNotes();
+  renderNotes();
+  document.getElementById('noteModal').remove();
+}
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  saveNotes();
+  renderNotes();
+  const modal = document.getElementById('noteModal');
+  if (modal) modal.remove();
+}
+renderNotes();
+
+// ============================================================
+// FOCUS TIMER — ephemeral, not persisted (a live countdown only)
+// ============================================================
+let timerSeconds = 25 * 60;
+let timerTotal   = 25 * 60;
+let timerRunning = false;
+let timerInterval = null;
+function formatTimerTime(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+function renderTimerDisplay() {
+  const el = document.getElementById('bigTimer');
+  if (el) el.textContent = formatTimerTime(timerSeconds);
+}
+function setTimerPreset(btn, mins) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (mins === 'custom') {
+    const val = prompt('Custom timer length in minutes:', '30');
+    const n = parseInt(val, 10);
+    if (!n || n <= 0) return;
+    mins = n;
+  }
+  clearInterval(timerInterval);
+  timerRunning = false;
+  const startBtn = document.getElementById('timerStartBtn');
+  if (startBtn) startBtn.textContent = 'Start';
+  timerSeconds = mins * 60;
+  timerTotal   = mins * 60;
+  renderTimerDisplay();
+}
+function toggleTimer() {
+  const btn = document.getElementById('timerStartBtn');
+  timerRunning = !timerRunning;
+  if (timerRunning) {
+    btn.textContent = 'Pause';
+    timerInterval = setInterval(() => {
+      if (timerSeconds > 0) {
+        timerSeconds--;
+        renderTimerDisplay();
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        btn.textContent = 'Start';
+      }
+    }, 1000);
+  } else {
+    btn.textContent = 'Start';
+    clearInterval(timerInterval);
+  }
+}
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = timerTotal;
+  const btn = document.getElementById('timerStartBtn');
+  if (btn) btn.textContent = 'Start';
+  renderTimerDisplay();
+}
+
+// ============================================================
+// DARK MODE + NOTIFICATION PREFERENCE TOGGLES (Settings)
+// ============================================================
+function applyDarkMode(on) {
+  document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
+  localStorage.setItem('amigo_darkmode', on ? '1' : '0');
+}
+function toggleDarkModeSwitch(el) {
+  const on = !el.classList.contains('on');
+  el.classList.toggle('on', on);
+  applyDarkMode(on);
+  saveUserData();
+}
+function toggleNotifPrefSwitch(el) {
+  const on = !el.classList.contains('on');
+  el.classList.toggle('on', on);
+  localStorage.setItem('amigo_notifpref', on ? '1' : '0');
+  saveUserData();
+}
+// Apply saved dark-mode preference on load, and reflect both toggles' visual state
+(function initToggleStates() {
+  const dark = localStorage.getItem('amigo_darkmode') === '1';
+  applyDarkMode(dark);
+  const darkSwitch = document.getElementById('darkModeSwitch');
+  if (darkSwitch) darkSwitch.classList.toggle('on', dark);
+  const notifOn = localStorage.getItem('amigo_notifpref') !== '0';
+  const notifSwitch = document.getElementById('notifPrefSwitch');
+  if (notifSwitch) notifSwitch.classList.toggle('on', notifOn);
+})();
+
+// ============================================================
+// TASKS PAGE — type filter dropdown
+// ============================================================
+function filterTaskBlocks(value) {
+  document.querySelectorAll('#section-tasks .task-block').forEach(block => {
+    block.style.display = (value === 'all' || block.dataset.type === value) ? '' : 'none';
+  });
 }

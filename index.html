@@ -112,6 +112,8 @@
           <div class="nav-item" onclick="setNav(this,'uploads')"><i class="ti ti-upload"></i> Uploads</div>
           <div class="nav-item" onclick="setNav(this,'todo')"><i class="ti ti-checkbox"></i> To-Do</div>
           <div class="nav-item" onclick="setNav(this,'calendar')"><i class="ti ti-calendar"></i> Calendar</div>
+          <div class="nav-item" onclick="setNav(this,'notes')"><i class="ti ti-notes"></i> Notes</div>
+          <div class="nav-item" onclick="setNav(this,'timer')"><i class="ti ti-hourglass"></i> Timer</div>
           <div class="nav-item" onclick="setNav(this,'feedback')"><i class="ti ti-message-circle"></i> Feedback</div>
           <div class="nav-item" onclick="setNav(this,'settings')"><i class="ti ti-settings"></i> Settings</div>
         </div>
@@ -167,9 +169,18 @@
 
           <!-- HOME -->
           <div id="section-home" class="page-section">
-            <div class="greeting">
-              <h2>Hello, Student 👋</h2>
-              <p>Here's what's on your plate today.</p>
+            <div class="greeting greeting-row">
+              <div>
+                <h2>Hello, Student 👋</h2>
+                <p>Here's what's on your plate today.</p>
+              </div>
+              <button class="ai-send home-quick-add-btn" onclick="openQuickAddModal()"><i class="ti ti-plus"></i> Quick Add</button>
+            </div>
+            <div class="stat-row">
+              <div class="stat-card"><div class="stat-label">Due Today</div><div class="stat-num" id="stat-due-today">0</div></div>
+              <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-num" id="stat-this-week">0</div></div>
+              <div class="stat-card stat-card-red"><div class="stat-label">Overdue</div><div class="stat-num" id="stat-overdue">0</div></div>
+              <div class="stat-card stat-card-green"><div class="stat-label">Completed</div><div class="stat-num" id="stat-completed">0</div></div>
             </div>
             <div id="liveClassZone"></div>
             <div class="upcoming-section">
@@ -177,16 +188,27 @@
               <div class="task-list" id="todayList"><div class="focus-empty-light">Nothing due today.</div></div>
             </div>
             <div class="upcoming-section upcoming-section-mt">
-              <div class="section-header"><span class="section-title">Upcoming</span></div>
-              <div class="task-list" id="taskList"><div class="focus-empty-light">No upcoming tasks yet.</div></div>
+              <div class="section-header"><span class="section-title">Upcoming</span><span class="section-meta">Tomorrow</span></div>
+              <div class="task-list" id="taskList"><div class="focus-empty-light">Nothing due tomorrow.</div></div>
             </div>
           </div>
 
           <!-- TASKS (merged: assignments, quizzes, mids, presentations, finals, notices) -->
           <div id="section-tasks" class="page-section" style="display:none;">
             <div class="greeting"><h2>Tasks</h2><p>Everything you're tracking, grouped by type.</p></div>
+            <div class="filter-row">
+              <select class="type-filter" onchange="filterTaskBlocks(this.value)">
+                <option value="all">All types</option>
+                <option value="assignment">Assignments</option>
+                <option value="quiz">Quizzes</option>
+                <option value="mids">Mids</option>
+                <option value="presentation">Presentations</option>
+                <option value="final">Finals</option>
+                <option value="notice">Notices</option>
+              </select>
+            </div>
 
-            <div class="task-block">
+            <div class="task-block" data-type="assignment">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('assignment')">
                 <span class="section-title"><i class="ti ti-file-text"></i> Assignments <span class="task-block-count" id="tbc-assignment">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('assignment')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-assignment"></i>
@@ -194,7 +216,7 @@
               <div class="task-list" id="list-assignment" style="display:none;"><div class="focus-empty-light">No assignments yet.</div></div>
             </div>
 
-            <div class="task-block">
+            <div class="task-block" data-type="quiz">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('quiz')">
                 <span class="section-title"><i class="ti ti-pencil"></i> Quizzes <span class="task-block-count" id="tbc-quiz">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('quiz')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-quiz"></i>
@@ -202,7 +224,7 @@
               <div class="task-list" id="list-quiz" style="display:none;"><div class="focus-empty-light">No quizzes yet.</div></div>
             </div>
 
-            <div class="task-block">
+            <div class="task-block" data-type="mids">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('mids')">
                 <span class="section-title"><i class="ti ti-writing"></i> Mids <span class="task-block-count" id="tbc-mids">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('mids')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-mids"></i>
@@ -210,7 +232,7 @@
               <div class="task-list" id="list-mids" style="display:none;"><div class="focus-empty-light">No mids added yet.</div></div>
             </div>
 
-            <div class="task-block">
+            <div class="task-block" data-type="presentation">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('presentation')">
                 <span class="section-title"><i class="ti ti-presentation"></i> Presentations <span class="task-block-count" id="tbc-presentation">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('presentation')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-presentation"></i>
@@ -218,7 +240,7 @@
               <div class="task-list" id="list-presentation" style="display:none;"><div class="focus-empty-light">No presentations yet.</div></div>
             </div>
 
-            <div class="task-block">
+            <div class="task-block" data-type="final">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('final')">
                 <span class="section-title"><i class="ti ti-certificate"></i> Finals <span class="task-block-count" id="tbc-final">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('final')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-final"></i>
@@ -226,7 +248,7 @@
               <div class="task-list" id="list-final" style="display:none;"><div class="focus-empty-light">No finals added yet.</div></div>
             </div>
 
-            <div class="task-block">
+            <div class="task-block" data-type="notice">
               <div class="section-header task-block-header" onclick="toggleTaskBlock('notice')">
                 <span class="section-title"><i class="ti ti-speakerphone"></i> Notices <span class="task-block-count" id="tbc-notice">0 loaded</span></span>
                 <button class="task-block-add" onclick="event.stopPropagation(); openQuickAddModal('notice')" title="Add"><i class="ti ti-plus"></i></button><i class="ti ti-chevron-down task-block-chevron" id="tchev-notice"></i>
@@ -324,6 +346,34 @@
             </div>
           </div>
 
+          <!-- NOTES -->
+          <div id="section-notes" class="page-section" style="display:none;">
+            <div class="greeting greeting-row">
+              <div><h2>Notes</h2><p>Quick thoughts, pinned where you'll see them.</p></div>
+              <button class="ai-send" onclick="openNoteModal()"><i class="ti ti-plus"></i> New Note</button>
+            </div>
+            <div class="notes-board" id="notesBoard">
+              <div class="sticky-new" onclick="openNoteModal()"><i class="ti ti-plus"></i> New Note</div>
+            </div>
+          </div>
+
+          <!-- TIMER -->
+          <div id="section-timer" class="page-section" style="display:none;">
+            <div class="greeting"><h2>Focus Timer</h2><p>One task, one block of time.</p></div>
+            <div class="timer-page-wrap">
+              <div class="timer-big" id="bigTimer">25:00</div>
+              <div class="preset-row">
+                <div class="preset-btn active" onclick="setTimerPreset(this,25)">25 min</div>
+                <div class="preset-btn" onclick="setTimerPreset(this,45)">45 min</div>
+                <div class="preset-btn" onclick="setTimerPreset(this,'custom')">Custom</div>
+              </div>
+              <div class="timer-actions">
+                <button class="ai-send" id="timerStartBtn" onclick="toggleTimer()">Start</button>
+                <button class="ai-opt" onclick="resetTimer()">Reset</button>
+              </div>
+            </div>
+          </div>
+
           <!-- FEEDBACK -->
           <div id="section-feedback" class="page-section" style="display:none;">
             <div class="greeting"><h2>Feedback</h2><p>Help us make Amigo better for you 🙏</p></div>
@@ -397,6 +447,14 @@
                 </select>
               </div>
               <button class="ai-send" onclick="saveSettings()">Save Settings</button>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Dark Mode</div><div class="toggle-desc">Switch the whole app to a dark theme</div></div>
+                <div class="switch" id="darkModeSwitch" onclick="toggleDarkModeSwitch(this)"></div>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Notification Reminders</div><div class="toggle-desc">Get notified before tasks and classes are due</div></div>
+                <div class="switch" id="notifPrefSwitch" onclick="toggleNotifPrefSwitch(this)"></div>
+              </div>
             </div>
           </div>
 

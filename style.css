@@ -4,13 +4,16 @@
    AMIGO DESIGN SYSTEM — navy identity (reverted from lilac), tokens
    ============================================================ */
 :root {
-  /* Brand — navy family (original Amigo colors) */
+  /* Brand — navy family (per approved mockup) */
   --color-primary:        #1a3a6b;
-  --color-primary-dark:   #0f2240;
+  --color-primary-dark:   #123059;
   --color-primary-darker: #0a1830;
   --color-primary-light:  #e8eef7;
   --color-primary-soft:   #4a6fa5;
   --gradient-primary: linear-gradient(160deg, #0f2240 0%, #1a3a6b 100%);
+  --color-gold:        #D9A441;
+  --color-gold-dark:   #B07F22;
+  --color-gold-tint:   #FAEFD7;
 
   /* Neutrals */
   --color-bg:           #f4f7fb;
@@ -27,8 +30,8 @@
   --color-danger:      #EF4444;
   --color-danger-bg:   #FEE2E2;
   --color-danger-text: #DC2626;
-  --color-warning:     #D97706;
-  --color-warning-bg:  #FEF3C7;
+  --color-warning:     #CA8A04;
+  --color-warning-bg:  #FEF9C3;
   --color-success:     #16A34A;
   --color-success-bg:  #DCFCE7;
   --color-info:        #1d4ed8;
@@ -1412,3 +1415,128 @@ body {
   .stat-num { font-size: 14px; }
   .stat-label { font-size: 8px; }
 }
+/* ============================================================
+   NEW: item checkbox + overdue label (task completion feature)
+   ============================================================ */
+.item-checkbox {
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 1.6px solid var(--color-border);
+  flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: transparent;
+  transition: all var(--transition-fast);
+}
+.item-checkbox i { font-size: 13px; }
+.item-checkbox.checked { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.task-item-done .task-title { text-decoration: line-through; color: var(--color-text-muted); }
+.task-due-overdue { color: var(--color-danger-text); font-weight: 600; }
+
+/* ============================================================
+   NEW: Home stat row + quick add button
+   ============================================================ */
+.greeting-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.home-quick-add-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.stat-row {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: var(--space-3); margin: var(--space-4) 0;
+}
+.stat-card {
+  background: var(--color-surface); border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg); padding: var(--space-4);
+  border-top: 3px solid var(--color-primary);
+}
+.stat-card-red   { border-top-color: var(--color-danger); }
+.stat-card-green { border-top-color: var(--color-success); }
+.stat-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 600; margin-bottom: 8px; }
+.stat-num { font-size: 26px; font-weight: 700; font-family: var(--font-display); color: var(--color-text); }
+.stat-card-red .stat-num   { color: var(--color-danger-text); }
+.stat-card-green .stat-num { color: var(--color-success); }
+@media (max-width: 900px) { .stat-row { grid-template-columns: repeat(2,1fr); } }
+
+/* ============================================================
+   NEW: Tasks page type filter
+   ============================================================ */
+.filter-row { margin-bottom: var(--space-4); }
+.type-filter {
+  padding: 9px 14px; border-radius: var(--radius-md);
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  font-size: 13px; font-weight: 600; color: var(--color-text); cursor: pointer;
+}
+
+/* ============================================================
+   NEW: Notes (sticky note board)
+   ============================================================ */
+.notes-board { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: var(--space-3); }
+@media (max-width: 900px) { .notes-board { grid-template-columns: repeat(2,1fr); } }
+.sticky {
+  border-radius: var(--radius-lg); padding: 16px; min-height: 130px;
+  display: flex; flex-direction: column; cursor: pointer;
+  box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+}
+.sticky:hover { transform: translateY(-2px); }
+.note-amber { background: var(--color-gold-tint); }
+.note-teal  { background: #E1F0EE; }
+.note-pink  { background: #FBE4E1; }
+.note-blue  { background: var(--color-primary-light); }
+.sticky-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.sticky-title { font-weight: 700; font-size: 14px; color: var(--color-text); }
+.sticky-del { color: rgba(15,23,42,0.4); cursor: pointer; }
+.sticky-body { font-size: 13px; color: rgba(15,23,42,0.72); line-height: 1.5; white-space: pre-wrap; }
+.sticky-new {
+  border: 1.6px dashed var(--color-border); border-radius: var(--radius-lg);
+  min-height: 130px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 6px; color: var(--color-text-muted);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.sticky-new:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* ============================================================
+   NEW: Focus timer page
+   ============================================================ */
+.timer-page-wrap { display: flex; flex-direction: column; align-items: center; padding: 60px 0 30px; }
+.timer-big { font-family: var(--font-display); font-size: 72px; font-weight: 700; margin-bottom: 24px; letter-spacing: -0.02em; }
+.preset-row { display: flex; gap: 10px; margin-bottom: 28px; }
+.preset-btn {
+  padding: 9px 20px; border-radius: var(--radius-full); border: 1px solid var(--color-border);
+  background: var(--color-surface); font-size: 13px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer;
+}
+.preset-btn.active { background: var(--color-primary-light); color: var(--color-primary-dark); border-color: var(--color-primary-light); }
+.timer-actions { display: flex; gap: 10px; }
+
+/* ============================================================
+   NEW: Settings toggle rows
+   ============================================================ */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 4px; border-top: 1px solid var(--color-border-soft); margin-top: 6px;
+}
+.toggle-label { font-size: 14px; font-weight: 600; color: var(--color-text); }
+.toggle-desc { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+.switch {
+  width: 40px; height: 22px; border-radius: var(--radius-full);
+  background: var(--color-border); position: relative; cursor: pointer;
+  flex-shrink: 0; transition: background var(--transition-fast);
+}
+.switch::after {
+  content: ''; width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  position: absolute; top: 3px; left: 3px; transition: left var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.switch.on { background: var(--color-primary); }
+.switch.on::after { left: 21px; }
+
+/* ============================================================
+   DARK MODE — toggled via document root's data-theme attribute
+   ============================================================ */
+:root[data-theme="dark"] {
+  --color-bg:             #0F1B2B;
+  --color-surface:        #16243A;
+  --color-surface-alt:    #1D2E46;
+  --color-border:         #2A3E56;
+  --color-border-soft:    #22344A;
+  --color-text:           #EAF1F8;
+  --color-text-secondary: #A8B8C7;
+  --color-text-muted:     #71838F;
+  --color-primary-light:  #1F3A57;
+}
+:root[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text); }

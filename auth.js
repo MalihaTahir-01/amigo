@@ -52,9 +52,10 @@ async function signUpWithEmail(email, password, name) {
 
   if (data.session) {
     await loadUserData();
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('appScreen').style.display  = 'flex';
-    applySessionToUI(data.session);
+    // Same fix as handleLogin() in app.js — reload so the whole startup
+    // sequence re-runs with the session already active, instead of leaving
+    // the already-loaded (empty) app.js state on screen.
+    window.location.reload();
     return 'AUTO_LOGIN';
   }
 
@@ -194,6 +195,10 @@ async function loadUserData() {
     if (s.uni)     localStorage.setItem('amigo_uni',     s.uni);
     if (s.program) localStorage.setItem('amigo_program', s.program);
     if (s.lang)    localStorage.setItem('amigo_lang',    s.lang);
+    // Notes and the new toggles live inside settings (no DB schema change needed).
+    localStorage.setItem('amigo_notes', JSON.stringify(s.notes || []));
+    localStorage.setItem('amigo_darkmode', s.darkMode ? '1' : '0');
+    localStorage.setItem('amigo_notifpref', s.notifPref === false ? '0' : '1');
   }
 }
 
@@ -213,6 +218,9 @@ async function saveUserData() {
       uni:     localStorage.getItem('amigo_uni')     || '',
       program: localStorage.getItem('amigo_program') || '',
       lang:    localStorage.getItem('amigo_lang')    || 'en',
+      notes:      JSON.parse(localStorage.getItem('amigo_notes') || '[]'),
+      darkMode:   localStorage.getItem('amigo_darkmode') === '1',
+      notifPref:  localStorage.getItem('amigo_notifpref') !== '0',
     },
     updated_at: new Date().toISOString(),
   };

@@ -323,7 +323,7 @@ updateCounts();
 // SETTINGS — load saved values on page load
 // ────────────────────────────────────────────────────────────
 const savedName    = localStorage.getItem('amigo_name');
-const savedPic     = localStorage.getItem('amigo_pic');
+const savedPic     = localStorage.getItem('amigo_pic_cache');
 const savedUni     = localStorage.getItem('amigo_uni');
 const savedProgram = localStorage.getItem('amigo_program');
 const savedLang    = localStorage.getItem('amigo_lang') || 'en';
@@ -335,6 +335,12 @@ if (savedName) {
   if (el) el.value = savedName;
 }
 if (savedPic) applyProfilePic(savedPic);
+// The cached URL above may be expired (signed URLs last 1 hour) or this may
+// be a device that's never had it cached at all — fetch a fresh one from
+// cloud storage in the background so the real picture shows up either way.
+getFileUrlFromCloud('amigo_profile_pic').then(url => {
+  if (url) { applyProfilePic(url); localStorage.setItem('amigo_pic_cache', url); }
+});
 if (savedUni) {
   const el = document.getElementById('uniInput');
   if (el) el.value = savedUni;
@@ -1126,41 +1132,40 @@ function saveFolders() {
   }));
   localStorage.setItem('amigo_folders', JSON.stringify(meta));
 }
-// ── IndexedDB helpers ────────────────────────────────────────
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('amigo_files_db', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('files', { keyPath: 'key' });
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror   = () => reject(req.error);
-  });
+// ── Supabase Storage helpers ─────────────────────────────────
+// NOTE: files used to live only in this browser's IndexedDB — a local
+// per-device store. Only the folder/file NAMES synced to the cloud, never
+// the actual file bytes, which is why a file uploaded on one device could
+// never be opened on another, and why browsers occasionally evicted it
+// entirely after a period of inactivity. Files now go straight into a
+// private Supabase Storage bucket ("user-files"), scoped per-account by a
+// path like "<your-user-id>/<key>" — the same storage every device reads
+// from, and nothing a browser can silently clear.
+async function getCurrentUserId() {
+  const { data } = await _supabase.auth.getSession();
+  return data.session ? data.session.user.id : null;
 }
-async function saveFileToDB(key, dataUrl) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('files', 'readwrite');
-    tx.objectStore('files').put({ key, dataUrl });
-    tx.oncomplete = resolve;
-    tx.onerror    = () => reject(tx.error);
-  });
+async function uploadFileToCloud(key, file) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error('Not signed in');
+  const { error } = await _supabase.storage
+    .from('user-files')
+    .upload(`${userId}/${key}`, file, { upsert: true });
+  if (error) throw error;
 }
-async function getFileFromDB(key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx  = db.transaction('files', 'readonly');
-    const req = tx.objectStore('files').get(key);
-    req.onsuccess = () => resolve(req.result ? req.result.dataUrl : null);
-    req.onerror   = () => reject(req.error);
-  });
+async function getFileUrlFromCloud(key) {
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+  const { data, error } = await _supabase.storage
+    .from('user-files')
+    .createSignedUrl(`${userId}/${key}`, 3600); // valid 1 hour, generated fresh each open
+  if (error) return null;
+  return data.signedUrl;
 }
-async function deleteFileFromDB(key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('files', 'readwrite');
-    tx.objectStore('files').delete(key);
-    tx.oncomplete = resolve;
-    tx.onerror    = () => reject(tx.error);
-  });
+async function deleteFileFromCloud(key) {
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+  await _supabase.storage.from('user-files').remove([`${userId}/${key}`]);
 }
 // ── Folder CRUD ──────────────────────────────────────────────
 function createFolder() {
@@ -1254,19 +1259,21 @@ function renderFile(folderId, fileData) {
 function handleUpload(input, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
-  const MAX_MB    = 200;
+  // Supabase's free tier caps individual uploads at 50MB (Pro removes this
+  // cap) — matching that here so you get a clear message before uploading,
+  // instead of the bucket silently rejecting a bigger file after the fact.
+  const MAX_MB    = 50;
   const MAX_BYTES = MAX_MB * 1024 * 1024;
   const status    = document.getElementById('aiStatus');
-  Array.from(input.files).forEach(file => {
+  Array.from(input.files).forEach(async file => {
     if (file.size > MAX_BYTES) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
       return;
     }
-    if (status) status.textContent = `Uploading "${file.name}"...`;
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const key      = `file_${folderId}_${Date.now()}_${file.name}`;
-      await saveFileToDB(key, e.target.result);
+    if (status) status.textContent = `Uploading "${file.name}" to your account...`;
+    try {
+      const key = `file_${folderId}_${Date.now()}_${file.name}`;
+      await uploadFileToCloud(key, file);
       const fileData = { name: file.name, key, size: file.size, uploadedAt: Date.now() };
       folder.files.push(fileData);
       saveFolders();
@@ -1278,11 +1285,13 @@ function handleUpload(input, folderId) {
       const chev = document.getElementById('fchev-' + folderId);
       if (chev) chev.style.transform = 'rotate(180deg)';
       if (status) {
-        status.textContent = `"${file.name}" uploaded!`;
-        setTimeout(() => status.textContent = '', 2500);
+        status.textContent = `"${file.name}" uploaded — available on all your devices now!`;
+        setTimeout(() => status.textContent = '', 3000);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      if (status) status.textContent = `Couldn't upload "${file.name}" — check your connection and try again.`;
+    }
   });
   input.value = '';
 }
@@ -1292,19 +1301,15 @@ async function openFile(fileName, folderId) {
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
   if (!fileData) return;
-  const dataUrl = await getFileFromDB(fileData.key);
-  if (!dataUrl) {
-    alert('File not found. It may have been cleared by the browser.');
+  const url = await getFileUrlFromCloud(fileData.key);
+  if (!url) {
+    alert("Couldn't reach that file — check your connection and try again.");
     return;
   }
   const ext     = fileName.split('.').pop().toLowerCase();
-  const isImage = ['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext);
-  const isPdf   = ext === 'pdf';
-  const isVideo = ['mp4','mov','webm','avi'].includes(ext);
-  const isAudio = ['mp3','wav','ogg','m4a','flac'].includes(ext);
   const isText  = ['txt','md','json','js','ts','py','html','css','csv','php','c','cpp','java'].includes(ext);
   if (isText) {
-    const content = atob(dataUrl.split(',')[1]);
+    const content = await (await fetch(url)).text();
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html><html><head><title>${fileName}</title>
       <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0f172a;padding:24px;font-family:Inter,sans-serif}
@@ -1316,20 +1321,17 @@ async function openFile(fileName, folderId) {
     win.document.close();
     return;
   }
-  const res     = await fetch(dataUrl);
-  const blob    = await res.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  if (isPdf || isImage || isVideo || isAudio) {
-    window.open(blobUrl, '_blank');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-    return;
+  // Signed URLs work directly as real HTTP links — images/PDFs/video/audio
+  // open inline, everything else triggers a normal browser download.
+  const ext2Known = ['jpg','jpeg','png','gif','webp','svg','bmp','pdf','mp4','mov','webm','avi','mp3','wav','ogg','m4a','flac'];
+  if (ext2Known.includes(ext)) {
+    window.open(url, '_blank');
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
   }
-  // For other file types, trigger a download
-  const a  = document.createElement('a');
-  a.href     = blobUrl;
-  a.download = fileName;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 }
 // ── Delete file ──────────────────────────────────────────────
 async function deleteFile(fileName, folderId) {
@@ -1337,7 +1339,7 @@ async function deleteFile(fileName, folderId) {
   const folder   = folders.find(f => f.id === folderId);
   if (!folder) return;
   const fileData = folder.files.find(f => f.name === fileName);
-  if (fileData && fileData.key) await deleteFileFromDB(fileData.key);
+  if (fileData && fileData.key) await deleteFileFromCloud(fileData.key);
   folder.files = folder.files.filter(f => f.name !== fileName);
   saveFolders();
   saveUserData();
@@ -1354,7 +1356,7 @@ async function deleteFolder(folderId) {
   if (!folder) return;
   if (!confirm(`Delete folder "${folder.name}" and all its files?`)) return;
   for (const f of folder.files) {
-    if (f.key) await deleteFileFromDB(f.key);
+    if (f.key) await deleteFileFromCloud(f.key);
   }
   folders = folders.filter(f => f.id !== folderId);
   saveFolders();
@@ -2097,18 +2099,20 @@ function saveSettings() {
 function uploadProfilePic(input) {
   const file = input.files[0];
   if (!file) return;
+  // Instant local preview while the real upload happens in the background
   const reader = new FileReader();
-  reader.onload = async function(e) {
-    const src = e.target.result;
-    try {
-      await saveFileToDB('amigo_profile_pic', src);
-    } catch(err) {
-      console.warn('IndexedDB failed, falling back to localStorage');
-      localStorage.setItem('amigo_pic', src);
-    }
-    applyProfilePic(src);
-  };
+  reader.onload = e => applyProfilePic(e.target.result);
   reader.readAsDataURL(file);
+  // NOTE: this used to save to IndexedDB under a key that was never actually
+  // read back on page load (a pre-existing bug on top of the IndexedDB
+  // device-locking issue) — the picture would vanish on refresh or another
+  // device. It now uploads to the same cloud storage as regular files, and
+  // a small local cache is kept just for an instant paint before that
+  // finishes loading.
+  uploadFileToCloud('amigo_profile_pic', file)
+    .then(() => getFileUrlFromCloud('amigo_profile_pic'))
+    .then(url => { if (url) localStorage.setItem('amigo_pic_cache', url); })
+    .catch(err => console.error('Profile picture upload failed:', err));
 }
 function applyProfilePic(src) {
   const display = document.getElementById('profilePicDisplay');

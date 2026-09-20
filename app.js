@@ -873,17 +873,24 @@ function saveItem(targetId) {
   const quickModal = document.getElementById('quickAddModal');
   if (quickModal) quickModal.remove();
 
-  // Show success message (home bar has its own status line; quick-add modal doesn't need one)
-  const status = document.getElementById('aiStatus');
-  if (status) {
-    status.textContent = t('saved');
-    setTimeout(() => { status.textContent = ''; }, 2500);
-  }
+  showToast(t('saved'));
   flowData = {};
 }
 // Removes an item's existing DOM cards everywhere and re-renders it fresh —
 // used after an edit, since due date/type/priority all affect which
 // list(s) the card belongs in and how it's sorted.
+// ============================================================
+// GLOBAL TOAST — see the CSS comment above this rule for why this exists
+// ============================================================
+let toastTimer = null;
+function showToast(message, isError) {
+  const el = document.getElementById('toast');
+  if (!el) { console.log('[toast]', message); return; }
+  el.textContent = message;
+  el.className = 'toast show' + (isError ? ' toast-error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
 function refreshItemDOM(item) {
   document.querySelectorAll('[data-id="' + item.id + '"]').forEach(el => el.remove());
   renderItem(item);
@@ -1264,13 +1271,12 @@ function handleUpload(input, folderId) {
   // instead of the bucket silently rejecting a bigger file after the fact.
   const MAX_MB    = 50;
   const MAX_BYTES = MAX_MB * 1024 * 1024;
-  const status    = document.getElementById('aiStatus');
   Array.from(input.files).forEach(async file => {
     if (file.size > MAX_BYTES) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
       return;
     }
-    if (status) status.textContent = `Uploading "${file.name}" to your account...`;
+    showToast(`Uploading "${file.name}"...`);
     try {
       const key = `file_${folderId}_${Date.now()}_${file.name}`;
       await uploadFileToCloud(key, file);
@@ -1284,13 +1290,10 @@ function handleUpload(input, folderId) {
       document.getElementById('files-' + folderId).style.display = 'block';
       const chev = document.getElementById('fchev-' + folderId);
       if (chev) chev.style.transform = 'rotate(180deg)';
-      if (status) {
-        status.textContent = `"${file.name}" uploaded — available on all your devices now!`;
-        setTimeout(() => status.textContent = '', 3000);
-      }
+      showToast(`"${file.name}" uploaded — available on all your devices now!`);
     } catch (err) {
       console.error('Upload failed:', err);
-      if (status) status.textContent = `Couldn't upload "${file.name}" — check your connection and try again.`;
+      showToast(`Couldn't upload "${file.name}" — ${err.message || 'check your connection and try again'}.`, true);
     }
   });
   input.value = '';
@@ -2088,12 +2091,7 @@ function saveSettings() {
   localStorage.setItem('amigo_lang', lang);
   applyLanguage(lang);
   saveUserData();
-  // Show success message then go home
-  const statusEl = document.getElementById('aiStatus');
-  if (statusEl) {
-    statusEl.textContent = t('settingsSaved');
-    setTimeout(() => { statusEl.textContent = ''; }, 2000);
-  }
+  showToast(t('settingsSaved'));
   setNav(document.querySelector('.nav-item'), 'home');
 }
 function uploadProfilePic(input) {
@@ -2812,4 +2810,17 @@ function filterTaskBlocks(value) {
   document.querySelectorAll('#section-tasks .task-block').forEach(block => {
     block.style.display = (value === 'all' || block.dataset.type === value) ? '' : 'none';
   });
+}
+
+// ============================================================
+// MOBILE "MORE" DRAWER — holds Uploads/Calendar/Timer/Feedback/Settings
+// on small screens so the bottom tab bar isn't crowded with 9+ icons
+// ============================================================
+function toggleMobileDrawer() {
+  document.getElementById('mobileDrawer').classList.toggle('open');
+  document.getElementById('mobileDrawerOverlay').classList.toggle('open');
+}
+function closeMobileDrawer() {
+  document.getElementById('mobileDrawer').classList.remove('open');
+  document.getElementById('mobileDrawerOverlay').classList.remove('open');
 }

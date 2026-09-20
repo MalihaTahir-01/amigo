@@ -74,6 +74,11 @@ body {
   overflow: hidden;
 }
 
+/* Mobile drawer — invisible/out-of-flow by default; the mobile media query
+   below gives it its real fixed positioning and slide-in behavior. */
+.mobile-drawer-overlay,
+.mobile-drawer { display: none; }
+
 /* ============================================================
    SIDEBAR
    ============================================================ */
@@ -1312,6 +1317,9 @@ body {
     justify-content: space-between;
   }
 
+  .sidebar-logo .logo-text { color: #fff; }
+  .sidebar-logo .logo-mark { background: rgba(255,255,255,0.18); }
+
   .mobile-settings-btn {
     display: flex;
     align-items: center;
@@ -1356,8 +1364,55 @@ body {
 
   .nav-item i { font-size: 18px; }
   .nav-badge { display: none !important; }
-  /* Settings now lives in the top header shortcut, so hide the duplicate bottom-bar tab on mobile */
+  /* These five now live in the hamburger drawer instead of crowding the
+     bottom tab bar — Home/Tasks/Timetable/To-Do/Notes stay as the 5 primary
+     tabs since those are what's reached for constantly; the rest are one
+     tap away instead of a sixth/seventh/eighth icon squeezed into a row. */
+  .nav-item[onclick*="uploads"],
+  .nav-item[onclick*="calendar"],
+  .nav-item[onclick*="timer"],
+  .nav-item[onclick*="feedback"],
   .nav-item[onclick*="settings"] { display: none !important; }
+
+  /* Mobile "more" drawer */
+  .mobile-drawer-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.4);
+    z-index: 600;
+  }
+  .mobile-drawer-overlay.open { display: block; }
+  .mobile-drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 78vw;
+    max-width: 300px;
+    background: var(--color-surface);
+    z-index: 601;
+    padding: 16px 12px;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .mobile-drawer.open { transform: translateX(0); }
+  .mobile-drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 16px;
+    border-bottom: 1px solid var(--color-border-soft);
+    margin-bottom: 10px;
+  }
+  .mobile-drawer-close { background: none; border: none; color: var(--color-text-secondary); font-size: 18px; cursor: pointer; }
+  .mobile-drawer .nav-item {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 11px 10px;
+    font-size: 14px !important;
+  }
+  .mobile-drawer .nav-item i { font-size: 18px; }
 
   .sidebar-profile {
     display: flex !important;
@@ -1556,3 +1611,31 @@ body {
 .custom-timer-row { display: flex; align-items: center; gap: 8px; }
 .custom-timer-row input { width: 70px; text-align: center; }
 .custom-timer-unit { font-size: 13px; color: var(--color-text-secondary); }
+
+/* ============================================================
+   GLOBAL TOAST — replaces the old #aiStatus element that was
+   deleted along with the home AI bar, which had left task-save,
+   upload, and settings-saved confirmations silently going nowhere.
+   ============================================================ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--color-text);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 900;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.toast-error { background: var(--color-danger); }
+@media (max-width: 768px) { .toast { bottom: 76px; } }

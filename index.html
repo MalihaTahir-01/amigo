@@ -485,15 +485,23 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- These stay deferred too, in the same order as the head scripts above,
-       so auth.js still only runs once the Supabase library it depends on
-       (const { createClient } = supabase;) has actually loaded. -->
+  <!-- auth.js stays deferred, same order as the head scripts above, so it
+       only runs once the Supabase library it depends on
+       (const { createClient } = supabase;) has actually loaded.
+       The block below has NO src, so the "defer" attribute is silently
+       ignored on it by every browser (that's spec behavior, not a bug in
+       this file) — it would otherwise run immediately during parsing,
+       before deferred auth.js has had a chance to define initAuth(), which
+       is exactly what broke login. Waiting for DOMContentLoaded instead
+       guarantees every deferred script above has already finished. -->
   <script src="auth.js" defer></script>
-  <script defer>
-    initAuth().then(() => {
-      const script = document.createElement('script');
-      script.src = 'app.js';
-      document.body.appendChild(script);
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initAuth().then(() => {
+        const script = document.createElement('script');
+        script.src = 'app.js';
+        document.body.appendChild(script);
+      });
     });
   </script>
 </body>

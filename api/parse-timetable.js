@@ -196,10 +196,14 @@ Rules:
         maxOutputTokens: 32768,
         responseMimeType: 'application/json',
         // Filtering a ~2000-row table by multiple criteria (program AND
-        // semester) needs actual checking, not just fast pattern-matching
-        // — 'minimal' was sacrificing accuracy for a truncation risk that
-        // no longer exists now that maxOutputTokens is this much higher.
-        thinkingConfig: { thinkingLevel: 'high' }
+        // semester) needs actual checking, not just fast pattern-matching,
+        // so this stays above 'minimal' — but 'high' was making every
+        // import slow (long "Reading the timetable…" waits) and more
+        // likely to hit Gemini-side overload or the serverless function's
+        // own timeout before a response came back. 'low' keeps real
+        // reasoning for the matching logic while cutting typical response
+        // time significantly.
+        thinkingConfig: { thinkingLevel: 'low' }
       }
     });
 

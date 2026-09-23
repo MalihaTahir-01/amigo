@@ -4,9 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Amigo — Academic Organizer</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- defer: these were blocking the browser from painting anything (even
+       the auth screen) until all three finished downloading. They're only
+       used later, inside auth.js/app.js, so deferring them lets the page
+       show up immediately while they load in the background. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -481,8 +485,11 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="auth.js"></script>
-  <script>
+  <!-- These stay deferred too, in the same order as the head scripts above,
+       so auth.js still only runs once the Supabase library it depends on
+       (const { createClient } = supabase;) has actually loaded. -->
+  <script src="auth.js" defer></script>
+  <script defer>
     initAuth().then(() => {
       const script = document.createElement('script');
       script.src = 'app.js';

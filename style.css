@@ -1606,6 +1606,18 @@ body {
   --color-text-secondary: #A8B8C7;
   --color-text-muted:     #71838F;
   --color-primary-light:  #1F3A57;
+
+  /* --color-primary / --color-primary-dark / --color-plum are the light-mode
+     navy tones. --color-primary-light and --color-plum-bg above are already
+     flipped to dark surfaces — but the light-mode navy TEXT that sits on top
+     of them (folder icons, settings labels, "ai-status", notif headers, stat
+     icons, msg-info boxes, preset toggles) was still using the unflipped
+     dark navy, which is nearly invisible on a dark surface. Lightened here
+     so that text stays readable without changing any light-mode value. */
+  --color-primary:        #6FA3E0;
+  --color-primary-dark:   #BBD6F2;
+  --color-plum:           #C3B0EA;
+  --color-plum-bg:        #2A2347;
 }
 :root[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text); }
 .custom-timer-row { display: flex; align-items: center; gap: 8px; }

@@ -1,5 +1,10 @@
 {
   "framework": null,
   "cleanUrls": false,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "functions": {
+    "api/parse-timetable.js": {
+      "maxDuration": 60
+    }
+  }
 }

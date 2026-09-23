@@ -2840,6 +2840,56 @@ function toggleNotifPrefSwitch(el) {
   el.classList.toggle('on', on);
   localStorage.setItem('amigo_notifpref', on ? '1' : '0');
   saveUserData();
+  if (on) subscribeToPush(); else unsubscribeFromPush();
+}
+
+// ── Real push notifications (survive the app being closed) ──
+// The VAPID public key is meant to be public — it's how the browser proves
+// a subscription to this specific server; it carries no secret.
+const VAPID_PUBLIC_KEY = 'BJ6_Fs8idxpfeJzCnvVGoSZqB2ZlotFjhX9ODG_rbyLzQJ-EpPxjZNStzVv_98Abht3rxfR5NmYFD2CzdseaYd8';
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const session = await getSession();
+    if (!session) return;
+    const json = sub.toJSON();
+    await _supabase.from('push_subscriptions').upsert({
+      user_id: session.user.id,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth_key: json.keys.auth,
+    }, { onConflict: 'endpoint' });
+  } catch (err) {
+    console.error('Push subscribe failed:', err);
+  }
+}
+async function unsubscribeFromPush() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    await _supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    await sub.unsubscribe();
+  } catch (err) {
+    console.error('Push unsubscribe failed:', err);
+  }
 }
 // Apply saved dark-mode preference on load, and reflect both toggles' visual state
 (function initToggleStates() {
@@ -2850,6 +2900,11 @@ function toggleNotifPrefSwitch(el) {
   const notifOn = localStorage.getItem('amigo_notifpref') !== '0';
   const notifSwitch = document.getElementById('notifPrefSwitch');
   if (notifSwitch) notifSwitch.classList.toggle('on', notifOn);
+  // Preference is on (from this device or synced from another) but this
+  // browser/device may not have an active push subscription yet — e.g.
+  // first load after this feature shipped, or a new device. Re-subscribe
+  // quietly rather than waiting for the person to toggle it off and on.
+  if (notifOn) subscribeToPush();
 })();
 
 // ============================================================

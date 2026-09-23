@@ -1724,6 +1724,41 @@ function readFileAsBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+// A phone camera photo is routinely 4–8MB, and base64 adds ~33% on top of
+// that — easily blowing past Vercel's fixed ~4.5MB request-body limit before
+// the file even reaches parse-timetable.js (that's the "(413)" error).
+// Downscaling to a max dimension and re-encoding as JPEG keeps every class
+// on a timetable photo perfectly legible while cutting typical payload size
+// by 80–95%. PDFs/spreadsheets aren't touched here — this only applies to
+// actual photos.
+function compressImageFile(file, maxDim = 2000, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(async blob => {
+        if (!blob) { reject(new Error('Could not process that image')); return; }
+        try {
+          const base64 = await readFileAsBase64(blob);
+          resolve({ base64, mimeType: 'image/jpeg' });
+        } catch (err) { reject(err); }
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not open that image')); };
+    img.src = url;
+  });
+}
 function readSpreadsheetAsText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1758,10 +1793,24 @@ async function attemptTimetableImport(file, command, flow) {
   try {
     const isSpreadsheet = /\.(xlsx|xls|csv)$/i.test(file.name) ||
       (file.type && (file.type.includes('sheet') || file.type === 'text/csv' || file.type === 'application/vnd.ms-excel'));
+    const isImage = file.type && file.type.startsWith('image/');
     let body;
     if (isSpreadsheet) {
       body = { command, textContent: await readSpreadsheetAsText(file) };
+    } else if (isImage) {
+      // Downscale/re-encode photos so a normal phone photo doesn't blow past
+      // Vercel's request-size limit (see compressImageFile above).
+      const { base64, mimeType } = await compressImageFile(file);
+      body = { command, mimeType, fileBase64: base64 };
     } else {
+      // PDFs and anything else can't be shrunk this way — better to say so
+      // clearly up front than let it fail with an opaque "(413)" after the
+      // person's waited for the read.
+      const MAX_MB = 3.2;
+      if (file.size > MAX_MB * 1024 * 1024) {
+        flow.innerHTML = `<div class="ai-question">That file is too large to import as-is (limit is about ${MAX_MB}MB for PDFs). Try exporting just the relevant page(s) as a smaller PDF, or take a photo of the timetable instead — photos get automatically compressed.</div>`;
+        return;
+      }
       body = { command, mimeType: file.type || 'application/octet-stream', fileBase64: await readFileAsBase64(file) };
     }
     const res = await fetch('/api/parse-timetable', {

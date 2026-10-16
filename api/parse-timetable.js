@@ -167,16 +167,25 @@ Rules:
   const ATTEMPTS = [
     { model: 'gemini-3.6-flash', cap: 22000 },
     { model: 'gemini-2.5-flash', cap: 18000 },
-    { model: 'gemini-3.6-flash', cap: Infinity }
+    { model: 'gemini-2.5-flash-lite', cap: Infinity }
   ];
+  // Every model has its OWN quota bucket on Google's side, so a 429 (quota)
+  // on one model just moves on to the next one. Each model is tried at most
+  // once per click, so one click can never burn more than 3 requests.
+  const attemptLog = []; // shown in the error message so failures are diagnosable
+  function note(model, status, text) {
+    let msg = (text || '').toString();
+    try { msg = JSON.parse(msg).error.message || msg; } catch (e) {}
+    attemptLog.push(`${model}: ${status} ${msg.replace(/\s+/g, ' ').slice(0, 140)}`);
+  }
   async function callGeminiWithRetry(body) {
-    let lastStatus = 502, lastErrText = '';
+    let lastStatus = 502, lastErrText = '', quota429Text = '';
     for (let i = 0; i < ATTEMPTS.length; i++) {
       const remaining = DEADLINE - Date.now();
       if (remaining < 4000) break;
       const { model, cap } = ATTEMPTS[i];
       const attemptBody = JSON.parse(JSON.stringify(body));
-      if (model === 'gemini-2.5-flash' && attemptBody.generationConfig) {
+      if (model !== 'gemini-3.6-flash' && attemptBody.generationConfig) {
         // thinkingLevel belongs to the newer model; the older one uses a budget.
         attemptBody.generationConfig.thinkingConfig = { thinkingBudget: 0 };
       }
@@ -197,16 +206,20 @@ Rules:
         lastStatus = aiRes.status;
         lastErrText = await aiRes.text();
         clearTimeout(timer);
+        note(model, aiRes.status, lastErrText);
         console.error('Gemini attempt failed', model, aiRes.status, (Date.now() - t0) + 'ms', lastErrText.slice(0, 300));
-        if (aiRes.status === 401 || aiRes.status === 403 || aiRes.status === 429) break;
+        if (aiRes.status === 401 || aiRes.status === 403) break;
+        if (aiRes.status === 429) quota429Text = lastErrText;
       } catch (err) {
         clearTimeout(timer);
         lastStatus = err.name === 'AbortError' ? 504 : 502;
         lastErrText = err.message;
+        note(model, err.name === 'AbortError' ? 'timeout' : 'network', err.message);
         console.error('Gemini attempt error', model, err.name, (Date.now() - t0) + 'ms', err.message);
       }
       await new Promise(r => setTimeout(r, 300));
     }
+    if (quota429Text) return { ok: false, status: 429, text: async () => quota429Text };
     return { ok: false, status: lastStatus, text: async () => lastErrText };
   }
 
@@ -237,7 +250,14 @@ Rules:
       console.error('Gemini API error:', aiRes.status, errText);
       let friendly;
       if (aiRes.status === 429) {
-        friendly = "You've hit Gemini's usage limit for now (quota exceeded) — this isn't a bug in the app, it's Google's rate/usage limit on the API key. Wait a few minutes and try again, or check your quota/billing at https://aistudio.google.com.";
+        // Say WHICH limit was hit, so it's clear whether to wait a minute or a day.
+        const perDay = /PerDay/i.test(errText);
+        const perMin = /PerMinute/i.test(errText);
+        const delay = (errText.match(/"retryDelay":\s*"([^"]+)"/) || [])[1];
+        friendly = "Google says this API key is out of quota on all the models Amigo tries" +
+          (perDay ? " — the DAILY limit is used up (it resets once a day; or use a key with billing enabled)." :
+           perMin ? " — the PER-MINUTE limit was hit" + (delay ? "; Google says retry in about " + delay : "; wait a minute") + "." :
+           ". Check usage at https://aistudio.google.com.");
       } else if (aiRes.status === 401 || aiRes.status === 403) {
         friendly = 'The Gemini API key is missing, invalid, or not authorized for this project — check the GEMINI_API_KEY set in Vercel.';
       } else if (aiRes.status === 504) {
@@ -247,6 +267,7 @@ Rules:
       } else {
         friendly = `Gemini API ${aiRes.status}: ${errText.slice(0, 300)}`;
       }
+      if (attemptLog.length) friendly += ' [Details: ' + attemptLog.join(' | ') + ']';
       res.status(502).json({ error: friendly });
       return;
     }

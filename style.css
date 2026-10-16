@@ -808,8 +808,11 @@ body {
 }
 
 .folder-header:hover { background: var(--color-surface-alt); }
-.folder-header-left { display: flex; align-items: center; gap: 8px; }
-.folder-header-right { display: flex; gap: 6px; align-items: center; }
+.folder-header { flex-wrap: wrap; gap: 8px; }
+.folder-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 140px; }
+.folder-header-left .folder-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.folder-header-right { display: flex; gap: 6px; align-items: center; flex-shrink: 0; margin-left: auto; }
+.folder-upload-btn { white-space: nowrap; }
 .folder-icon { font-size: 18px; color: var(--color-primary); }
 .folder-name { font-size: 14px; font-weight: 500; color: var(--color-text); }
 

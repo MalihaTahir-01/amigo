@@ -1566,6 +1566,44 @@ function formatTimeRange(start, end) {
 function openAddClassModal(folderId) {
   openClassModal(folderId, null);
 }
+// Top-level "Add class manually" button: works even before any schedule
+// exists (creates a default one), and asks which schedule when there are several.
+function openManualAddClass() {
+  if (scheduleFolders.length === 0) {
+    const folder = { id: Date.now(), name: 'My Timetable', classes: [] };
+    scheduleFolders.push(folder);
+    saveScheduleFolders();
+    saveUserData();
+    const container = document.getElementById('scheduleFolderList');
+    const empty = container && container.querySelector('.focus-empty-light');
+    if (empty) empty.remove();
+    renderScheduleFolder(folder);
+    openClassModal(folder.id, null);
+    return;
+  }
+  if (scheduleFolders.length === 1) { openClassModal(scheduleFolders[0].id, null); return; }
+  const existing = document.getElementById('pickScheduleModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'pickScheduleModal';
+  modal.className = 'task-detail-overlay';
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">Add class to which schedule?</div>
+      <div class="settings-field">
+        <select id="pickScheduleSelect" class="reminder-select">
+          ${scheduleFolders.map(f => `<option value="${f.id}">${escapeAttr(f.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="ai-flow-row" style="margin-top:4px;">
+        <button class="task-detail-btn task-detail-btn-close" onclick="document.getElementById('pickScheduleModal').remove()">Cancel</button>
+        <button class="ai-send" onclick="const id = Number(document.getElementById('pickScheduleSelect').value); document.getElementById('pickScheduleModal').remove(); openClassModal(id, null);">Next</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 function openEditClassModal(folderId, classId) {
   openClassModal(folderId, classId);
 }
@@ -1576,6 +1614,8 @@ function openClassModal(folderId, classId) {
   const existing = classId ? folder.classes.find(c => c.id === classId) : null;
   const vals = existing || { subject: '', day: WEEKDAYS[0], date: localDateStr(new Date()), startTime: '09:00', endTime: '10:00', teacher: '', room: '' };
 
+  const oldModal = document.getElementById('classModal');
+  if (oldModal) oldModal.remove();
   const modal = document.createElement('div');
   modal.id = 'classModal';
   modal.className = 'task-detail-overlay';
@@ -1768,7 +1808,17 @@ function readSpreadsheetAsText(file) {
         const wb = XLSX.read(data, { type: 'array' });
         let text = '';
         wb.SheetNames.forEach(name => {
-          text += `Sheet: ${name}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[name]) + '\n\n';
+          // Strip blank rows / trailing commas and collapse repeated lines so
+          // Gemini reads far fewer tokens (the main cause of slow imports).
+          const rows = XLSX.utils.sheet_to_csv(wb.Sheets[name]).split('\n');
+          const compact = [];
+          rows.forEach(r => {
+            const line = r.replace(/,+\s*$/, '').trim();
+            if (!line || /^,*$/.test(line)) return;
+            if (compact.length && compact[compact.length - 1] === line) return;
+            compact.push(line);
+          });
+          if (compact.length) text += `Sheet: ${name}\n` + compact.join('\n') + '\n\n';
         });
         resolve(text);
       } catch (err) {
@@ -1821,12 +1871,13 @@ async function attemptTimetableImport(file, command, flow) {
     if (!res.ok) {
       let detail = '';
       try { detail = (await res.json()).error || ''; } catch (e) {}
-      throw new Error(`AI service unavailable (${res.status}) ${detail}`);
+      if (!detail && (res.status === 504 || res.status === 502)) detail = 'The server took too long to answer. Please try again — a smaller file or a narrower instruction (e.g. "BSAI semester 3") is faster.';
+      throw new Error(detail || `AI service unavailable (${res.status})`);
     }
     const data = await res.json();
     const classes = Array.isArray(data.classes) ? data.classes : [];
     if (classes.length === 0) {
-      flow.innerHTML = `<div class="ai-question">Couldn't find any classes in that file${data.note ? ' — ' + escapeAttr(data.note) : ''}. Try a clearer photo, or add classes manually.</div>`;
+      flow.innerHTML = `<div class="ai-question">Couldn't find any classes in that file${data.note ? ' — ' + escapeAttr(data.note) : ''}. Try a clearer photo, or <a href="#" onclick="document.getElementById('timetableImportModal').remove(); openManualAddClass(); return false;">add classes manually</a>.</div>`;
       return;
     }
     ttImportPending = classes.map((c, i) => ({ ...c, _tempId: 'tt' + i }));
@@ -2286,19 +2337,12 @@ function deleteReminder(id) {
   updateNotifBadge();
 }
 function scheduleNotification(reminder) {
-  if (!('Notification' in window)) return;
-  Notification.requestPermission().then(permission => {
-    if (permission !== 'granted') return;
-    const [hours, minutes] = reminder.time.split(':').map(Number);
-    const notifTime        = new Date(reminder.date + 'T00:00:00');
-    notifTime.setHours(hours, minutes, 0, 0);
-    const delay = notifTime.getTime() - Date.now();
-    if (delay <= 0) return;
-    setTimeout(() => new Notification('Amigo Reminder', { body: reminder.title, icon: '/favicon.ico' }), delay);
-  });
-}
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
+  // Real delivery is done by the server (api/send-reminders.js) as a push
+  // notification, so it works with the app closed. This only makes sure this
+  // device is subscribed (saveReminder is a tap, so a permission prompt is
+  // allowed here). `new Notification()` is NOT used: Android Chrome throws on
+  // it, and it can never fire once the page is closed anyway.
+  if (localStorage.getItem('amigo_notifpref') !== '0') subscribeToPush(true);
 }
 renderCalendar();
 renderReminderList();
@@ -2840,7 +2884,7 @@ function toggleNotifPrefSwitch(el) {
   el.classList.toggle('on', on);
   localStorage.setItem('amigo_notifpref', on ? '1' : '0');
   saveUserData();
-  if (on) subscribeToPush(); else unsubscribeFromPush();
+  if (on) enablePhoneNotifications(); else { unsubscribeFromPush(); refreshNotifStatus(); }
 }
 
 // ── Real push notifications (survive the app being closed) ──
@@ -2853,11 +2897,19 @@ function urlBase64ToUint8Array(base64String) {
   const raw     = atob(base64);
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
-async function subscribeToPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+// Returns 'granted' | 'denied' | 'unsupported' | 'error' | 'no-session' | 'default'.
+// `interactive` must only be true when called from a tap/click: browsers
+// (especially mobile Chrome and iOS Safari) silently ignore or auto-block
+// permission prompts that aren't triggered by a user gesture — which is why
+// push never got set up before.
+async function subscribeToPush(interactive) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
+    let permission = Notification.permission;
+    if (permission === 'default' && interactive) permission = await Notification.requestPermission();
+    if (permission !== 'granted') return permission;
+    const session = await getSession();
+    if (!session) return 'no-session';
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
@@ -2866,17 +2918,18 @@ async function subscribeToPush() {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
     }
-    const session = await getSession();
-    if (!session) return;
     const json = sub.toJSON();
-    await _supabase.from('push_subscriptions').upsert({
+    const { error } = await _supabase.from('push_subscriptions').upsert({
       user_id: session.user.id,
       endpoint: json.endpoint,
       p256dh: json.keys.p256dh,
       auth_key: json.keys.auth,
     }, { onConflict: 'endpoint' });
+    if (error) { console.error('Saving push subscription failed:', error.message); return 'error'; }
+    return 'granted';
   } catch (err) {
     console.error('Push subscribe failed:', err);
+    return 'error';
   }
 }
 async function unsubscribeFromPush() {
@@ -2891,6 +2944,31 @@ async function unsubscribeFromPush() {
     console.error('Push unsubscribe failed:', err);
   }
 }
+// Settings button: enable phone notifications (a real tap, so the browser will show its prompt).
+async function enablePhoneNotifications() {
+  localStorage.setItem('amigo_notifpref', '1');
+  const sw = document.getElementById('notifPrefSwitch');
+  if (sw) sw.classList.add('on');
+  const result = await subscribeToPush(true);
+  const msgs = {
+    granted: 'Phone notifications are on for this device 🔔',
+    denied: 'Notifications are blocked — allow them for Amigo in your phone/browser site settings, then tap again.',
+    unsupported: 'This browser can\'t do push notifications. On iPhone, add Amigo to your Home Screen first (Share → Add to Home Screen) and open it from there.',
+    'no-session': 'Sign in first, then try again.',
+    error: 'Couldn\'t set up notifications — please try again.',
+    default: 'Notification permission wasn\'t granted.',
+  };
+  showToast(msgs[result] || msgs.error, result !== 'granted');
+  refreshNotifStatus();
+  saveUserData();
+}
+function refreshNotifStatus() {
+  const el = document.getElementById('notifStatusText');
+  if (!el) return;
+  if (!('Notification' in window) || !('PushManager' in window)) { el.textContent = 'Not supported in this browser (on iPhone: install Amigo to the Home Screen first).'; return; }
+  const p = Notification.permission;
+  el.textContent = p === 'granted' ? 'Enabled on this device' : p === 'denied' ? 'Blocked — allow it in site settings' : 'Not enabled yet — tap the button';
+}
 // Apply saved dark-mode preference on load, and reflect both toggles' visual state
 (function initToggleStates() {
   const dark = localStorage.getItem('amigo_darkmode') === '1';
@@ -2900,11 +2978,20 @@ async function unsubscribeFromPush() {
   const notifOn = localStorage.getItem('amigo_notifpref') !== '0';
   const notifSwitch = document.getElementById('notifPrefSwitch');
   if (notifSwitch) notifSwitch.classList.toggle('on', notifOn);
-  // Preference is on (from this device or synced from another) but this
-  // browser/device may not have an active push subscription yet — e.g.
-  // first load after this feature shipped, or a new device. Re-subscribe
-  // quietly rather than waiting for the person to toggle it off and on.
-  if (notifOn) subscribeToPush();
+  refreshNotifStatus();
+  if (notifOn) {
+    // Already-granted devices: silently (re)register the subscription.
+    subscribeToPush(false);
+    // Not granted yet: ask on the person's FIRST tap anywhere — a user
+    // gesture is required for the prompt to appear on phones.
+    if ('Notification' in window && Notification.permission === 'default') {
+      const askOnFirstTap = () => {
+        document.removeEventListener('click', askOnFirstTap, true);
+        subscribeToPush(true).then(refreshNotifStatus);
+      };
+      document.addEventListener('click', askOnFirstTap, true);
+    }
+  }
 })();
 
 // ============================================================

@@ -58,7 +58,7 @@ module.exports = async (req, res) => {
   let users, subsByUser;
   try {
     const [userRows, subRows] = await Promise.all([
-      supabaseRest('user_data?select=user_id,reminders,schedule_folders'),
+      supabaseRest('user_data?select=user_id,reminders,schedule_folders,items'),
       supabaseRest('push_subscriptions?select=*'),
     ]);
     users = userRows || [];
@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
         const startMin = timeToMinutes(c.startTime);
         if (startMin == null) return;
         const diff = startMin - nowMin;
-        if (diff > 25 && diff <= 30) {
+        if (diff >= 20 && diff <= 30) { // wider than the 5-min cron tick; notification_log dedups
           due.push({
             user_id: u.user_id,
             ref_key: `class:${folder.id}:${c.subject}:${c.startTime}:${todayStr}`,
@@ -106,13 +106,29 @@ module.exports = async (req, res) => {
       const dueMin = timeToMinutes(r.time);
       if (dueMin == null) return;
       const diff = nowMin - dueMin;
-      if (diff >= 0 && diff < 5) {
+      if (diff >= 0 && diff < 20) { // tolerate cron jitter/delays; dedup prevents repeats
+
         due.push({
           user_id: u.user_id,
           ref_key: `reminder:${r.id}`,
           title: r.title,
           body: `${r.type || 'Reminder'} — due now`,
         });
+      }
+    });
+
+    // Tasks / assignments / quizzes added through the app (user_data.items)
+    // only have a due DATE, so: a heads-up the evening before (6 PM) and a
+    // reminder on the morning of (8 AM). Completed items are skipped.
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = localDateStr(tomorrow);
+    (u.items || []).forEach(it => {
+      if (!it || it.completed || !/^\d{4}-\d{2}-\d{2}$/.test(it.due || '')) return;
+      const label = it.subject ? `${it.title} (${it.subject})` : it.title;
+      if (it.due === todayStr && nowMin >= 8 * 60 && nowMin < 12 * 60) {
+        due.push({ user_id: u.user_id, ref_key: `item:${it.id}:today`, title: label, body: `${it.type || 'Task'} — due today` });
+      } else if (it.due === tomorrowStr && nowMin >= 18 * 60 && nowMin < 22 * 60) {
+        due.push({ user_id: u.user_id, ref_key: `item:${it.id}:eve`, title: label, body: `${it.type || 'Task'} — due tomorrow` });
       }
     });
   });
@@ -122,16 +138,16 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Dedup: only keep items not already logged as sent.
+  // Dedup: only keep items not already logged as sent. The log is filtered in
+  // JS on purpose — the old PostgREST `or=(ref_key.eq...)` filter broke on
+  // subjects containing commas or brackets (e.g. "Physics (Lab)"), which made
+  // the whole run fail with a 500 and send nothing.
   let alreadySent = new Set();
   try {
-    const keys = due.map(d => d.ref_key);
-    const orFilter = keys.map(k => `ref_key.eq.${encodeURIComponent(k)}`).join(',');
-    const logRows = await supabaseRest(`notification_log?select=user_id,ref_key&or=(${orFilter})`);
+    const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const logRows = await supabaseRest(`notification_log?select=user_id,ref_key&sent_at=gte.${encodeURIComponent(since)}&limit=10000`);
     (logRows || []).forEach(r => alreadySent.add(r.user_id + '|' + r.ref_key));
   } catch (err) {
-    // If the dedup check itself fails, better to skip this run than risk
-    // spamming — the next cron tick will retry.
     res.status(500).json({ error: 'dedup check failed: ' + err.message });
     return;
   }
@@ -151,6 +167,7 @@ module.exports = async (req, res) => {
         );
         sentForThisItem = true;
       } catch (err) {
+        console.error('push failed', err.statusCode, err.body || err.message);
         if (err.statusCode === 404 || err.statusCode === 410) staleEndpoints.push(sub.endpoint);
       }
     }

@@ -156,33 +156,54 @@ Rules:
     parts.push({ text: `\nSpreadsheet content:\n${textContent.slice(0, 400000)}` });
   }
 
-  // Gemini occasionally returns a transient 503 "model overloaded" error that
-  // clears up within a second or two. Retry a couple of times automatically
-  // before bothering the user with an error — this is what was missing
-  // before, which is why a plain retry-by-hand ("try again") used to work.
-  async function callGeminiWithRetry(body, maxAttempts) {
-    maxAttempts = maxAttempts || 3;
-    let lastRes, lastErrText;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const aiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
-          body: JSON.stringify(body)
-        }
-      );
-      if (aiRes.ok) return aiRes;
-      lastRes = aiRes;
-      lastErrText = await aiRes.text();
-      const isTransient = aiRes.status === 503 || aiRes.status === 500;
-      if (!isTransient || attempt === maxAttempts) break;
-      await new Promise(r => setTimeout(r, 700 * attempt));
+  // Gemini calls can be slow or overloaded. The old code had no per-call
+  // timeout, so ONE hung request ate the whole 60s Vercel limit and the user
+  // just saw "timeout, try again later". Now every attempt gets its own
+  // time cap, transient failures (429/500/503/timeouts) move on quickly, and
+  // if the primary model keeps failing we fall back to a second model.
+  const DEADLINE = Date.now() + 52000; // stay under maxDuration (60s)
+  const MODELS = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+  async function callGeminiWithRetry(body) {
+    let lastStatus = 502, lastErrText = '';
+    for (let i = 0; i < MODELS.length; i++) {
+      const remaining = DEADLINE - Date.now();
+      if (remaining < 6000) break;
+      const model = MODELS[i];
+      const attemptBody = JSON.parse(JSON.stringify(body));
+      if (model !== MODELS[0] && attemptBody.generationConfig) {
+        // thinkingLevel is specific to the newer model; the fallback uses a budget.
+        attemptBody.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      }
+      // Give the first attempt most of the budget, later ones what's left.
+      const cap = i === 0 ? Math.min(30000, remaining) : Math.min(remaining - 1000, 20000);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), cap);
+      try {
+        const aiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify(attemptBody),
+            signal: ctrl.signal
+          }
+        );
+        if (aiRes.ok) { clearTimeout(timer); return aiRes; }
+        lastStatus = aiRes.status;
+        lastErrText = await aiRes.text();
+        clearTimeout(timer);
+        console.error('Gemini attempt failed', model, aiRes.status, lastErrText.slice(0, 200));
+        // Bad key / quota: another attempt will not help.
+        if (aiRes.status === 401 || aiRes.status === 403 || aiRes.status === 429) break;
+      } catch (err) {
+        clearTimeout(timer);
+        lastStatus = err.name === 'AbortError' ? 504 : 502;
+        lastErrText = err.message;
+        console.error('Gemini attempt error', model, err.name, err.message);
+      }
+      await new Promise(r => setTimeout(r, 500));
     }
-    return { ok: false, status: lastRes.status, text: async () => lastErrText };
+    return { ok: false, status: lastStatus, text: async () => lastErrText };
   }
 
   try {
@@ -215,6 +236,8 @@ Rules:
         friendly = "You've hit Gemini's usage limit for now (quota exceeded) — this isn't a bug in the app, it's Google's rate/usage limit on the API key. Wait a few minutes and try again, or check your quota/billing at https://aistudio.google.com.";
       } else if (aiRes.status === 401 || aiRes.status === 403) {
         friendly = 'The Gemini API key is missing, invalid, or not authorized for this project — check the GEMINI_API_KEY set in Vercel.';
+      } else if (aiRes.status === 504) {
+        friendly = "Google's AI took too long to answer (it did not respond in time, even after retrying). Please try again in a moment. If it keeps happening, try a narrower instruction like \"BSAI semester 3\", or a smaller/cropped file.";
       } else if (aiRes.status === 503 || aiRes.status === 500) {
         friendly = "Google's AI service is briefly overloaded and didn't recover after a few automatic retries — this is temporary on their end, not a bug. Please try again in a moment.";
       } else {

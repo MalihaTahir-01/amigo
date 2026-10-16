@@ -284,6 +284,7 @@
             </div>
             <div class="uploads-toolbar" style="margin-top:8px;">
               <button class="ai-send" onclick="openTimetableImportModal()"><i class="ti ti-sparkles"></i> Import with AI (photo, PDF, or Excel)</button>
+              <button class="ai-send" onclick="openManualAddClass()"><i class="ti ti-plus"></i> Add class manually</button>
             </div>
             <div id="scheduleFolderList" class="folders-list">
               <div class="focus-empty-light">No schedules yet — create one above!</div>
@@ -472,6 +473,10 @@
               <div class="toggle-row">
                 <div><div class="toggle-label">Notification Reminders</div><div class="toggle-desc">Get notified before tasks and classes are due</div></div>
                 <div class="switch" id="notifPrefSwitch" onclick="toggleNotifPrefSwitch(this)"></div>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Phone notifications</div><div class="toggle-desc" id="notifStatusText">Checking…</div></div>
+                <button class="ai-send" onclick="enablePhoneNotifications()">Enable</button>
               </div>
             </div>
           </div>

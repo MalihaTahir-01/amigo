@@ -1,21 +1,42 @@
+// /api/send-reminders.js
+// Called every 5 minutes by the Supabase cron job (see supabase-push-setup.sql).
+// Sends REAL phone push notifications (they pop up like WhatsApp/Instagram,
+// even when the app is closed) for:
+//   1. Classes:      30 minutes before, and again 15 minutes before.
+//   2. Assignments / quizzes / exams (tasks added in the app with a due date):
+//                    the NIGHT BEFORE the due date (8 PM), plus a morning
+//                    reminder on the due day (8 AM).
+//   3. Calendar reminders: at the exact date + time you set.
+// A notification_log table makes sure each one is only ever sent once.
+
 const webpush = require('web-push');
 
-// Fixed Asia/Karachi offset (Pakistan doesn't observe DST), matching the
-// UTC+5 handling already used elsewhere in this app.
+// ── Settings you can tweak ───────────────────────────────────
+const CLASS_NOTICE_MINUTES = [30, 15]; // how long before a class to notify
+const NIGHT_BEFORE_HOUR = 20;          // 20 = 8 PM the day before a due date
+const DUE_DAY_HOUR = 8;                // 8 = 8 AM on the due day (set to null to disable)
+const WINDOW_MIN = 5;                  // matches the 5-minute cron; a missed tick is covered below
+// ─────────────────────────────────────────────────────────────
+
+// Pakistan is UTC+5 all year (no daylight saving).
 const TZ_OFFSET_MIN = 5 * 60;
 const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 function nowInKarachi() {
-  const utcNow = new Date();
-  return new Date(utcNow.getTime() + TZ_OFFSET_MIN * 60 * 1000);
+  return new Date(Date.now() + TZ_OFFSET_MIN * 60 * 1000);
 }
 function localDateStr(d) {
   return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
 }
 function timeToMinutes(t) {
-  if (!t) return null;
+  if (!t || typeof t !== 'string' || !t.includes(':')) return null;
   const [h, m] = t.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
   return h * 60 + m;
+}
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  return (h % 12 === 0 ? 12 : h % 12) + ':' + String(m).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM');
 }
 
 async function supabaseRest(path, opts = {}) {
@@ -53,6 +74,7 @@ module.exports = async (req, res) => {
   const now = nowInKarachi();
   const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
   const todayStr = localDateStr(now);
+  const tomorrowStr = localDateStr(new Date(now.getTime() + 24 * 60 * 60 * 1000));
   const todayWeekday = WEEKDAYS[now.getUTCDay()];
 
   let users, subsByUser;
@@ -63,9 +85,7 @@ module.exports = async (req, res) => {
     ]);
     users = userRows || [];
     subsByUser = {};
-    (subRows || []).forEach(s => {
-      (subsByUser[s.user_id] ||= []).push(s);
-    });
+    (subRows || []).forEach(s => { (subsByUser[s.user_id] ||= []).push(s); });
   } catch (err) {
     res.status(500).json({ error: err.message });
     return;
@@ -75,10 +95,11 @@ module.exports = async (req, res) => {
 
   users.forEach(u => {
     const subs = subsByUser[u.user_id];
-    if (!subs || subs.length === 0) return; // nobody to notify
+    if (!subs || subs.length === 0) return; // no device registered for this user
 
-    // Classes: fire 25–30 minutes before start (a 5-min window matching the
-    // cron cadence), so each class gets exactly one notification per day.
+    // 1) CLASSES — one notification per notice time (e.g. 30 and 15 minutes).
+    //    A notice fires on the first cron tick where the class is within
+    //    (notice - WINDOW_MIN) .. notice minutes away. Dedup keeps it to one.
     (u.schedule_folders || []).forEach(folder => {
       (folder.classes || []).forEach(c => {
         if (!c.startTime) return;
@@ -86,49 +107,50 @@ module.exports = async (req, res) => {
         if (!matchesToday) return;
         const startMin = timeToMinutes(c.startTime);
         if (startMin == null) return;
-        const diff = startMin - nowMin;
-        if (diff >= 20 && diff <= 30) { // wider than the 5-min cron tick; notification_log dedups
-          due.push({
-            user_id: u.user_id,
-            ref_key: `class:${folder.id}:${c.subject}:${c.startTime}:${todayStr}`,
-            title: `${c.subject} starts soon`,
-            body: `${c.startTime}${c.room ? ' · ' + c.room : ''} — starting in about 30 minutes`,
-          });
-        }
+        const diff = startMin - nowMin; // minutes until the class starts
+        CLASS_NOTICE_MINUTES.forEach(notice => {
+          if (diff <= notice && diff > notice - WINDOW_MIN - 1 && diff > 0) {
+            due.push({
+              user_id: u.user_id,
+              ref_key: `class${notice}:${folder.id}:${c.id || c.subject}:${c.startTime}:${todayStr}`,
+              title: `${c.subject} in ${diff} min`,
+              body: `${fmt12(c.startTime)}${c.room ? ' · ' + c.room : ''}${c.teacher ? ' · ' + c.teacher : ''}`,
+            });
+          }
+        });
       });
     });
 
-    // Reminders (tasks/quizzes/etc.): fire at their own set date+time, in a
-    // 0–5 minute window after the moment they're due.
+    // 2) ASSIGNMENTS / QUIZZES / EXAMS (tasks with a due date).
+    (u.items || []).forEach(it => {
+      if (!it || it.completed || !/^\d{4}-\d{2}-\d{2}$/.test(it.due || '')) return;
+      const label = it.subject ? `${it.title} (${it.subject})` : it.title;
+      const kind = it.type ? it.type.charAt(0).toUpperCase() + it.type.slice(1) : 'Task';
+      const nightStart = NIGHT_BEFORE_HOUR * 60;
+      if (it.due === tomorrowStr && nowMin >= nightStart && nowMin < nightStart + 180) {
+        due.push({ user_id: u.user_id, ref_key: `item:${it.id}:eve`, title: `${kind} due tomorrow`, body: label });
+      }
+      if (DUE_DAY_HOUR != null) {
+        const dayStart = DUE_DAY_HOUR * 60;
+        if (it.due === todayStr && nowMin >= dayStart && nowMin < dayStart + 180) {
+          due.push({ user_id: u.user_id, ref_key: `item:${it.id}:today`, title: `${kind} due today`, body: label });
+        }
+      }
+    });
+
+    // 3) CALENDAR REMINDERS — at their own date + time.
     (u.reminders || []).forEach(r => {
-      if (!r.date || !r.time) return;
-      if (r.date !== todayStr) return;
+      if (!r.date || !r.time || r.date !== todayStr) return;
       const dueMin = timeToMinutes(r.time);
       if (dueMin == null) return;
       const diff = nowMin - dueMin;
-      if (diff >= 0 && diff < 20) { // tolerate cron jitter/delays; dedup prevents repeats
-
+      if (diff >= 0 && diff < 20) { // tolerate cron jitter; dedup prevents repeats
         due.push({
           user_id: u.user_id,
           ref_key: `reminder:${r.id}`,
           title: r.title,
-          body: `${r.type || 'Reminder'} — due now`,
+          body: `${r.type || 'Reminder'} — now`,
         });
-      }
-    });
-
-    // Tasks / assignments / quizzes added through the app (user_data.items)
-    // only have a due DATE, so: a heads-up the evening before (6 PM) and a
-    // reminder on the morning of (8 AM). Completed items are skipped.
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const tomorrowStr = localDateStr(tomorrow);
-    (u.items || []).forEach(it => {
-      if (!it || it.completed || !/^\d{4}-\d{2}-\d{2}$/.test(it.due || '')) return;
-      const label = it.subject ? `${it.title} (${it.subject})` : it.title;
-      if (it.due === todayStr && nowMin >= 8 * 60 && nowMin < 12 * 60) {
-        due.push({ user_id: u.user_id, ref_key: `item:${it.id}:today`, title: label, body: `${it.type || 'Task'} — due today` });
-      } else if (it.due === tomorrowStr && nowMin >= 18 * 60 && nowMin < 22 * 60) {
-        due.push({ user_id: u.user_id, ref_key: `item:${it.id}:eve`, title: label, body: `${it.type || 'Task'} — due tomorrow` });
       }
     });
   });
@@ -138,10 +160,8 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Dedup: only keep items not already logged as sent. The log is filtered in
-  // JS on purpose — the old PostgREST `or=(ref_key.eq...)` filter broke on
-  // subjects containing commas or brackets (e.g. "Physics (Lab)"), which made
-  // the whole run fail with a 500 and send nothing.
+  // Dedup: skip anything already logged as sent. Filtered in JS (not in the
+  // URL) so subject names with commas/brackets can't break the query.
   let alreadySent = new Set();
   try {
     const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
@@ -163,7 +183,7 @@ module.exports = async (req, res) => {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
-          JSON.stringify({ title: item.title, body: item.body })
+          JSON.stringify({ title: item.title, body: item.body, tag: item.ref_key })
         );
         sentForThisItem = true;
       } catch (err) {
@@ -179,7 +199,7 @@ module.exports = async (req, res) => {
           prefer: 'resolution=ignore-duplicates',
           body: JSON.stringify({ user_id: item.user_id, ref_key: item.ref_key }),
         });
-      } catch (_) { /* best-effort log; a duplicate send next tick is not harmful */ }
+      } catch (_) { /* best-effort; a duplicate next tick is harmless */ }
     }
   }
 

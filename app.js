@@ -2962,6 +2962,21 @@ async function enablePhoneNotifications() {
   refreshNotifStatus();
   saveUserData();
 }
+async function sendTestNotification() {
+  const session = await getSession();
+  if (!session) { showToast('Sign in first', true); return; }
+  showToast('Sending test notification…');
+  try {
+    const res = await fetch('/api/test-push', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token } });
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (data.ok) showToast('Sent to ' + data.sent + ' device(s) — a notification should pop up now');
+    else showToast(data.error || ('Push failed: ' + ((data.errors || []).join(' | ') || res.status)), true);
+    console.log('test-push result', data);
+  } catch (err) {
+    showToast('Could not reach the server: ' + err.message, true);
+  }
+}
 function refreshNotifStatus() {
   const el = document.getElementById('notifStatusText');
   if (!el) return;

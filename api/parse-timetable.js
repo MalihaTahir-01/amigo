@@ -165,9 +165,9 @@ Rules:
   // Each attempt has its own time cap so a hung request can't eat the whole
   // budget, and the fallback model is guaranteed a turn (the 2nd attempt).
   const ATTEMPTS = [
-    { model: 'gemini-3.6-flash', cap: 22000 },
-    { model: 'gemini-2.5-flash', cap: 18000 },
-    { model: 'gemini-2.5-flash-lite', cap: Infinity }
+    { model: 'gemini-3.8-flash', cap: 22000 },
+    { model: 'gemini-3.6-flash', cap: 18000 },
+    { model: 'gemini-3.5-flash-lite', cap: Infinity }
   ];
   // Every model has its OWN quota bucket on Google's side, so a 429 (quota)
   // on one model just moves on to the next one. Each model is tried at most
@@ -185,10 +185,6 @@ Rules:
       if (remaining < 4000) break;
       const { model, cap } = ATTEMPTS[i];
       const attemptBody = JSON.parse(JSON.stringify(body));
-      if (model !== 'gemini-3.6-flash' && attemptBody.generationConfig) {
-        // thinkingLevel belongs to the newer model; the older one uses a budget.
-        attemptBody.generationConfig.thinkingConfig = { thinkingBudget: 0 };
-      }
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), Math.min(cap, remaining - 500));
       const t0 = Date.now();

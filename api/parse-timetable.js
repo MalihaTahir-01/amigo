@@ -161,23 +161,28 @@ Rules:
   // just saw "timeout, try again later". Now every attempt gets its own
   // time cap, transient failures (429/500/503/timeouts) move on quickly, and
   // if the primary model keeps failing we fall back to a second model.
-  const DEADLINE = Date.now() + 52000; // stay under maxDuration (60s)
-  const MODELS = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+  const DEADLINE = Date.now() + 54000; // stay under maxDuration (60s)
+  // Each attempt has its own time cap so a hung request can't eat the whole
+  // budget, and the fallback model is guaranteed a turn (the 2nd attempt).
+  const ATTEMPTS = [
+    { model: 'gemini-3.6-flash', cap: 22000 },
+    { model: 'gemini-2.5-flash', cap: 18000 },
+    { model: 'gemini-3.6-flash', cap: Infinity }
+  ];
   async function callGeminiWithRetry(body) {
     let lastStatus = 502, lastErrText = '';
-    for (let i = 0; i < MODELS.length; i++) {
+    for (let i = 0; i < ATTEMPTS.length; i++) {
       const remaining = DEADLINE - Date.now();
-      if (remaining < 6000) break;
-      const model = MODELS[i];
+      if (remaining < 4000) break;
+      const { model, cap } = ATTEMPTS[i];
       const attemptBody = JSON.parse(JSON.stringify(body));
-      if (model !== MODELS[0] && attemptBody.generationConfig) {
-        // thinkingLevel is specific to the newer model; the fallback uses a budget.
+      if (model === 'gemini-2.5-flash' && attemptBody.generationConfig) {
+        // thinkingLevel belongs to the newer model; the older one uses a budget.
         attemptBody.generationConfig.thinkingConfig = { thinkingBudget: 0 };
       }
-      // Give the first attempt most of the budget, later ones what's left.
-      const cap = i === 0 ? Math.min(30000, remaining) : Math.min(remaining - 1000, 20000);
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), cap);
+      const timer = setTimeout(() => ctrl.abort(), Math.min(cap, remaining - 500));
+      const t0 = Date.now();
       try {
         const aiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -188,20 +193,19 @@ Rules:
             signal: ctrl.signal
           }
         );
-        if (aiRes.ok) { clearTimeout(timer); return aiRes; }
+        if (aiRes.ok) { clearTimeout(timer); console.log('Gemini ok', model, (Date.now() - t0) + 'ms'); return aiRes; }
         lastStatus = aiRes.status;
         lastErrText = await aiRes.text();
         clearTimeout(timer);
-        console.error('Gemini attempt failed', model, aiRes.status, lastErrText.slice(0, 200));
-        // Bad key / quota: another attempt will not help.
+        console.error('Gemini attempt failed', model, aiRes.status, (Date.now() - t0) + 'ms', lastErrText.slice(0, 300));
         if (aiRes.status === 401 || aiRes.status === 403 || aiRes.status === 429) break;
       } catch (err) {
         clearTimeout(timer);
         lastStatus = err.name === 'AbortError' ? 504 : 502;
         lastErrText = err.message;
-        console.error('Gemini attempt error', model, err.name, err.message);
+        console.error('Gemini attempt error', model, err.name, (Date.now() - t0) + 'ms', err.message);
       }
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 300));
     }
     return { ok: false, status: lastStatus, text: async () => lastErrText };
   }

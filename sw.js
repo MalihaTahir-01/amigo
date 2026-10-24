@@ -1,4 +1,4 @@
-const CACHE = 'amigo-v13';
+const CACHE = 'amigo-v14';
 const ASSETS = ['/', '/index.html', '/app.js', '/auth.js', '/style.css', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 // Libraries loaded from a CDN. The app can't start without the Supabase one
 // (auth.js uses it immediately), so they are saved at install time, not just

@@ -49,6 +49,13 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const { getUser } = require('./_auth');
+  const authedUser = await getUser(req);
+  if (!authedUser) {
+    res.status(401).json({ error: 'Please sign in again' });
+    return;
+  }
+
   const { command, mimeType, fileBase64, textContent, today: clientToday } = req.body || {};
 
   if (!fileBase64 && !textContent) {

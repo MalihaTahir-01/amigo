@@ -377,6 +377,32 @@ function goToSettingsFromHeader() {
 // AI FLOW — real AI parsing (calls /api/parse-task), with the old
 // scripted button flow kept as an automatic fallback if the AI call fails
 // ────────────────────────────────────────────────────────────
+// Headers for our own /api calls: includes the signed-in user's token so the
+// server can tell it's really you (the AI endpoints are no longer open to anyone).
+async function apiHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  try {
+    const s = await getSession();
+    if (s && s.access_token) h.Authorization = 'Bearer ' + s.access_token;
+  } catch (e) {}
+  return h;
+}
+// Instant "task added" push to this person's devices (fire and forget).
+async function notifyTaskAdded(item) {
+  if (localStorage.getItem('amigo_notifpref') === '0') return;
+  try {
+    const h = await apiHeaders();
+    if (!h.Authorization) return;
+    await fetch('/api/notify-task', {
+      method: 'POST', headers: h,
+      body: JSON.stringify({
+        title: 'Task added ✅',
+        body: item.title + (item.due ? ' — due ' + item.due : ''),
+        tag: 'task-added-' + item.id,
+      }),
+    });
+  } catch (e) { /* offline or no device registered — nothing to do */ }
+}
 function setInput(val) {
   const el = document.getElementById('aiInput');
   if (!el) return;
@@ -396,7 +422,7 @@ async function organizePrompt() {
   try {
     const res = await fetch('/api/parse-task', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ text, today: localDateStr(new Date()) })
     });
     if (!res.ok) {
@@ -547,7 +573,7 @@ async function quickAddOrganize(lockedType) {
   try {
     const res = await fetch('/api/parse-task', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify({ text, today: localDateStr(new Date()) })
     });
     if (!res.ok) throw new Error('AI service unavailable (' + res.status + ')');
@@ -858,6 +884,7 @@ function saveItem(targetId) {
     renderItem(item);
     sortList('taskList');
     sortList('list-' + item.type);
+    notifyTaskAdded(item);
   }
 
   updateCounts();
@@ -1866,7 +1893,7 @@ async function attemptTimetableImport(file, command, flow) {
     }
     const res = await fetch('/api/parse-timetable', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await apiHeaders(),
       body: JSON.stringify(body)
     });
     if (!res.ok) {

@@ -82,7 +82,7 @@ module.exports = async (req, res) => {
   let users, subsByUser;
   try {
     const [userRows, subRows] = await Promise.all([
-      supabaseRest('user_data?select=user_id,reminders,schedule_folders,items'),
+      supabaseRest('user_data?select=user_id,reminders,schedule_folders,items,settings'),
       supabaseRest('push_subscriptions?select=*'),
     ]);
     users = userRows || [];
@@ -98,6 +98,7 @@ module.exports = async (req, res) => {
   users.forEach(u => {
     const subs = subsByUser[u.user_id];
     if (!subs || subs.length === 0) return; // no device registered for this user
+    if (u.settings && u.settings.notifPref === false) return; // they switched notifications off in Settings
 
     // 1) CLASSES — one notification per notice time (e.g. 30 and 15 minutes).
     //    A notice fires on the first cron tick where the class is within
@@ -139,6 +140,23 @@ module.exports = async (req, res) => {
         }
       }
     });
+
+    // 2b) OVERDUE — ONE combined morning nudge for anything still unfinished
+    //     (only items up to 14 days late, so old abandoned ones don't nag forever).
+    if (DUE_DAY_HOUR != null && nowMin >= DUE_DAY_HOUR * 60 && nowMin < DUE_DAY_HOUR * 60 + 180) {
+      const overdue = (u.items || []).filter(it =>
+        it && !it.completed && /^\d{4}-\d{2}-\d{2}$/.test(it.due || '') && it.due < todayStr &&
+        (Date.parse(todayStr) - Date.parse(it.due)) / 86400000 <= 14);
+      if (overdue.length > 0) {
+        const names = overdue.slice(0, 3).map(it => it.title).join(', ');
+        due.push({
+          user_id: u.user_id,
+          ref_key: `overdue:${todayStr}`,
+          title: `${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}`,
+          body: names + (overdue.length > 3 ? ` +${overdue.length - 3} more` : ''),
+        });
+      }
+    }
 
     // 3) CALENDAR REMINDERS — at their own date + time.
     (u.reminders || []).forEach(r => {

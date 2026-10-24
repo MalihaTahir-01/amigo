@@ -1,9 +1,39 @@
-const CACHE = 'amigo-v11';
+const CACHE = 'amigo-v12';
 const ASSETS = ['/', '/index.html', '/app.js', '/auth.js', '/style.css', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+// Libraries loaded from a CDN. The app can't start without the Supabase one
+// (auth.js uses it immediately), so they are saved at install time, not just
+// "whenever they happen to be fetched". Best-effort: one failing never blocks install.
+const CDN_ASSETS = [
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css',
+];
+
+// fetch() that gives up after `ms` — on a Wi-Fi with no real internet a request
+// can hang for a very long time instead of failing, which froze the whole app.
+function fetchWithTimeout(req, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    fetch(req).then(
+      res => { clearTimeout(timer); resolve(res); },
+      err => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
+// Opaque responses (plain <script src> from a CDN) have ok === false and
+// status 0, so the old "res.ok && res.status === 200" check never cached them.
+function isCacheable(res) {
+  return res && ((res.ok && res.status === 200) || res.type === 'opaque');
+}
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS).then(() =>
+        Promise.all(CDN_ASSETS.map(u => c.add(new Request(u, { mode: 'cors' })).catch(() => {})))
+      ))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -57,15 +87,15 @@ self.addEventListener('fetch', e => {
   // External CDN (fonts, icons): network first, cache as fallback
   if (url.origin !== self.location.origin) {
     e.respondWith(
-      fetch(e.request)
+      fetchWithTimeout(e.request, 5000)
         .then(res => {
-          if (res.ok && res.status === 200) {
+          if (isCacheable(res)) {
             const clone = res.clone();
             caches.open(CACHE).then(c => c.put(e.request, clone));
           }
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(e.request).then(cached => cached || Response.error()))
     );
     return;
   }
@@ -76,7 +106,7 @@ self.addEventListener('fetch', e => {
   // whatever was cached under the current CACHE name until that name
   // changed. Network-first means you always see what's actually live.)
   e.respondWith(
-    fetch(e.request)
+    fetchWithTimeout(e.request, 4000)
       .then(res => {
         if (res.ok && res.status === 200) {
           const clone = res.clone();

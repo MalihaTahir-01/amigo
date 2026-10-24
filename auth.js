@@ -9,9 +9,52 @@ function getRedirectURL() {
   return window.location.origin;
 }
 
+// Where supabase-js keeps the login on this device (sb-<project>-auth-token).
+const SB_STORAGE_KEY = 'sb-' + new URL(SUPABASE_URL).hostname.split('.')[0] + '-auth-token';
+
+// Reads the saved login straight from the device — no network involved.
+function getStoredSession() {
+  try {
+    const raw = localStorage.getItem(SB_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const s = (parsed && parsed.currentSession) || parsed;
+    return (s && s.user && s.refresh_token) ? s : null;
+  } catch (e) { return null; }
+}
+
+// supabase-js refreshes an expired login over the network, and with no (or
+// useless) internet it keeps retrying for ~30 seconds before giving up and
+// returning "no session" — which is what threw you back to the login page.
+// Fix: wait at most 3 seconds; if it can't confirm online, trust the login
+// already saved on this device. You only really get logged out by signing out
+// (or if the server explicitly rejects the login while online).
+let _offlineUntil = 0; // after one timeout, skip the 3s wait for a minute
 async function getSession() {
-  const { data: { session } } = await _supabase.auth.getSession();
-  return session;
+  const stored = getStoredSession();
+  if (stored && Date.now() < _offlineUntil) return stored;
+  try {
+    const result = await Promise.race([
+      _supabase.auth.getSession(),
+      new Promise(resolve => setTimeout(() => resolve({ timedOut: true }), 3000)),
+    ]);
+    if (result && result.data && result.data.session) return result.data.session;
+    const networkTrouble = result.timedOut || !navigator.onLine ||
+      (result.error && (result.error.name === 'AuthRetryableFetchError' || result.error.status === 0));
+    if (networkTrouble && stored) { _offlineUntil = Date.now() + 60000; return stored; }
+    return null;
+  } catch (e) {
+    if (stored) _offlineUntil = Date.now() + 60000;
+    return stored; // network blew up — fall back to the saved login
+  }
+}
+
+// Gives up on a request that hangs (Wi-Fi connected but no real internet).
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
 }
 
 async function signInWithGoogle() {
@@ -171,16 +214,29 @@ async function loadUserData() {
   if (!session) return;
   const userId = session.user.id;
 
-  const { data, error } = await _supabase
-    .from('user_data')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (error || !data) {
+  // Changes made while offline are still waiting to be uploaded: send them
+  // first, otherwise "always trust the cloud" below would wipe them out.
+  if (localStorage.getItem('amigo_dirty') === '1') {
     await saveUserData();
+    if (localStorage.getItem('amigo_dirty') === '1') return; // still offline — keep local data
+  }
+
+  let data, error;
+  try {
+    ({ data, error } = await withTimeout(
+      _supabase.from('user_data').select('*').eq('user_id', userId).single(), 4000
+    ));
+  } catch (e) {
+    return; // offline / hanging network — just use what's already on this device
+  }
+
+  if (error) {
+    // PGRST116 = "no row yet" (brand-new account) → create it. Any OTHER
+    // error (offline, server hiccup) must NOT overwrite the cloud copy.
+    if (error.code === 'PGRST116') await saveUserData();
     return;
   }
+  if (!data) return;
 
   // Always trust cloud data — overwrite local completely
   if (data.items)     localStorage.setItem('amigo_items',     JSON.stringify(data.items));
@@ -224,10 +280,18 @@ async function saveUserData() {
     },
     updated_at: new Date().toISOString(),
   };
-  const { error } = await _supabase
-    .from('user_data')
-    .upsert(payload, { onConflict: 'user_id' });
-  if (error) console.error('Supabase save error:', error.message);
+  try {
+    const { error } = await withTimeout(
+      _supabase.from('user_data').upsert(payload, { onConflict: 'user_id' }), 8000
+    );
+    if (error) throw error;
+    localStorage.removeItem('amigo_dirty');
+  } catch (err) {
+    // Couldn't reach the server — remember there are unsent changes so they
+    // get uploaded next time instead of being overwritten.
+    localStorage.setItem('amigo_dirty', '1');
+    console.error('Supabase save error:', err.message || err);
+  }
 }
 
 // ============================================================
@@ -266,6 +330,6 @@ async function handleForgotPassword() {
 
 function clearLocalData() {
   const keys = ['amigo_items','amigo_todos','amigo_reminders','amigo_folders','amigo_schedule_folders',
-                 'amigo_name','amigo_uni','amigo_program','amigo_lang','amigo_pic'];
+                 'amigo_name','amigo_uni','amigo_program','amigo_lang','amigo_pic','amigo_dirty'];
   keys.forEach(k => localStorage.removeItem(k));
 }

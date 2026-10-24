@@ -1,4 +1,4 @@
-const CACHE = 'amigo-v12';
+const CACHE = 'amigo-v13';
 const ASSETS = ['/', '/index.html', '/app.js', '/auth.js', '/style.css', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 // Libraries loaded from a CDN. The app can't start without the Supabase one
 // (auth.js uses it immediately), so they are saved at install time, not just
@@ -84,10 +84,15 @@ self.addEventListener('fetch', e => {
   if (url.hostname.includes('googleapis.com')) return;
   if (url.hostname.includes('google.com')) return;
 
-  // External CDN (fonts, icons): network first, cache as fallback
-  if (url.origin !== self.location.origin) {
-    e.respondWith(
-      fetchWithTimeout(e.request, 5000)
+  // Everything else (the app's own files AND the CDN libraries):
+  // STALE-WHILE-REVALIDATE. The saved copy is shown instantly — no waiting on
+  // the network, which is what made the app take 2-4 seconds to open on slow
+  // Wi-Fi — and a fresh copy is downloaded quietly in the background for the
+  // next launch. The very first visit (nothing saved yet) still uses the network.
+  // To push an update to phones faster, bump CACHE at the top of this file.
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const network = fetchWithTimeout(e.request, 8000)
         .then(res => {
           if (isCacheable(res)) {
             const clone = res.clone();
@@ -95,25 +100,12 @@ self.addEventListener('fetch', e => {
           }
           return res;
         })
-        .catch(() => caches.match(e.request).then(cached => cached || Response.error()))
-    );
-    return;
-  }
-
-  // Local files: NETWORK FIRST, cache only as an offline fallback.
-  // (Previously this was cache-first, which meant a redeploy could sit
-  // invisible in the browser forever — every file kept being served from
-  // whatever was cached under the current CACHE name until that name
-  // changed. Network-first means you always see what's actually live.)
-  e.respondWith(
-    fetchWithTimeout(e.request, 4000)
-      .then(res => {
-        if (res.ok && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      })
-      .catch(() => caches.match(e.request).then(cached => cached || caches.match('/index.html')))
+        .catch(() => null);
+      if (cached) {
+        e.waitUntil(network); // keep refreshing in the background
+        return cached;
+      }
+      return network.then(res => res || caches.match('/index.html') || Response.error());
+    })
   );
 });

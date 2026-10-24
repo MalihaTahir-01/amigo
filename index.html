@@ -45,12 +45,10 @@
   <div class="amigo">
 
     <!-- AUTH SCREEN -->
-    <!-- BOOT SPLASH: shown while the app checks your saved login, so the
-         login page never flashes for returning users. initAuth() decides
-         whether to reveal the login page or the app, then removes this. -->
-    <div id="bootSplash" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3a6b,#0f2240);">
-      <div style="width:64px;height:64px;border-radius:18px;background:#fff;color:#1a3a6b;display:flex;align-items:center;justify-content:center;font:700 30px 'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.25);">A</div>
-    </div>
+    <!-- BOOT COVER: a plain background-colour sheet (same colour as the phone's
+         own launch screen, no second logo) that hides the page for the split
+         second before the boot script below decides what to show. -->
+    <div id="bootSplash" style="position:fixed;inset:0;z-index:9999;background:#0f2240;"></div>
     <div id="authScreen" class="auth-screen" style="display:none;">
       <div class="auth-decor auth-decor-1"></div>
       <div class="auth-decor auth-decor-2"></div>
@@ -519,20 +517,56 @@
   <script src="auth.js" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const hideSplash = () => {
-        // Safety net: if neither screen got shown for any reason, show login
-        // rather than leaving a blank page.
-        const auth = document.getElementById('authScreen');
-        const app  = document.getElementById('appScreen');
-        if (auth.style.display === 'none' && app.style.display === 'none') auth.style.display = 'flex';
-        const splash = document.getElementById('bootSplash');
-        if (splash) splash.remove();
-      };
-      Promise.resolve().then(() => initAuth()).catch(err => console.error('initAuth failed:', err)).then(() => {
-        hideSplash();
+      const el = id => document.getElementById(id);
+      const removeSplash = () => { const s = el('bootSplash'); if (s) s.remove(); };
+      const loadApp = () => {
         const script = document.createElement('script');
         script.src = 'app.js';
         document.body.appendChild(script);
+      };
+      // Login links (password reset, email confirm, Google sign-in return) need
+      // the full check before anything is shown.
+      const special = /type=(recovery|signup)|access_token=|[?&]code=/.test(location.hash + location.search);
+      // Is there a login saved on this device? (read straight from storage — instant)
+      let hasLogin = false;
+      try { hasLogin = !!(typeof getStoredSession === 'function' && getStoredSession()); } catch (e) {}
+
+      // ── FAST PATH: already logged in on this device ──────────────────────
+      // Open the app immediately from the data saved on the phone (no waiting
+      // for the internet), then check the login and sync with the cloud quietly
+      // in the background. If the cloud has newer data, the page refreshes once.
+      if (hasLogin && !special) {
+        el('authScreen').style.display = 'none';
+        el('appScreen').style.display  = 'flex';
+        try { applySessionToUI(getStoredSession()); } catch (e) {}
+        removeSplash();
+        loadApp();
+
+        const KEYS = ['amigo_items','amigo_todos','amigo_reminders','amigo_folders',
+                      'amigo_schedule_folders','amigo_notes','amigo_lang','amigo_name'];
+        // Compare data ignoring key order (the cloud returns keys in a different order).
+        const canon = raw => {
+          try {
+            const walk = v => Array.isArray(v) ? v.map(walk)
+              : (v && typeof v === 'object') ? Object.keys(v).sort().reduce((o, k) => (o[k] = walk(v[k]), o), {})
+              : v;
+            return JSON.stringify(walk(JSON.parse(raw)));
+          } catch (e) { return raw; }
+        };
+        const snap = () => JSON.stringify(KEYS.map(k => canon(localStorage.getItem(k))));
+        const before = snap();
+        Promise.resolve().then(() => initAuth()).catch(err => console.error('background sync failed:', err))
+          .then(() => { if (snap() !== before) window.location.reload(); });
+        return;
+      }
+
+      // ── NORMAL PATH: not logged in on this device ────────────────────────
+      if (!special) { el('authScreen').style.display = 'flex'; removeSplash(); }
+      Promise.resolve().then(() => initAuth()).catch(err => console.error('initAuth failed:', err)).then(() => {
+        // Safety net: never leave a blank page
+        if (el('authScreen').style.display === 'none' && el('appScreen').style.display === 'none') el('authScreen').style.display = 'flex';
+        removeSplash();
+        loadApp();
       });
     });
   </script>

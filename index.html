@@ -24,6 +24,16 @@
 </head>
 <script>
   if ('serviceWorker' in navigator) {
+    // When a new version of the app finishes installing, reload once so the
+    // phone switches to it right away instead of staying on the old copy until
+    // the next launch. (Only if an older version was already running.)
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloadedForUpdate) return;
+      reloadedForUpdate = true;
+      window.location.reload();
+    });
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then(reg => console.log('SW registered:', reg.scope))

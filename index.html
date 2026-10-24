@@ -35,7 +35,13 @@
   <div class="amigo">
 
     <!-- AUTH SCREEN -->
-    <div id="authScreen" class="auth-screen" style="display:flex;">
+    <!-- BOOT SPLASH: shown while the app checks your saved login, so the
+         login page never flashes for returning users. initAuth() decides
+         whether to reveal the login page or the app, then removes this. -->
+    <div id="bootSplash" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3a6b,#0f2240);">
+      <div style="width:64px;height:64px;border-radius:18px;background:#fff;color:#1a3a6b;display:flex;align-items:center;justify-content:center;font:700 30px 'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.25);">A</div>
+    </div>
+    <div id="authScreen" class="auth-screen" style="display:none;">
       <div class="auth-decor auth-decor-1"></div>
       <div class="auth-decor auth-decor-2"></div>
       <div class="auth-decor auth-decor-3"></div>
@@ -503,7 +509,17 @@
   <script src="auth.js" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      initAuth().then(() => {
+      const hideSplash = () => {
+        // Safety net: if neither screen got shown for any reason, show login
+        // rather than leaving a blank page.
+        const auth = document.getElementById('authScreen');
+        const app  = document.getElementById('appScreen');
+        if (auth.style.display === 'none' && app.style.display === 'none') auth.style.display = 'flex';
+        const splash = document.getElementById('bootSplash');
+        if (splash) splash.remove();
+      };
+      Promise.resolve().then(() => initAuth()).catch(err => console.error('initAuth failed:', err)).then(() => {
+        hideSplash();
         const script = document.createElement('script');
         script.src = 'app.js';
         document.body.appendChild(script);

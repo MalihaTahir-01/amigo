@@ -392,12 +392,12 @@ async function organizePrompt() {
   if (!text) return;
   flowData = { raw: text };
   const flow = document.getElementById('aiFlow');
-  flow.innerHTML = `<div class="ai-question">"${text}" — reading this...</div>`;
+  flow.innerHTML = `<div class="ai-question">"${escapeAttr(text)}" — reading this...</div>`;
   try {
     const res = await fetch('/api/parse-task', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text, today: localDateStr(new Date()) })
     });
     if (!res.ok) {
       let detail = '';
@@ -543,12 +543,12 @@ async function quickAddOrganize(lockedType) {
   if (!text) return;
   flowData = { raw: text, lockedType: lockedType || null };
   const flow = document.getElementById('quickAddFlow');
-  flow.innerHTML = `<div class="ai-question">"${text}" — reading this...</div>`;
+  flow.innerHTML = `<div class="ai-question">"${escapeAttr(text)}" — reading this...</div>`;
   try {
     const res = await fetch('/api/parse-task', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text, today: localDateStr(new Date()) })
     });
     if (!res.ok) throw new Error('AI service unavailable (' + res.status + ')');
     const parsed = await res.json();
@@ -597,7 +597,7 @@ function startManualFlow(text) {
   flowData = { raw: text };
   const flow = document.getElementById('aiFlow');
   flow.innerHTML = `
-    <div class="ai-question">"${text}" — ${t('whatType')}</div>
+    <div class="ai-question">"${escapeAttr(text)}" — ${t('whatType')}</div>
     <div class="ai-options">
       <button class="ai-opt" onclick="pickType('assignment')">${t('assignment')}</button>
       <button class="ai-opt" onclick="pickType('quiz')">${t('quiz')}</button>
@@ -1001,8 +1001,8 @@ function showTaskDetail(item) {
           <i class="ti ${iconName(item.type)}"></i>
         </div>
         <div>
-          <div class="task-detail-title">${item.title}</div>
-          <div class="task-detail-subject">${item.subject}</div>
+          <div class="task-detail-title">${escapeAttr(item.title)}</div>
+          <div class="task-detail-subject">${escapeAttr(item.subject)}</div>
         </div>
       </div>
       <div class="task-detail-info">
@@ -1020,7 +1020,7 @@ function showTaskDetail(item) {
         </div>
         ${item.note ? `<div class="task-detail-info-row">
           <span class="task-detail-info-label">Note</span>
-          <span class="task-detail-info-value">${item.note}</span>
+          <span class="task-detail-info-value">${escapeAttr(item.note)}</span>
         </div>` : ''}
       </div>
       <div class="task-detail-actions">
@@ -1058,8 +1058,8 @@ function addToList(listId, item) {
     <div class="item-checkbox ${item.completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggleItemComplete(${item.id})"><i class="ti ti-check"></i></div>
     <div class="task-icon ${iconClass(item.type)}"><i class="ti ${iconName(item.type)}"></i></div>
     <div class="task-info">
-      <div class="task-title">${item.title}</div>
-      <div class="task-sub">${item.subject}${item.note ? ' — ' + item.note : ''}</div>
+      <div class="task-title">${escapeAttr(item.title)}</div>
+      <div class="task-sub">${escapeAttr(item.subject)}${item.note ? ' — ' + escapeAttr(item.note) : ''}</div>
     </div>
     <span class="task-due ${overdue ? 'task-due-overdue' : ''}">${dueLabel}</span>
     <span class="urgency ${urgencyClass(item.priority)}">${item.priority}</span>
@@ -1121,7 +1121,7 @@ function addToFocus(item) {
   div.setAttribute('data-id', item.id);
   div.innerHTML = `
     <div class="focus-dot ${dotColor(item.priority)}"></div>
-    <span class="focus-item-text">${item.title} — ${item.subject}</span>
+    <span class="focus-item-text">${escapeAttr(item.title)} — ${escapeAttr(item.subject)}</span>
     <span class="focus-item-tag ${tagClass(item.priority)}">${item.priority}</span>`;
   focus.appendChild(div);
 }
@@ -1200,7 +1200,7 @@ function renderFolder(folder) {
     <div class="folder-header" onclick="toggleFolder(${folder.id})">
       <div class="folder-header-left">
         <i class="ti ti-folder folder-icon" id="ficon-${folder.id}"></i>
-        <span class="folder-name">${folder.name}</span>
+        <span class="folder-name">${escapeAttr(folder.name)}</span>
         <span class="folder-count" id="fcount-${folder.id}">${folder.files.length} file${folder.files.length !== 1 ? 's' : ''}</span>
       </div>
       <div class="folder-header-right">
@@ -1847,12 +1847,12 @@ async function attemptTimetableImport(file, command, flow) {
     const isImage = file.type && file.type.startsWith('image/');
     let body;
     if (isSpreadsheet) {
-      body = { command, textContent: await readSpreadsheetAsText(file) };
+      body = { command, today: localDateStr(new Date()), textContent: await readSpreadsheetAsText(file) };
     } else if (isImage) {
       // Downscale/re-encode photos so a normal phone photo doesn't blow past
       // Vercel's request-size limit (see compressImageFile above).
       const { base64, mimeType } = await compressImageFile(file);
-      body = { command, mimeType, fileBase64: base64 };
+      body = { command, today: localDateStr(new Date()), mimeType, fileBase64: base64 };
     } else {
       // PDFs and anything else can't be shrunk this way — better to say so
       // clearly up front than let it fail with an opaque "(413)" after the
@@ -1862,7 +1862,7 @@ async function attemptTimetableImport(file, command, flow) {
         flow.innerHTML = `<div class="ai-question">That file is too large to import as-is (limit is about ${MAX_MB}MB for PDFs). Try exporting just the relevant page(s) as a smaller PDF, or take a photo of the timetable instead — photos get automatically compressed.</div>`;
         return;
       }
-      body = { command, mimeType: file.type || 'application/octet-stream', fileBase64: await readFileAsBase64(file) };
+      body = { command, today: localDateStr(new Date()), mimeType: file.type || 'application/octet-stream', fileBase64: await readFileAsBase64(file) };
     }
     const res = await fetch('/api/parse-timetable', {
       method: 'POST',
@@ -2321,7 +2321,7 @@ function renderReminderList() {
     div.innerHTML   = `
       <div class="task-icon ${iconClass(r.type)}"><i class="ti ${iconName(r.type)}"></i></div>
       <div class="task-info">
-        <div class="task-title">${r.title}</div>
+        <div class="task-title">${escapeAttr(r.title)}</div>
         <div class="task-sub">${r.type} — ${r.time}</div>
       </div>
       <span class="task-due">${dateLabel}</span>
@@ -2379,8 +2379,8 @@ function doSearch() {
     div.innerHTML = `
       <div class="task-icon ${iconClass(item.type)}"><i class="ti ${iconName(item.type)}"></i></div>
       <div class="task-info">
-        <div class="task-title">${item.title}</div>
-        <div class="task-sub">${item.subject} — ${item.type}</div>
+        <div class="task-title">${escapeAttr(item.title)}</div>
+        <div class="task-sub">${escapeAttr(item.subject)} — ${escapeAttr(item.type)}</div>
       </div>
       <span class="task-due">${item.due}</span>
       <span class="urgency ${urgencyClass(item.priority)}">${item.priority}</span>`;

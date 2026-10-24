@@ -60,7 +60,9 @@ async function supabaseRest(path, opts = {}) {
 }
 
 module.exports = async (req, res) => {
-  if (req.headers['x-cron-secret'] !== process.env.CRON_SECRET) {
+  // If CRON_SECRET is missing on the server, both sides were `undefined` and the
+  // check below passed for ANYONE. Refuse everything unless the secret is set.
+  if (!process.env.CRON_SECRET || req.headers['x-cron-secret'] !== process.env.CRON_SECRET) {
     res.status(401).json({ error: 'unauthorized' });
     return;
   }

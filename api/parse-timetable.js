@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { command, mimeType, fileBase64, textContent } = req.body || {};
+  const { command, mimeType, fileBase64, textContent, today: clientToday } = req.body || {};
 
   if (!fileBase64 && !textContent) {
     res.status(400).json({ error: 'Provide either a file (fileBase64 + mimeType) or textContent' });
@@ -62,7 +62,8 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = (typeof clientToday === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(clientToday))
+    ? clientToday : new Date().toISOString().slice(0, 10);
 
   const systemPrompt = `You extract class/shift schedule entries from a timetable
 (which may be a photo, a PDF, or raw text pulled from a spreadsheet) and match

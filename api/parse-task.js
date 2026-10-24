@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { text } = req.body || {};
+  const { text, today: clientToday } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) {
     res.status(400).json({ error: 'Missing "text" in request body' });
     return;
@@ -31,16 +31,20 @@ module.exports = async function handler(req, res) {
 
   // Give the model "today" so it can resolve relative dates ("Monday",
   // "next week") into an absolute date correctly, instead of guessing.
-  const today = new Date();
+  // Use the date from the person's own phone. The server runs in UTC, which is
+  // still "yesterday" for Pakistan between midnight and 5 AM, so "tomorrow" or
+  // "mon" would resolve one day off for late-night use.
+  const validClientDate = typeof clientToday === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(clientToday) && !isNaN(new Date(clientToday + 'T12:00:00Z'));
+  const today = validClientDate ? new Date(clientToday + 'T12:00:00Z') : new Date();
   const todayIso = today.toISOString().slice(0, 10);
-  const todayWeekday = today.toLocaleDateString('en-US', { weekday: 'long' });
+  const todayWeekday = today.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
 
   // Compute a couple of real "next occurrence" example dates off the actual
   // today, so the few-shot examples below are never stale or self-contradicting.
   const nextWeekdayIso = (targetDow) => {
     const d = new Date(today);
-    const diff = ((targetDow - d.getDay() + 7) % 7) || 7; // always strictly in the future
-    d.setDate(d.getDate() + diff);
+    const diff = ((targetDow - d.getUTCDay() + 7) % 7) || 7; // always strictly in the future
+    d.setUTCDate(d.getUTCDate() + diff);
     return d.toISOString().slice(0, 10);
   };
   const nextMonIso = nextWeekdayIso(1);

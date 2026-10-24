@@ -2624,7 +2624,13 @@ async function handleLogin() {
   errEl.className = 'auth-msg auth-msg-info show';
   const error = await signInWithEmail(email, password);
   if (error) {
-    errEl.textContent = 'wrong email or password 😬';
+    // Only say "wrong password" when that is really what the server said —
+    // otherwise show the true reason so it can be fixed.
+    errEl.textContent =
+      /invalid login credentials/i.test(error) ? 'wrong email or password 😬'
+      : error === 'TIMEOUT' ? 'the server is not answering — check your internet and try again 🌐'
+      : /not confirmed/i.test(error) ? 'confirm your email first — check your inbox 📩'
+      : error;
     errEl.className = 'auth-msg auth-msg-error show';
     return;
   }

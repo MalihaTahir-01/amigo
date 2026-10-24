@@ -311,14 +311,13 @@ const focusDateEl = document.getElementById('focusDate');
 if (focusDateEl) focusDateEl.textContent = now.toLocaleDateString('en-US', {
   day: 'numeric', month: 'short', year: 'numeric'
 });
-// Remove any tasks whose (now-absolute) due date has already passed, then render the rest
+// Render all saved items on page load.
+// expireOldTasks() clears the lists, renders every item, sorts and updates
+// the counts — so it is the ONLY render pass needed here. (There used to be a
+// second items.forEach(renderItem) right after it, which drew every task twice
+// each time the app loaded.)
 expireOldTasks();
 if (itemsMigrated) saveUserData();
-// Render all saved items on page load
-items.forEach(item => renderItem(item));
-sortList('taskList');
-['assignment','quiz','mids','presentation','final','notice'].forEach(type => sortList('list-' + type));
-updateCounts();
 // ────────────────────────────────────────────────────────────
 // SETTINGS — load saved values on page load
 // ────────────────────────────────────────────────────────────
@@ -1036,6 +1035,8 @@ function showTaskDetail(item) {
 function addToList(listId, item) {
   const list = document.getElementById(listId);
   if (!list) return;
+  // Safety net: never draw the same task twice in the same list
+  if (list.querySelector('[data-id="' + item.id + '"]')) return;
   // Remove the "empty" placeholder if it exists (list empty-states use
   // focus-empty-light, the home focus card uses focus-empty — match both)
   const empty = list.querySelector('.focus-empty, .focus-empty-light');

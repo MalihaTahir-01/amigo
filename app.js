@@ -2803,10 +2803,12 @@ renderNotes();
 // ============================================================
 // FOCUS TIMER — ephemeral, not persisted (a live countdown only)
 // ============================================================
-let timerSeconds = 25 * 60;
+let timerSeconds = 25 * 60;   // seconds left (shown on screen; frozen while paused)
 let timerTotal   = 25 * 60;
 let timerRunning = false;
 let timerInterval = null;
+let timerEndAt   = null;      // clock time (ms) when the running timer reaches 0
+let timerAudioCtx = null;     // Web Audio context used for the bell
 function formatTimerTime(s) {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
@@ -2832,6 +2834,7 @@ function setTimerPreset(btn, mins) {
 function applyTimerLength(mins, btn) {
   clearInterval(timerInterval);
   timerRunning = false;
+  timerEndAt = null;
   const startBtn = document.getElementById('timerStartBtn');
   if (startBtn) startBtn.textContent = 'Start';
   timerSeconds = mins * 60;
@@ -2871,29 +2874,115 @@ function confirmCustomTimer() {
   applyTimerLength(totalMins, document.querySelector('.preset-btn:last-child'));
   document.getElementById('customTimerModal').remove();
 }
+// ── Finish alert: bell sound + vibration + notification ──────
+// Browsers only allow sound after a tap, so the audio is "unlocked" when the
+// person presses Start (that tap is what makes the bell allowed later).
+function unlockTimerAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!timerAudioCtx) timerAudioCtx = new AC();
+    if (timerAudioCtx.state === 'suspended') timerAudioCtx.resume();
+  } catch (_) { /* sound is a bonus — never break the timer over it */ }
+}
+function playTimerBell() {
+  try {
+    unlockTimerAudio();
+    const ctx = timerAudioCtx;
+    if (ctx) {
+      // One "ding" = a base tone plus two quieter higher tones, fading out
+      // slowly — that mix is what makes it sound like a bell, not a beep.
+      const ding = t0 => {
+        [[880, 0.35], [1318.5, 0.18], [1760, 0.10]].forEach(([freq, peak]) => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.0001, t0);
+          gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 1.7);
+        });
+      };
+      const now = ctx.currentTime;
+      ding(now); ding(now + 1.2); ding(now + 2.4); // three rings
+    }
+  } catch (err) { console.error('Timer bell failed:', err); }
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+}
+async function showTimerNotification() {
+  try {
+    if (localStorage.getItem('amigo_notifpref') === '0') return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!('serviceWorker' in navigator)) return;
+    // Must go through the service worker — `new Notification()` throws on Android Chrome.
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification("Time's up! ⏰", {
+      body: 'Your focus timer has finished.',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'amigo-timer',
+      renotify: true,
+      vibrate: [300, 150, 300],
+    });
+  } catch (err) { console.error('Timer notification failed:', err); }
+}
+function finishTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerEndAt = null;
+  timerSeconds = 0;
+  renderTimerDisplay();
+  const btn = document.getElementById('timerStartBtn');
+  if (btn) btn.textContent = 'Start';
+  playTimerBell();
+  showTimerNotification();
+  showToast("Time's up! 🔔");
+}
+// Works out the time left from the clock instead of "minus 1 each second".
+// A phone that sleeps or a background tab can pause setInterval, which made
+// the old countdown fall behind; the clock can't fall behind.
+function timerTick() {
+  if (!timerRunning || timerEndAt == null) return;
+  timerSeconds = Math.max(0, Math.round((timerEndAt - Date.now()) / 1000));
+  renderTimerDisplay();
+  if (timerSeconds <= 0) finishTimer();
+}
+// Coming back to the app after the screen was off: catch up immediately.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) timerTick(); });
 function toggleTimer() {
   const btn = document.getElementById('timerStartBtn');
-  timerRunning = !timerRunning;
-  if (timerRunning) {
+  if (!timerRunning) {
+    // Start / resume. If it already finished, begin a fresh round.
+    if (timerSeconds <= 0) timerSeconds = timerTotal;
+    unlockTimerAudio(); // this tap is what lets the bell play later
+    if ('Notification' in window && Notification.permission === 'default' &&
+        localStorage.getItem('amigo_notifpref') !== '0') {
+      Notification.requestPermission();
+    }
+    timerRunning = true;
+    timerEndAt = Date.now() + timerSeconds * 1000;
     btn.textContent = 'Pause';
-    timerInterval = setInterval(() => {
-      if (timerSeconds > 0) {
-        timerSeconds--;
-        renderTimerDisplay();
-      } else {
-        clearInterval(timerInterval);
-        timerRunning = false;
-        btn.textContent = 'Start';
-      }
-    }, 1000);
-  } else {
-    btn.textContent = 'Start';
     clearInterval(timerInterval);
+    timerInterval = setInterval(timerTick, 250); // 250ms so the display never skips a second
+    renderTimerDisplay();
+  } else {
+    // Pause: freeze the time that is left.
+    timerTick();
+    if (!timerRunning) return; // it hit zero in that same instant
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerEndAt = null;
+    btn.textContent = 'Start';
   }
 }
 function resetTimer() {
   clearInterval(timerInterval);
   timerRunning = false;
+  timerEndAt = null;
   timerSeconds = timerTotal;
   const btn = document.getElementById('timerStartBtn');
   if (btn) btn.textContent = 'Start';

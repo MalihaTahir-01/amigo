@@ -1,4 +1,5 @@
-const CACHE = 'amigo-v19';
+const CACHE = 'amigo-v20';
+const SHARE_CACHE = 'amigo-share'; // files shared into Amigo from other apps, waiting to be filed
 const ASSETS = ['/', '/index.html', '/app.js', '/auth.js', '/style.css', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 // Libraries loaded from a CDN. The app can't start without the Supabase one
 // (auth.js uses it immediately), so they are saved at install time, not just
@@ -40,7 +41,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== SHARE_CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -68,8 +69,33 @@ self.addEventListener('notificationclick', e => {
   );
 });
 
+// Share target: when someone picks Amigo in the phone's Share menu (WhatsApp,
+// Drive, Gallery...), the phone sends the file(s) here as a POST. We park them in
+// a small cache, then open the app, which asks which folder to put them in.
+async function handleShareTarget(request) {
+  try {
+    const form = await request.formData();
+    const files = form.getAll('files').filter(f => f && typeof f !== 'string');
+    await caches.delete(SHARE_CACHE);
+    const cache = await caches.open(SHARE_CACHE);
+    await Promise.all(files.map((file, i) => cache.put(
+      new Request('/shared-file/' + String(i).padStart(3, '0')),
+      new Response(file, { headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-Filename': encodeURIComponent(file.name || 'shared-file'),
+      } })
+    )));
+  } catch (err) { console.error('Share target failed:', err); }
+  return Response.redirect('/?share=1', 303);
+}
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  if (e.request.method === 'POST' && url.pathname === '/share-target') {
+    e.respondWith(handleShareTarget(e.request));
+    return;
+  }
 
   // Skip non-GET requests completely
   if (e.request.method !== 'GET') return;

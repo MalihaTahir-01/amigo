@@ -1292,14 +1292,20 @@ function renderFile(folderId, fileData) {
 }
 // ── Upload ───────────────────────────────────────────────────
 function handleUpload(input, folderId) {
+  uploadFilesToFolder(Array.from(input.files), folderId);
+  input.value = '';
+}
+// The upload itself, shared by the folder's Upload button and by files shared
+// into Amigo from other apps (see "SHARE TARGET" further down).
+function uploadFilesToFolder(fileList, folderId) {
   const folder   = folders.find(f => f.id === folderId);
-  if (!folder) return;
+  if (!folder) return Promise.resolve();
   // Supabase's free tier caps individual uploads at 50MB (Pro removes this
   // cap) — matching that here so you get a clear message before uploading,
   // instead of the bucket silently rejecting a bigger file after the fact.
   const MAX_MB    = 50;
   const MAX_BYTES = MAX_MB * 1024 * 1024;
-  Array.from(input.files).forEach(async file => {
+  return Promise.all(fileList.map(async file => {
     if (file.size > MAX_BYTES) {
       alert(`"${file.name}" exceeds the ${MAX_MB}MB limit.`);
       return;
@@ -1323,8 +1329,7 @@ function handleUpload(input, folderId) {
       console.error('Upload failed:', err);
       showToast(`Couldn't upload "${file.name}" — ${err.message || 'check your connection and try again'}.`, true);
     }
-  });
-  input.value = '';
+  }));
 }
 // ── Open file ────────────────────────────────────────────────
 async function openFile(fileName, folderId) {
@@ -2028,6 +2033,103 @@ function confirmTimetableImport() {
 scheduleFolders.forEach(f => renderScheduleFolder(f));
 // Load saved folders on page boot
 folders.forEach(f => renderFolder(f));
+
+// ============================================================
+// SHARE TARGET — "Share → Amigo" from WhatsApp, Drive, Gallery...
+// The service worker (sw.js) parks the shared files in the 'amigo-share'
+// cache and opens the app at /?share=1. Here we pick them up, ask which
+// folder they belong in, and upload them like a normal upload.
+// ============================================================
+let pendingSharedFiles = [];
+async function checkSharedFiles() {
+  try {
+    if (!('caches' in window)) return;
+    if (location.search.includes('share=')) history.replaceState(null, '', location.pathname);
+    const cache = await caches.open('amigo-share');
+    const reqs  = (await cache.keys()).sort((a, b) => a.url.localeCompare(b.url));
+    if (!reqs.length) return;
+    const files = [];
+    for (const req of reqs) {
+      const res = await cache.match(req);
+      if (!res) continue;
+      const blob = await res.blob();
+      const name = decodeURIComponent(res.headers.get('X-Filename') || 'shared-file');
+      files.push(new File([blob], name, { type: blob.type || res.headers.get('Content-Type') || '' }));
+    }
+    if (files.length) showSharePicker(files);
+  } catch (err) { console.error('Reading shared files failed:', err); }
+}
+async function clearSharedFiles() {
+  pendingSharedFiles = [];
+  try { await caches.delete('amigo-share'); } catch (_) {}
+}
+function showSharePicker(files) {
+  pendingSharedFiles = files;
+  const old = document.getElementById('shareModal');
+  if (old) old.remove();
+  const modal = document.createElement('div');
+  modal.id = 'shareModal';
+  modal.className = 'task-detail-overlay';
+  const folderOptions = folders.map(f => `<option value="${f.id}">${escapeAttr(f.name)}</option>`).join('');
+  const fileList = files.map(f => `<li>${escapeAttr(f.name)} <span class="share-size">${formatBytes(f.size)}</span></li>`).join('');
+  modal.innerHTML = `
+    <div class="task-detail-sheet">
+      <div class="task-detail-handle"></div>
+      <div class="ai-question quick-add-title">Save to Amigo</div>
+      <ul class="share-file-list">${fileList}</ul>
+      <div class="ai-flow-row">
+        <select id="shareFolderSelect" class="ai-input-boxed" onchange="document.getElementById('shareNewFolder').style.display = this.value === 'new' ? 'block' : 'none'">
+          ${folderOptions}
+          <option value="new">＋ New folder…</option>
+        </select>
+      </div>
+      <div class="ai-flow-row">
+        <input id="shareNewFolder" class="ai-input-boxed" type="text" placeholder="New folder name" style="display:none;" />
+      </div>
+      <div class="ai-flow-row">
+        <button class="ai-send" style="width:100%;" onclick="saveSharedFiles()">Save</button>
+      </div>
+      <button class="task-detail-btn task-detail-btn-close quick-add-close" onclick="cancelSharedFiles()">Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+  // No folders yet → go straight to "new folder".
+  const sel = document.getElementById('shareFolderSelect');
+  if (!folders.length) { sel.value = 'new'; document.getElementById('shareNewFolder').style.display = 'block'; }
+  // Show the Uploads page behind the dialog.
+  const nav = document.querySelector('.nav-item[onclick*="uploads"]');
+  if (nav) setNav(nav, 'uploads');
+}
+async function saveSharedFiles() {
+  const files = pendingSharedFiles;
+  if (!files.length) return;
+  const sel = document.getElementById('shareFolderSelect').value;
+  let folderId;
+  if (sel === 'new') {
+    const name = document.getElementById('shareNewFolder').value.trim();
+    if (!name) { alert('Type a name for the new folder.'); return; }
+    const folder = { id: Date.now(), name, files: [] };
+    folders.push(folder);
+    saveFolders();
+    saveUserData();
+    const container = document.getElementById('folderList');
+    const empty = container && container.querySelector('.focus-empty');
+    if (empty) empty.remove();
+    renderFolder(folder);
+    folderId = folder.id;
+  } else {
+    folderId = Number(sel);
+  }
+  const modal = document.getElementById('shareModal');
+  if (modal) modal.remove();
+  await uploadFilesToFolder(files, folderId);
+  await clearSharedFiles();
+}
+async function cancelSharedFiles() {
+  const modal = document.getElementById('shareModal');
+  if (modal) modal.remove();
+  await clearSharedFiles();
+}
+checkSharedFiles();
 
 // ============================================================
 // LIVE CLASS WIDGET (homepage) — shows the class happening right now,

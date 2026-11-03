@@ -1684,3 +1684,9 @@ body {
   margin-top: 10px; width: 100%; border: none; border-radius: 10px; cursor: pointer;
   padding: 10px; font-size: 14px; font-weight: 600; color: #fff; background: #1a3a6b;
 }
+
+/* ── "Save to Amigo" dialog for files shared in from other apps ── */
+.share-file-list { list-style: none; margin: 0 0 14px; padding: 0; max-height: 140px; overflow: auto; font-size: 13px; color: var(--color-text); }
+.share-file-list li { padding: 6px 0; border-bottom: 1px solid var(--color-surface-alt); word-break: break-word; }
+.share-file-list li:last-child { border-bottom: none; }
+.share-size { color: var(--color-text-secondary); font-size: 12px; margin-left: 6px; white-space: nowrap; }

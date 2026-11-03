@@ -56,6 +56,73 @@
     });
   }
 </script>
+<script>
+  // ── "Install Amigo app" link on the login page ──────────────
+  // Android/desktop Chrome: the browser hands us an install prompt we can open
+  // with one tap. iPhone has no such prompt, so we show the Add-to-Home-Screen steps.
+  // The link is hidden inside the installed app, and once we know it was installed.
+  (function () {
+    let deferredPrompt = null;
+    const isStandalone = () =>
+      window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isIOS = () =>
+      /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const flag = {
+      get() { try { return localStorage.getItem('amigo_installed') === '1'; } catch (_) { return false; } },
+      set() { try { localStorage.setItem('amigo_installed', '1'); } catch (_) {} },
+    };
+    function refreshInstallRow() {
+      const row = document.getElementById('installRow');
+      if (!row) return;
+      if (isStandalone()) flag.set(); // running as the installed app → remember it
+      row.style.display = (isStandalone() || flag.get()) ? 'none' : 'block';
+    }
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();      // keep the prompt so OUR link can open it
+      deferredPrompt = e;
+      refreshInstallRow();
+    });
+    window.addEventListener('appinstalled', () => { deferredPrompt = null; flag.set(); refreshInstallRow(); });
+    document.addEventListener('DOMContentLoaded', refreshInstallRow);
+
+    function showInstallHelp(title, steps) {
+      const old = document.getElementById('installHelp');
+      if (old) old.remove();
+      const box = document.createElement('div');
+      box.id = 'installHelp';
+      box.className = 'install-help-overlay';
+      box.innerHTML = '<div class="install-help-card"><h3></h3><ol></ol><button type="button">Got it</button></div>';
+      box.querySelector('h3').textContent = title;
+      steps.forEach(s => { const li = document.createElement('li'); li.textContent = s; box.querySelector('ol').appendChild(li); });
+      box.querySelector('button').onclick = () => box.remove();
+      box.addEventListener('click', e => { if (e.target === box) box.remove(); });
+      document.body.appendChild(box);
+    }
+    window.amigoInstall = async function () {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (choice && choice.outcome === 'accepted') { flag.set(); refreshInstallRow(); }
+        return;
+      }
+      if (isIOS()) {
+        showInstallHelp('Install Amigo on iPhone', [
+          'Tap the Share button (the square with an arrow) at the bottom of Safari.',
+          'Scroll down and tap "Add to Home Screen".',
+          'Tap "Add". Amigo now opens like an app from your home screen.',
+        ]);
+      } else {
+        showInstallHelp('Install Amigo', [
+          'Open your browser menu (the ⋮ or ⋯ button).',
+          'Tap "Install app" or "Add to Home screen".',
+          'Confirm. Amigo now opens like an app.',
+        ]);
+      }
+    };
+  })();
+</script>
 <body>
   <div class="amigo">
 
@@ -77,8 +144,8 @@
         </div>
 
         <div class="auth-tabs">
-          <button onclick="switchTab('login')" id="tab-login" class="auth-tab active">Sign in</button>
-          <button onclick="switchTab('signup')" id="tab-signup" class="auth-tab">New here?</button>
+          <button onclick="switchTab('login')" id="tab-login" class="auth-tab active">Login</button>
+          <button onclick="switchTab('signup')" id="tab-signup" class="auth-tab">Sign up</button>
         </div>
 
         <!-- LOGIN FORM -->
@@ -118,6 +185,12 @@
             <button onclick="handleSignup()" class="auth-submit">Create my account ✨</button>
           </div>
           <p class="auth-terms">By signing up you agree to use Amigo responsibly 🤝</p>
+        </div>
+
+        <!-- INSTALL LINK: shown only when Amigo is opened in a normal browser tab.
+             Hidden automatically inside the installed app (see the install script in <head>). -->
+        <div id="installRow" class="auth-install" style="display:none;">
+          <button type="button" onclick="amigoInstall()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6.5 11 12 16.5 17.5 11M5 20h14"/></svg>Install Amigo app</button>
         </div>
       </div>
     </div>

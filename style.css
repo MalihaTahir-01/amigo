@@ -1654,3 +1654,33 @@ body {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.toast-error { background: var(--color-danger); }
 @media (max-width: 768px) { .toast { bottom: 76px; } }
+/* ── "Install Amigo app" link on the login page ── */
+.auth-install { text-align: center; margin-top: 16px; }
+.auth-install button {
+  display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--color-primary-soft);
+  background: var(--color-primary-light);
+  border: 1px solid transparent;
+  padding: 7px 16px; border-radius: 999px;
+  transition: background .15s ease, color .15s ease;
+}
+.auth-install button:hover { background: #dbe5f3; color: var(--color-primary-dark); }
+.auth-install button svg { width: 15px; height: 15px; flex: none; }
+.install-help-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(10, 20, 40, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.install-help-card {
+  background: #fff; color: #1a2233; border-radius: 16px;
+  max-width: 340px; width: 100%; padding: 22px 22px 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+.install-help-card h3 { font-size: 16px; margin-bottom: 12px; }
+.install-help-card ol { padding-left: 20px; font-size: 13.5px; line-height: 1.6; color: #475467; }
+.install-help-card li { margin-bottom: 6px; }
+.install-help-card button {
+  margin-top: 10px; width: 100%; border: none; border-radius: 10px; cursor: pointer;
+  padding: 10px; font-size: 14px; font-weight: 600; color: #fff; background: #1a3a6b;
+}

@@ -32,11 +32,26 @@
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!hadController || reloadedForUpdate) return;
       reloadedForUpdate = true;
-      window.location.reload();
+      // Don't wipe a running focus timer: wait until it is stopped, then reload.
+      const reloadWhenIdle = () => {
+        if (typeof timerRunning !== 'undefined' && timerRunning) { setTimeout(reloadWhenIdle, 5000); return; }
+        window.location.reload();
+      };
+      reloadWhenIdle();
     });
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('SW registered:', reg.scope))
+        .then(reg => {
+          console.log('SW registered:', reg.scope);
+          // The browser only looks for a new sw.js when the page is opened (or about
+          // once a day). An app left open in the background therefore never noticed
+          // updates. Ask explicitly: when the app comes back to the screen, and every
+          // 10 minutes while it stays open. A found update then swaps in by itself
+          // through the controllerchange reload above.
+          const checkForUpdate = () => { reg.update().catch(() => {}); };
+          document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+          setInterval(checkForUpdate, 10 * 60 * 1000);
+        })
         .catch(err => console.error('SW failed:', err));
     });
   }

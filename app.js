@@ -3127,8 +3127,10 @@ function urlBase64ToUint8Array(base64String) {
 // (especially mobile Chrome and iOS Safari) silently ignore or auto-block
 // permission prompts that aren't triggered by a user gesture — which is why
 // push never got set up before.
+let _lastPushError = '';
 async function subscribeToPush(interactive) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
+  _lastPushError = '';
   try {
     let permission = Notification.permission;
     if (permission === 'default' && interactive) permission = await Notification.requestPermission();
@@ -3136,24 +3138,38 @@ async function subscribeToPush(interactive) {
     const session = await getSession();
     if (!session) return 'no-session';
     const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+    // Two attempts. If the first fails (a leftover subscription this account
+    // isn't allowed to overwrite, one made with a different key, or a broken
+    // one), throw it away and make a brand-new one for the second attempt.
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          });
+        }
+        const json = sub.toJSON();
+        const { error } = await _supabase.from('push_subscriptions').upsert({
+          user_id: session.user.id,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth_key: json.keys.auth,
+        }, { onConflict: 'endpoint' });
+        if (error) throw new Error('Database: ' + error.message);
+        return 'granted';
+      } catch (err) {
+        console.error('Push subscribe attempt ' + attempt + ' failed:', err);
+        _lastPushError = (err && (err.name ? err.name + ': ' : '') + (err.message || '')) || String(err);
+        if (attempt === 2) break;
+        try { const old = await reg.pushManager.getSubscription(); if (old) await old.unsubscribe(); } catch (_) {}
+      }
     }
-    const json = sub.toJSON();
-    const { error } = await _supabase.from('push_subscriptions').upsert({
-      user_id: session.user.id,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth_key: json.keys.auth,
-    }, { onConflict: 'endpoint' });
-    if (error) { console.error('Saving push subscription failed:', error.message); return 'error'; }
-    return 'granted';
+    return 'error';
   } catch (err) {
     console.error('Push subscribe failed:', err);
+    _lastPushError = (err && (err.name ? err.name + ': ' : '') + (err.message || '')) || String(err);
     return 'error';
   }
 }
@@ -3191,7 +3207,7 @@ async function enablePhoneNotifications() {
     error: 'Couldn\'t set up notifications — please try again.',
     default: 'Notification permission wasn\'t granted.',
   };
-  showToast(msgs[result] || msgs.error, result !== 'granted');
+  showToast((msgs[result] || msgs.error) + (result === 'error' && _lastPushError ? ' (' + _lastPushError.slice(0, 120) + ')' : ''), result !== 'granted');
   refreshNotifStatus();
   saveUserData();
 }

@@ -3137,7 +3137,7 @@ async function subscribeToPush(interactive) {
     if (permission !== 'granted') return permission;
     const session = await getSession();
     if (!session) return 'no-session';
-    const reg = await navigator.serviceWorker.ready;
+    let reg = await navigator.serviceWorker.ready;
     // Two attempts. If the first fails (a leftover subscription this account
     // isn't allowed to overwrite, one made with a different key, or a broken
     // one), throw it away and make a brand-new one for the second attempt.
@@ -3164,6 +3164,16 @@ async function subscribeToPush(interactive) {
         _lastPushError = (err && (err.name ? err.name + ': ' : '') + (err.message || '')) || String(err);
         if (attempt === 2) break;
         try { const old = await reg.pushManager.getSubscription(); if (old) await old.unsubscribe(); } catch (_) {}
+        // "push service error" usually means the browser's push registration
+        // is stuck. Re-creating the service worker resets it.
+        if (err && err.name === 'AbortError') {
+          try {
+            await reg.unregister();
+            reg = await navigator.serviceWorker.register('/sw.js');
+            await navigator.serviceWorker.ready;
+            await new Promise(r => setTimeout(r, 1500));
+          } catch (e) { console.error('Service worker reset failed:', e); }
+        }
       }
     }
     return 'error';

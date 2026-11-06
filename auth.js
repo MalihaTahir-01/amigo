@@ -110,14 +110,23 @@ async function signUpWithEmail(email, password, name) {
 
   return null;
 }
+let _signingOut = false;
 async function signOut() {
-  await saveUserData();
+  if (_signingOut) return;            // ignore repeated taps while it's working
+  _signingOut = true;
+  try { showToast('Signing out…'); } catch (e) {}
+  // Every step is time-limited, so a slow network or a stuck service worker
+  // can never leave you tapping a button that seems to do nothing.
+  try { await withTimeout(saveUserData(), 6000); } catch (e) {}
   // Stop this phone receiving push notifications for the account being left.
   // Must happen BEFORE auth.signOut(): deleting the saved subscription from
-  // the database needs the still-active login. (Never blocks logout.)
-  try { await unsubscribeFromPush(); } catch (e) { console.error('Push cleanup on sign-out failed:', e); }
+  // the database needs the still-active login.
+  try { await withTimeout(unsubscribeFromPush(), 4000); } catch (e) { console.error('Push cleanup on sign-out failed:', e); }
   clearLocalData();
-  await _supabase.auth.signOut();
+  try { await withTimeout(_supabase.auth.signOut(), 4000); } catch (e) {
+    // Offline: at least drop the login on this device.
+    try { await _supabase.auth.signOut({ scope: 'local' }); } catch (e2) {}
+  }
   window.location.reload();
 }
 

@@ -112,6 +112,10 @@ async function signUpWithEmail(email, password, name) {
 }
 async function signOut() {
   await saveUserData();
+  // Stop this phone receiving push notifications for the account being left.
+  // Must happen BEFORE auth.signOut(): deleting the saved subscription from
+  // the database needs the still-active login. (Never blocks logout.)
+  try { await unsubscribeFromPush(); } catch (e) { console.error('Push cleanup on sign-out failed:', e); }
   clearLocalData();
   await _supabase.auth.signOut();
   window.location.reload();

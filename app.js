@@ -3158,12 +3158,20 @@ async function subscribeToPush(interactive) {
   }
 }
 async function unsubscribeFromPush() {
-  if (!('serviceWorker' in navigator)) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     if (!sub) return;
-    await _supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    // 1) Remove this device from the server's list (needs the active login).
+    //    If we're offline this may fail — that's fine, step 2 still kills it.
+    try {
+      await withTimeout(_supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint), 5000);
+    } catch (err) {
+      console.error('Removing push subscription from server failed:', err);
+    }
+    // 2) Cancel it in the browser itself. Even if step 1 failed, the push
+    //    service now rejects it (410) and the server deletes it on its next send.
     await sub.unsubscribe();
   } catch (err) {
     console.error('Push unsubscribe failed:', err);
